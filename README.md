@@ -23,7 +23,7 @@ Any file-deployment tool relies on input files being organised in some way. I ha
  7. **No Config File**
 
 
-Web applications require some control over the number of requests needed to obtain data and the size of that data. To allow control, some data should be available as both an element and an array of elements.
+Web applications require some control over the number of requests needed to obtain data and the size of that data. To allow control, some data should be available as both an element and an array of elements. One source only should exist for that data.
 
 
 [0]: http://guides.rubyonrails.org/v2.3.11/i18n.html             "ror"
@@ -134,6 +134,26 @@ The example shows files grouped by 'defaults', 'data' and 'page-object'. Another
 
 *`Ruby on Rails` groups data by 'models' and 'views'.
 
+
+
+----------------------------------------------------------------------
+#### Unicode
+
+ * [loc.gov/standards/iso639-2/langhome.html][66]
+ 
+ _ISO 639-2 represents all languages contained in ISO 639-1 and in addition any other language as well as language groups as they may be coded for special purposes [...] every language code in the two-letter code set has a corresponding language code in the alpha-3 list, but not necessarily vice versa._
+
+The examples here use ISO 639-2, for reasons in the quote, but any language code may be used. These are the ISO standard [language][9] and [locale][9] codes preferred by locale-deploy. 
+
+Examples also use naming conventions copied from [Apple][10]. 'ES' designates the locale of Spain and 'spa-ES' designates Spanish language used in Spain. 'spa-ES_CL' designates spanish language of Spain, for the Chilean locale.
+
+
+[8]: http://www.iso.org/iso/country_names_and_code_elements_txt "iso country"
+[9]: http://www.loc.gov/standards/iso639-2/ISO-639-2_8859-1.txt "iso lang"
+[10]: http://developer.apple.com/library/ios/#documentation/MacOSX/Conceptual/BPInternational/Articles/LanguageDesignations.html#//apple_ref/doc/uid/20002144-SW3 "apple lang-locale"
+[66]: http://www.loc.gov/standards/iso639-2/langhome.html
+
+
 ----------------------------------------------------------------------
 #### Overview, Data
 
@@ -182,16 +202,6 @@ Fewer files are needed when an application supports these scenarios:
       ```
 
 A data might differ only by 'lang' or 'locale'. If your application supports 3 locales and 3 languages does this data need to exist in 9 files or 3?
-
-locale-converter uses ISO standard [language][9] and [locale][9] codes. It also uses a naming convention I copied from [Apple][10]. 'ES' designates the locale of Spain and 'spa-ES' designates Spanish language used in Spain. 'spa-ES_CL' designates spanish language of Spain, for the Chilean locale.
-
-```
-This website provides two sets of language codes as part of the ISO 639 standard, one as a two-letter code set (639-1) and another as a three-letter code set (this part of ISO 639) for the representation of names of languages. ISO 639-1 was devised primarily for use in terminology, lexicography and linguistics. ISO 639-2 represents all languages contained in ISO 639-1 and in addition any other language as well as language groups as they may be coded for special purposes when more specificity in coding is needed. The languages listed in ISO 639-1 are a subset of the languages listed in ISO 639-2; every language code in the two-letter code set has a corresponding language code in the alpha-3 list, but not necessarily vice versa. 
-```
-
-[8]: http://www.iso.org/iso/country_names_and_code_elements_txt "iso country"
-[9]: http://www.loc.gov/standards/iso639-2/ISO-639-2_8859-1.txt "iso lang"
-[10]: http://developer.apple.com/library/ios/#documentation/MacOSX/Conceptual/BPInternational/Articles/LanguageDesignations.html#//apple_ref/doc/uid/20002144-SW3 "apple lang-locale"
 
 
 
