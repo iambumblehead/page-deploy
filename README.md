@@ -135,15 +135,15 @@ The example shows files grouped by 'defaults', 'data' and 'page-object'. Another
 *`Ruby on Rails` groups data by 'models' and 'views'.
 
 
-
 ----------------------------------------------------------------------
 #### Unicode
+
+ISO standard [language][9] and [locale][9] codes are recommended, but any code may be used. The examples here use ISO 639-2, for reasons in this quote: 
 
  * [loc.gov/standards/iso639-2/langhome.html][66]
  
  _ISO 639-2 represents all languages contained in ISO 639-1 and in addition any other language as well as language groups as they may be coded for special purposes [...] every language code in the two-letter code set has a corresponding language code in the alpha-3 list, but not necessarily vice versa._
 
-The examples here use ISO 639-2, for reasons in the quote, but any language code may be used. These are the ISO standard [language][9] and [locale][9] codes preferred by locale-deploy. 
 
 Examples also use naming conventions copied from [Apple][10]. 'ES' designates the locale of Spain and 'spa-ES' designates Spanish language used in Spain. 'spa-ES_CL' designates spanish language of Spain, for the Chilean locale.
 
