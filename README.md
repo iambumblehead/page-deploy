@@ -164,17 +164,18 @@ Fewer files are needed when an application supports these scenarios:
     
     * A list of banks, sub-regions (prefectures or states) or payment gateways. Specific data for each locale is defined -with translations.    
 
-      `municipalities/baseLangLocaleArr.json`
-      `municipalities/eng-US_USArr.json`
-      `municipalities/eng-US_ESArr.json`
-      `municipalities/eng-US_CLArr.json`
-      `municipalities/spa-ES_USArr.json`
-      `municipalities/spa-ES_ESArr.json`
-      `municipalities/spa-ES_CLArr.json`
-      `municipalities/spa-CL_USArr.json`
-      `municipalities/spa-CL_ESArr.json`
-      `municipalities/spa-CL_CLArr.json`
-
+    > ```
+      municipalities/baseLangLocaleArr.json
+      municipalities/eng-US_USArr.json
+      municipalities/eng-US_ESArr.json
+      municipalities/eng-US_CLArr.json
+      municipalities/spa-ES_USArr.json
+      municipalities/spa-ES_ESArr.json
+      municipalities/spa-ES_CLArr.json
+      municipalities/spa-CL_USArr.json
+      municipalities/spa-CL_ESArr.json
+      municipalities/spa-CL_CLArr.json
+      ```
 
 A data might differ only by 'lang' or 'locale'. If your application supports 3 locales and 3 languages does this data need to exist in 9 files or 3?
 
