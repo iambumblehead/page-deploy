@@ -1,0 +1,66 @@
+{
+    "name" : "primaryNav",
+    "type" : "horizontalNav",
+    "selectType" : "single",
+
+    "sorting" : { 
+        "type" : "none",
+        "baseObjProperty" : "name"
+    },
+
+    "baseData" : {
+        "type" : "literal",
+        "value" : [{
+            "name" : "About",
+            "type" : "about"
+        },{
+            "name" : "News",
+            "type" : "news"
+        },{
+            "name" : "Gallery",
+            "type" : "gallery"
+        },{
+            "name" : "Media",
+            "type" : "media"
+        },{
+            "name" : "Links",
+            "type" : "links"
+        }]
+    },
+
+    "subjectData" : {
+        "type" : "iteral",
+        "value" : {
+            "type" : "about"
+        }
+    },
+
+    "dataPartial" : {
+        "labelArr" : [{
+            "name" : "primary",
+            "type" : "objProperty",
+            "propertyName" : "name"
+        }],
+        "returnVal" : {
+            "type" : "objProperty",
+            "propertyName" : "type"
+        },
+        "keys" : {
+            "matchOnObjBase" : {
+                "type" : "objProperty",
+                "propertyName" : "type"
+            },
+            "matchOnObjSubject" : {
+                "type" : "objProperty",
+                "propertyName" : "type"
+            }
+        }
+    },
+
+    "observerSpecArr" : [{
+        "event" : "change",
+        "type" : "localUpdate",            
+        "field" : "primaryNav"
+    }],
+    "observerSpecArr" : null
+}

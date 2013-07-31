@@ -1,0 +1,35 @@
+{
+    "name" : "password",
+    "type" : "password",
+
+    "labelArr" : [{
+        "name" : "primary",
+        "type" : "viewKey",
+        "key" : "viewData.labels.password_primary"
+    },{
+        "name" : "isRequired",
+        "type" : "literal",
+        "value" : "true"
+    }],
+
+    "subjectData" : {
+        "type" : "objProperty",
+        "propertyName" : "password"
+    },
+
+    "validation" : {
+        "type" : "AND",
+        "validatorArr": [{
+            "type" : "specPattern",
+            "name" : "isNotEmpty",
+            "errorKey" : "register_password_needed"
+        },{
+            "type" : "specPattern",
+            "name" : "isMinLength",                
+            "errorKey" : "register_password_small",
+            "options" : {
+                "min" : 5
+            }
+        }]
+    }
+}

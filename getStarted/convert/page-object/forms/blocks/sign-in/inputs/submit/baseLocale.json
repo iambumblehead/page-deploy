@@ -1,0 +1,10 @@
+{        
+    "name" : "submit",
+    "type" : "submit",
+
+    "labelArr" : [{
+        "name" : "primary",
+        "type" : "viewKey",
+        "key" : "viewData.labels.submit_primary"
+    }]
+}

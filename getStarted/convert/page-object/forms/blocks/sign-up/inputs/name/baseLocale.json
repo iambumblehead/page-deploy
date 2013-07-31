@@ -1,0 +1,25 @@
+{
+    "name" : "name",
+    "type" : "text",
+
+    "labelArr" : [{
+        "name" : "primary",
+        "type" : "literal",
+        "value" : "Name"
+    }],
+
+    "subjectData" : {
+        "type" : "objProperty",
+        "propertyName" : "obj.name",
+        "defaultVal" : {
+            "type" : "literal",
+            "value" : ""
+        }
+    },
+
+    "validation" : {
+        "type" : "specPattern",
+        "name" : "isNotEmpty",
+        "errorKey" : "new_merchant_signup_companyname"
+    }
+}
