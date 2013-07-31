@@ -162,9 +162,9 @@ Fewer files are needed when an application supports these scenarios:
  3. **`lang-locale`**
     _data differs for each locale and language_
     
-    * A list of banks, sub-regions (prefectures or states) or payment gateways. Specific data for each locale is defined -with translations.    
+    A list of banks, sub-regions (prefectures or states) or payment gateways. Specific data for each locale is defined -with translations.    
 
-    > ```
+      ```bash
       municipalities/baseLangLocaleArr.json
       municipalities/eng-US_USArr.json
       municipalities/eng-US_ESArr.json
