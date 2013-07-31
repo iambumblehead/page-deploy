@@ -1,7 +1,7 @@
 page-deploy
 ===========
 
-`page-deploy` deploys page-object data and pattern files. It is most useful for web applications using locale and language specific data. 
+It deploys page-object data and pattern files. This is most useful for web applications using locale and language specific data. 
 
 For example, your application may use locale files to render an input for a social-security-number. _Locale_ files would describe the input for 'en-US', but not for 'es-ES', while _language_ files would describe a label for the input, such as 'ssn number:' or 'ssn numero:'.
 
@@ -129,7 +129,7 @@ $ tree -L 10 ./getStarted/convert
 ```
 
 
-The example shows files grouped by 'defaults', 'data' and 'page-object'. Another* grouping could be used. I recommend the grouping used in the example.
+The example shows files grouped by 'defaults', 'data' and 'page-object'. Another* grouping could be used. The grouping used in the example is recommended.
 
 
 *`Ruby on Rails` groups data by 'models' and 'views'.
@@ -159,7 +159,7 @@ Examples also use naming conventions copied from [Apple][10]. 'ES' designates th
 
 Fewer files are needed when an application supports these scenarios:
 
- 1. **`lang`**
+ 1. **Lang**
     _data is same for each locale, but is different by language_
     
     A group of categories, such as 'food' and 'health'. One data is defined for all locales -with translations.        
@@ -171,7 +171,7 @@ Fewer files are needed when an application supports these scenarios:
       categories/spa-CL.json
       ```
 
- 2. **`locale`**
+ 2. **Locale**
     _data differs for each locale, but is one language for each_
     
     A legal document, such as a 'user agreement'. Specific data for each locale is defined -no translations.
@@ -183,7 +183,7 @@ Fewer files are needed when an application supports these scenarios:
       terms-and-conditions/CL.json
       ```
 
- 3. **`lang-locale`**
+ 3. **LangLocale**
     _data differs for each locale and language_
     
     A list of banks, sub-regions (prefectures or states) or payment gateways. Specific data for each locale is defined -with translations.    
