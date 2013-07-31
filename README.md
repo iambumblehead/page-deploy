@@ -142,22 +142,26 @@ Fewer files are needed when an application supports these scenarios:
  1. **`lang`**
     _data is same for each locale, but is different by language_
     
-    * A group of categories, such as 'food' and 'health'. One data is defined for all locales -with translations.        
+    A group of categories, such as 'food' and 'health'. One data is defined for all locales -with translations.        
 
-      `categories/baseLang.json`
-      `categories/eng-US.json`
-      `categories/spa-ES.json`
-      `categories/spa-CL.json`
-    
+      ```bash
+      categories/baseLang.json
+      categories/eng-US.json
+      categories/spa-ES.json
+      categories/spa-CL.json
+      ```
+
  2. **`locale`**
     _data differs for each locale, but is one language for each_
     
-    * A legal document, such as a 'user agreement'. Specific data for each locale is defined -no translations.
+    A legal document, such as a 'user agreement'. Specific data for each locale is defined -no translations.
 
-      `terms-and-conditions/baseLocale.json`
-      `terms-and-conditions/US.json`
-      `terms-and-conditions/ES.json`
-      `terms-and-conditions/CL.json`
+      ```bash
+      terms-and-conditions/baseLocale.json
+      terms-and-conditions/US.json
+      terms-and-conditions/ES.json
+      terms-and-conditions/CL.json
+      ```
 
  3. **`lang-locale`**
     _data differs for each locale and language_
