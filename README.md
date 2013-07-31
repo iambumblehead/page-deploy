@@ -1,26 +1,16 @@
 page-deploy
 ===========
 
-**WIP**. It is **not** stable. 
+`page-deploy` deploys page-object data and pattern files. It is most useful for web applications using locale and language specific data. 
 
-It is **not** ready for production use. It is under **heavy**
-development.
+For example, your application may use locale files to render an input for a social-security-number. _Locale_ files would describe the input for 'en-US', but not for 'es-ES', while _language_ files would describe a label for the input, such as 'ssn number:' or 'ssn numero:'.
 
-I am building something simple around this now and am making changes to these scripts suddenly as needed.
-
+Page-deploy strategically organizes these files for deployment. This positively affects the way you test, deploy, translate and develop an application using such files.
 
 ----------------------------------------------------------------------
-### About Locale File Deployment
+### About
 
-Files with locale or language specific content are "locale files". An application might use locale files to render an input for a social-security-number. Locale files would describe the input for 'en-US', but not for 'es-ES', and language files would describe a label for the input, such as 'ssn number:' or 'ssn numero:'.
-
-Organising these files is important. It will affect the way you test, deploy, translate and develop an application using them.
-
-
-----------------------------------------------------------------------
-### About `page-deploy`
-
-Any file-deployment tool relies on input files being organised in some way. I have worked on applications built around poorly organised locale files. I have studied the organisation of International files by [Ruby on Rails][0], [Django][3], [Microsoft][4], [Jquery][6], [Mozilla][5], [Apple][10] and by the [Unicode Consortium][1]. This tool is a product of that experience. 
+Any file-deployment tool relies on input files being organised in some way. I have worked on applications built around poorly organised input files. I have studied the organisation of International files by [Ruby on Rails][0], [Django][3], [Microsoft][4], [Jquery][6], [Mozilla][5], [Apple][10] and by the [Unicode Consortium][1]. This tool is a product of that experience. 
 
  Decisions made by this software:
 
@@ -50,11 +40,11 @@ Web applications require some control over the number of requests needed to obta
 ### Overview
 
 
-A directory named 'getStarted' is provided with page-deploy. Its directory and file-naming scheme are supported. A full layout of the directory with the `tree` command:
+The directory `getStarted` is provided with page-deploy. Its layout and file-naming scheme are supported. A full layout of the directory with the `tree` command:
  
 ```bash
-$ tree -L 10 ./convert
-./convert
+$ tree -L 10 ./getStarted/convert
+./getStarted/convert
 ├── data
 │   ├── type-country
 │   │   └── arr
