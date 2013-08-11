@@ -1,5 +1,5 @@
 // Filename: page-deploy.js  
-// Timestamp: 2013.07.30-23:53:55 (last modified)  
+// Timestamp: 2013.08.11-02:03:08 (last modified)  
 // Author(s): Bumblehead (www.bumblehead.com)
 //
 // uses gfm (github-flavored-markdown): https://github.com/chjj/marked
@@ -64,10 +64,10 @@ var localeconvert = module.exports = {
   },  
 
   convert : function (opts, fn) {
-    console.log('[...] locale-convert: begin.');
+    console.log('[...] page-deploy: begin.');
     this.breadthFirstConvert(opts.inputDir, opts, function (err, res) {
       if (err) return console.log(err, (err.stack) ? err.stack : '');
-      console.log('[...] locale-convert done.');
+      console.log('[...] page-deploy done.\n');
       if (typeof fn === 'function') fn(null, 'success');
     });
   }
