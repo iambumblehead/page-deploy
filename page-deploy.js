@@ -1,5 +1,5 @@
 // Filename: page-deploy.js  
-// Timestamp: 2013.08.11-02:03:08 (last modified)  
+// Timestamp: 2013.09.28-23:55:29 (last modified)  
 // Author(s): Bumblehead (www.bumblehead.com)
 //
 // uses gfm (github-flavored-markdown): https://github.com/chjj/marked
@@ -53,7 +53,10 @@ var localeconvert = module.exports = {
       if (stat && stat.isDirectory()) {
         // read contents
         that.breadthFirstDirectory(input, opts, fn);
-      } else if (stat.isFile() && isoutil.isBaseFilename(input)) {
+      } else if (stat.isFile() && 
+                 isoutil.isBaseFilename(input) &&
+                 input.match(/(json|md)$/)) {
+        
         converter.convertFilesForBase(input, opts, function (err, res) {
           fn(err, res);
         });
