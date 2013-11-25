@@ -1,6 +1,8 @@
 page-deploy
 ===========
 
+**NOT FOR PRODUCTION USE -ALPHA QUALITY**
+
 It deploys page-object data and pattern files. This is most useful for web applications using locale and language specific data. 
 
 For example, your application may use locale files to render an input for a social-security-number. _Locale_ files would describe the input for 'en-US', but not for 'es-ES', while _language_ files would describe a label for the input, such as 'ssn number:' or 'ssn numero:'.
