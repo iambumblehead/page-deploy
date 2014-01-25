@@ -135,6 +135,7 @@ Reference smaller files from another file -page-deploy will build that new file 
 properties file and special values...
 
 pd.langobj
+pd.langkey
 
 ----------------------------------------------------------------------
 #### Overview, Support Files
