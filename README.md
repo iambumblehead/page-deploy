@@ -46,88 +46,7 @@ The directory `getStarted` is provided with page-deploy. Its layout and file-nam
  
 ```bash
 $ tree -L 10 ./getStarted/convert
-./getStarted/convert
-├── data
-│   ├── type-country
-│   │   └── arr
-│   │       └── baseLang.json
-│   ├── type-municipality
-│   │   └── arr
-│   │       ├── baseLangLocale.json
-│   │       ├── eng-US_ES.json
-│   │       ├── eng-US_US.json
-│   │       ├── spa-ES_ES.json
-│   │       └── spa-ES_US.json
-│   └── user-agreement
-│       └── elements
-│           ├── baseLocale.md
-│           ├── ES.md
-│           └── US.md
-├── defaults
-│   ├── error
-│   │   └── baseLang.json
-│   └── unicode
-│       └── baseLang.json
-└── page-object
-    ├── blog
-    │   └── blocks
-    │       └── blog-list
-    │           ├── baseLang.json
-    │           └── data
-    │               ├── arr
-    │               │   └── baseLang.json
-    │               └── elements
-    │                   ├── big-update
-    │                   │   ├── baseLang.md
-    │                   │   └── support
-    │                   │       └── img
-    │                   │           ├── about-screen.jpg
-    │                   │           ├── full
-    │                   │           ├── linux-screen.jpg
-    │                   │           ├── stobo_linux2.png
-    │                   │           ├── stobo_linux.png
-    │                   │           ├── stobo-osx.jpg
-    │                   │           └── vista-screen.jpg
-    │                   ├── making-waves
-    │                   │   ├── baseLang.md
-    │                   │   └── support
-    │                   │       └── img
-    │                   │           ├── emacs-screenshot.jpg
-    │                   │           ├── full
-    │                   │           ├── render.jpg
-    │                   │           ├── sine-evolution.jpg
-    │                   │           └── testing.jpg
-    │                   └── writing-javascript
-    │                       └── baseLang.md
-    ├── canvas
-    │   ├── baseLocale.json
-    │   └── blocks
-    │       └── nav-top
-    │           └── baseLocale.json
-    └── forms
-        └── blocks
-            ├── sign-in
-            │   ├── baseLocale.json
-            │   └── inputs
-            │       ├── email
-            │       │   └── baseLocale.json
-            │       ├── password
-            │       │   └── baseLocale.json
-            │       └── submit
-            │           └── baseLocale.json
-            └── sign-up
-                ├── baseLocale.json
-                └── inputs
-                    ├── country
-                    │   └── baseLocale.json
-                    ├── name
-                    │   └── baseLocale.json
-                    ├── submit
-                    │   └── baseLocale.json
-                    ├── time-bgn
-                    │   └── baseLocale.json
-                    └── time-end
-                        └── baseLocale.json
+...
 ```
 
 
@@ -213,6 +132,9 @@ A data might differ only by 'lang' or 'locale'. If your application supports 3 l
 
 Reference smaller files from another file -page-deploy will build that new file for you. 
 
+properties file and special values...
+
+pd.langobj
 
 ----------------------------------------------------------------------
 #### Overview, Support Files
