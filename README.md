@@ -83,7 +83,7 @@ Fewer files are needed when an application supports these scenarios:
  1. **Lang**
     _data is same for each locale, but is different by language_
     
-    A group of categories, such as 'food' and 'health'. One data is defined for all locales -with translations.        
+    A group of categories, such as 'food' and 'health'. One data is defined for all locales -with translations.
 
       ```bash
       categories/baseLang.json
@@ -107,7 +107,7 @@ Fewer files are needed when an application supports these scenarios:
  3. **LangLocale**
     _data differs for each locale and language_
     
-    A list of banks, sub-regions (prefectures or states) or payment gateways. Specific data for each locale is defined -with translations.    
+    A list of banks, sub-regions (prefectures or states) or payment gateways. Specific data for each locale is defined -with translations.
 
       ```bash
       municipalities/baseLangLocaleArr.json
