@@ -2,8 +2,8 @@ var fs = require('fs'),
     path = require('path'),
     pathpublic = require('pathpublic'),
     objobjwalk = require('objobjwalk'),
-
-    wrench = require('wrench'),
+    
+    cpr = require('recursive-copy'),
     nodefs = require('node-fs'),
 
     fileutil = require('./fileutil');
@@ -82,14 +82,10 @@ var SupportConverter = module.exports = (function() {
           //          wrench.mkdirSyncRecursive(fileObjSupportPathNew, 0777);          
           nodefs.mkdir(outputSupportPath, 0755, true, function (err, res) {
             if (err) return fn(err);    
-            // 1.5.0+
-            //wrench.copyDirRecursive(fileObjSupportPath, fileObjSupportPathNew, {
-            //  forceDelete: true
-            //}, function (err, res) {
-            //
-            // 1.4.4
-            wrench.copyDirRecursive(inputSupportPath, outputSupportPath, function (err, res) {
-              if (err) return fn(err);    
+
+            cpr(inputSupportPath, outputSupportPath, (err, res) => {
+              if (err) return fn(err);
+              
               console.log('[mmm] wrote: ' + relativeSupportPath);
               fn(null, 'success');
             });          

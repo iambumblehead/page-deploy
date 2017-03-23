@@ -1,4 +1,4 @@
-var SupportConverter = require('../lib/supportconverter.js');
+var SupportConverter = require('../src/supportconverter.js');
 
 describe("supportconverter.getWithPublicPathStr", function () {
 

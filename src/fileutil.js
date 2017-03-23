@@ -1,12 +1,16 @@
+// Filename: fileutil.js  
+// Timestamp: 2017.03.23-14:04:07 (last modified)
+// Author(s): bumblehead <chris@bumblehead.com>
+
 var fs = require('fs'), // read/write files
     nodefs = require('node-fs'),
-    wrench = require('wrench'),
+    cpr = require('recursive-copy'),
     path = require('path');
 
-var Message = require('./message.js');
+var deploy_msg = require('./deploy_msg');
 
 var FileUtil = module.exports = {
-  
+
   getMinty : function(input, opts, filterFn, fn) {
     var extn = opts.extnType, 
         isRecursive = opts.isRecursive;
@@ -17,7 +21,7 @@ var FileUtil = module.exports = {
     (function getMints(input, cb) {
       var results = [];
       fs.stat(input, function(err, stat) {      
-        if (err || !stat) return fn(Message.error.pathInvalid(input));        
+        if (err || !stat) return fn(deploy_msg.error.pathInvalid(input));        
         
         if (stat.isDirectory()) {
           fs.readdir(input, function(err, inputArr) {
@@ -57,10 +61,9 @@ var FileUtil = module.exports = {
     }(input, fn));
   },
 
-
   getFile : function (file, fn) {
     fs.readFile(file, 'ascii', function(err, fd) {
-      if (err) return fn(Message.pathInvalid(file));
+      if (err) return fn(deploy_msg.pathInvalid(file));
       fn(err, fd);
     });
   },
@@ -78,7 +81,7 @@ var FileUtil = module.exports = {
         input = opts.inputPath;
 
     fs.stat(input, function(err, stat) {
-      if (err) return fn(Message.pathInvalid(input));
+      if (err) return fn(deploy_msg.pathInvalid(input));
 
       opts.isPassingFilename = that.isPassingFilename;
       FileUtil.getMinty(input, opts, function (filename, opts) {
@@ -89,7 +92,7 @@ var FileUtil = module.exports = {
 
   getFilesArr : function (dirname, opts, fn) {
     fs.stat(dirname, function(err, stat) {      
-      if (err || !stat || !stat.isDirectory()) return fn(Message.error.pathInvalid(dirname));        
+      if (err || !stat || !stat.isDirectory()) return fn(deploy_msg.error.pathInvalid(dirname));        
 
       fs.readdir(dirname, function (err, resArr) {
         if (err) return fn(err);
@@ -104,7 +107,7 @@ var FileUtil = module.exports = {
   getSubDirectories : function (opts, fn) {
     var dir = opts.inputDir;
     fs.stat(dir, function(err, stat) {      
-      if (err || !stat) return fn(Message.error.pathInvalid(dir));        
+      if (err || !stat) return fn(deploy_msg.error.pathInvalid(dir));        
       if (stat.isDirectory()) {
         fs.readdir(dir, function (err, res) {
           if (err) return fn(err);
@@ -119,17 +122,18 @@ var FileUtil = module.exports = {
     });
   },
 
-  copyDir : function (inputDir, outputDir, fn) {
-    nodefs.mkdir(outputDir, 0755, true, function (err, res) {
-      if (err) return fn(err);    
-      wrench.copyDirRecursive(inputDir, outputDir, fn);
+  copyDir : (inputDir, outputDir, fn) => {
+    nodefs.mkdir(outputDir, 0755, true, (err, res) => {
+      if (err) return fn(err);
+
+      cpr(inputDir, outputDir, fn);
     });
   },
 
   getSubPaths : function (opts, fn) {
     var dir = opts.inputDir;
     fs.stat(dir, function(err, stat) {      
-      if (err || !stat) return fn(Message.pathInputInvalid(dir));        
+      if (err || !stat) return fn(deploy_msg.pathInputInvalid(dir));        
       if (stat.isDirectory()) {
         fs.readdir(dir, fn);
       } else {

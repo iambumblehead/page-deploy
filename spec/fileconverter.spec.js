@@ -1,4 +1,4 @@
-var FileConverter = require('../lib/fileconverter.js');
+var FileConverter = require('../src/fileconverter.js');
 
 describe("fileconverter.getRefPathFilename", function () {
   var result, resultExpected;
