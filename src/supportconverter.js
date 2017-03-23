@@ -1,3 +1,7 @@
+// Filename: supportconverter.js  
+// Timestamp: 2017.03.23-15:39:20 (last modified)
+// Author(s): bumblehead <chris@bumblehead.com>
+
 var fs = require('fs'),
     path = require('path'),
     pathpublic = require('pathpublic'),
