@@ -1,5 +1,5 @@
 // Filename: page-deploy.js  
-// Timestamp: 2017.03.23-14:03:21 (last modified)
+// Timestamp: 2017.03.25-21:55:28 (last modified)
 // Author(s): Bumblehead (www.bumblehead.com)
 //
 // uses gfm (github-flavored-markdown): https://github.com/chjj/marked
@@ -9,10 +9,10 @@ var fs = require('fs'),
     path = require('path'),
     argv = require('optimist').argv,
 
-    converter = require('./converter'),
-    isoutil = require('./ISO/isoutil'),
+    deploy_converter = require('./deploy_converter'),
+
+    deploy_iso = require('./deploy_iso'),
     UserOptions = require('./deploy_opts'),
-    FileUtil = require('./fileutil'),
 
     input = argv.i || null;
 
@@ -54,10 +54,10 @@ const localeconvert = module.exports = (o => {
       if (stat && stat.isDirectory()) {
         o.breadthFirstDirectory(input, opts, fn);
       } else if (stat.isFile() && 
-                 isoutil.isBaseFilename(input) &&
+                 deploy_iso.isBaseFilename(input) &&
                  input.match(/(json|md)$/)) {
 
-        converter.convertFilesForBase(input, opts, fn);
+        deploy_converter.convertFilesForBase(input, opts, fn);
       } else {
         fn(null, null);
       }
@@ -81,9 +81,9 @@ const localeconvert = module.exports = (o => {
 
 // if called from command line...
 if (require.main === module) {
-  
   var opts = UserOptions.getNew(argv);
-  converter.convert(opts, (err, res) => {
+  
+  deploy_converter.convert(opts, (err, res) => {
     if (err) return console.log(err);
     console.log('[...] finished.');
   });

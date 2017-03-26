@@ -1,4 +1,8 @@
-var FileConverter = require('../src/fileconverter.js');
+// Filename: fileconverter.spec.js  
+// Timestamp: 2017.03.25-16:32:00 (last modified)
+// Author(s): bumblehead <chris@bumblehead.com>
+
+var FileConverter = require('../src/deploy_fileconvert');
 
 describe("fileconverter.getRefPathFilename", function () {
   var result, resultExpected;
@@ -16,8 +20,6 @@ describe("fileconverter.getRefPathFilename", function () {
     expect( result ).toBe( resultExpected );
   });
 });
-
-
 
 describe("fileconverter.getRefPath", function () {
   var result, resultExpected;

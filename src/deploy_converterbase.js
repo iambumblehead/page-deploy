@@ -1,13 +1,15 @@
-var fs = require('fs'),
-    path = require('path');
+// Filename: fileconverterBase.js  
+// Timestamp: 2017.03.25-22:10:49 (last modified)
+// Author(s): bumblehead <chris@bumblehead.com>
 
-var isoutil = require('./ISO/isoutil');
-var fileconverter = require('./fileconverter');
+const fs = require('fs'),
+      path = require('path'),
 
+      deploy_iso = require('./deploy_iso'),    
+      deploy_fileconvert = require('./deploy_fileconvert');
 
 // getA Regular fileconvert object... apply it here...
-
-var FileConverterBase = module.exports = (function() {
+const deploy_converterbase = module.exports = (o => {
 
   // baseObj,
   // ISOType
@@ -16,9 +18,9 @@ var FileConverterBase = module.exports = (function() {
   // getPrefixName
   // convertFilesForISO
 
-  var fcbase = Object.create(fileconverter);
+  var fcbase = Object.create(deploy_fileconvert);
 
-  fcbase.proto.getPrefixName = function (filepath) {
+  fcbase.proto.getPrefixName = (filepath) => {
     var prefixRe = /^(.*-)?base(?:LangLocale|Lang|Locale)/,
         prefixname = '',
         prefixmatch;
@@ -40,7 +42,7 @@ var FileConverterBase = module.exports = (function() {
   // 
   // << ['en-US.json', 'es-ES.json'], 'en-US', '.md'
   // >>  null
-  fcbase.proto.getFromStrArrMatchingISO = function (filenameArr, ISO, extn) {
+  fcbase.proto.getFromStrArrMatchingISO = (filenameArr, ISO, extn) => {
     for (var x = filenameArr.length, f; x--;) {
       if (filenameArr[x].indexOf(ISO) !== -1) {
         f = filenameArr[x];
@@ -51,27 +53,27 @@ var FileConverterBase = module.exports = (function() {
     }
     
     return null;
-  },
+  };
 
   // return the ISO filenames that should be generated.
   fcbase.proto.getAssocISOFilenameArr = function (opts) {
     var filename = this.filename,
-        ISOType = isoutil.getBaseType(filename),
+        ISOType = deploy_iso.getBaseType(filename),
         langArr = opts.supportedLangArr,
         localeArr = opts.supportedLocaleArr;
 
-    return isoutil.getRequiredFilenameArr(ISOType, langArr, localeArr);
+    return deploy_iso.getRequiredFilenameArr(ISOType, langArr, localeArr);
   };
 
-  // return an array of fileconverter objects suited to the iso options
-  // if an iso file is found, return fileconverter objects from file
-  // if no iso file is found, return cloned `this` (a fileconverter object)
+  // return an array of deploy_fileconvert objects suited to the iso options
+  // if an iso file is found, return deploy_fileconvert objects from file
+  // if no iso file is found, return cloned `this` (a deploy_fileconvert object)
   // matching extension checked for precision.
   fcbase.proto.getAssocISOFileObjArr = function (opts, fn) {
     var that = this,
         filename = that.filename,
         isoFilenameArr = that.getAssocISOFilenameArr(opts),
-        isoFileconverterArr = [],
+        isodeploy_fileconvertArr = [],
         extname = path.extname(filename),
         dirname = path.dirname(filename);
 
@@ -79,21 +81,21 @@ var FileConverterBase = module.exports = (function() {
       if (err) return fn(err);
 
       (function next (x, isoFilename, fcBase) {
-        if (!x--) return fn(null, isoFileconverterArr);
+        if (!x--) return fn(null, isodeploy_fileconvertArr);
 
         isoFilename = isoFilenameArr[x];
 
         if (that.getFromStrArrMatchingISO(resArr, isoFilename, extname)) {
           isoFilename = path.join(dirname, isoFilename + '.json');
-          fileconverter.getFromFileNew(isoFilename, opts, function (err, fcBase) {
+          deploy_fileconvert.getFromFileNew(isoFilename, opts, function (err, fcBase) {
             if (err) return fn(err);
-            isoFileconverterArr.push(fcBase);
+            isodeploy_fileconvertArr.push(fcBase);
             next(x);
           });
         } else {
           fcBase = Object.create(that);
           fcBase.filename = path.join(dirname, isoFilename + '.json');
-          isoFileconverterArr.push(fcBase);
+          isodeploy_fileconvertArr.push(fcBase);
           next(x);
         }
       }(isoFilenameArr.length));
@@ -122,4 +124,4 @@ var FileConverterBase = module.exports = (function() {
 
   return fcbase;
 
-}());
+})({});
