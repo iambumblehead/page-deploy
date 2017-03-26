@@ -1,5 +1,5 @@
 // Filename: deploy_supportconvert.js  
-// Timestamp: 2017.03.25-16:16:44 (last modified)
+// Timestamp: 2017.03.25-22:22:19 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 //
 // pickup and use 'support' directory and contents
@@ -53,8 +53,6 @@ const deploy_supportconvert = module.exports = (o => {
     let outputPath = o.getpathout(opts, cfg),
         publicPath = pathpublic.get(outputPath, opts.publicPath);
 
-    console.error('outputpath', outputPath, opts.publicPath);
-    
     return publicPath;
   };
 

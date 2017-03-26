@@ -1,5 +1,5 @@
 // Filename: converter.js  
-// Timestamp: 2017.03.25-22:07:40 (last modified)
+// Timestamp: 2017.03.25-22:21:33 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -67,6 +67,7 @@ const deploy_converter = module.exports = (o => {
     });
   };
 
+  return o;
   
 })({});
 
