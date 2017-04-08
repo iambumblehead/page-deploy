@@ -1,17 +1,18 @@
 // Filename: deploy_supportconvert.js  
-// Timestamp: 2017.03.25-22:22:19 (last modified)
+// Timestamp: 2017.04.08-13:31:06 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 //
 // pickup and use 'support' directory and contents
 // for given pattern
 
 const fs = require('fs'),
-      path = require('path'),
+      cpr = require('recursive-copy'),
+      path = require('path'),      
+      nodefs = require('node-fs'),      
       pathpublic = require('pathpublic'),
       objobjwalk = require('objobjwalk'),
-    
-      cpr = require('recursive-copy'),
-      nodefs = require('node-fs');
+
+      deploy_msg = require('./deploy_msg');      
 
 const deploy_supportconvert = module.exports = (o => {
   
@@ -79,8 +80,9 @@ const deploy_supportconvert = module.exports = (o => {
 
             cpr(inputSupportPath, outputSupportPath, (err, res) => {
               if (err) return fn(err);
-              
-              console.log('[mmm] wrote: ' + relativeSupportPath);
+
+              deploy_msg.convertedfilename(relativeSupportPath);
+              //console.log('[mmm] wrote: ' + relativeSupportPath);
               fn(null, 'success');
             });          
           });

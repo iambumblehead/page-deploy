@@ -1,14 +1,18 @@
-// Filename: deploy_file.js  
-// Timestamp: 2017.03.25-21:13:55 (last modified)
+// Filename: deploy_file.js  a
+// Timestamp: 2017.04.08-13:51:27 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'), // read/write files
       cpr = require('recursive-copy'),
       path = require('path'),
       nodefs = require('node-fs'),
+      deploy_iso = require('./deploy_iso'),
       deploy_msg = require('./deploy_msg');
 
 const deploy_file = module.exports = (o => {
+
+  o.readdir = (dir, fn) =>
+    fs.readdir(dir, fn);
 
   o.read = (file, fn) =>
     fs.readFile(file, 'utf8', (err, fd) => {
@@ -49,7 +53,7 @@ const deploy_file = module.exports = (o => {
       o.write(filename, content, fn);
     });
   };
-
+ 
   return o;
 
 })({});

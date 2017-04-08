@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.03.25-22:14:41 (last modified)
+// Timestamp: 2017.04.08-13:57:50 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -7,10 +7,12 @@ const fs = require('fs'),
       glob = require('glob'),
       objobjwalk = require('objobjwalk'),
 
+      deploy_msg = require('./deploy_msg'),
       deploy_file = require('./deploy_file'),
+      deploy_marked = require('./deploy_marked'),
       deploy_pattern = require('./deploy_pattern'),
-      deploy_supportconvert = require('./deploy_supportconvert'),
-      deploy_marked = require('./deploy_marked');
+      deploy_supportconvert = require('./deploy_supportconvert');
+
 
 const deploy_fileconvert = module.exports = (o => {
 
@@ -37,7 +39,6 @@ const deploy_fileconvert = module.exports = (o => {
 
   o.writeSupportDir = function (opts, fn) {
     var that = this;
-    //var supportConverterObj = deploy_supportconvert.getNew(that.filename);
 
     deploy_supportconvert.writeSupportDir(opts, {
       supportedFilename : that.filename
@@ -52,10 +53,8 @@ const deploy_fileconvert = module.exports = (o => {
   // becomes something like this:
   // <a href="domain.com/public/path/to/support/img/hand1.jpg">
   o.getWithUpdatedSupportPaths = function (opts, fn) {
-    var that = this, supportConverterObj;
+    var that = this;
 
-    //supportConverterObj = deploy_supportconvert.getNew(that.filename);
-    //supportConverterObj.getUpdatedObj(that.contentObj, opts, function (err, res) {
     deploy_supportconvert.getUpdatedObj(that.contentObj, opts, {
       supportedFilename : that.filename
     }, (err, res) => {
@@ -73,7 +72,7 @@ const deploy_fileconvert = module.exports = (o => {
 
     langpath = that.filename.replace(/spec-.*/, 'lang-baseLang.json');
 
-    deploy_fileconvert.getFromSimilarFileNew(langpath, opts, (err, langobj) => {        
+    deploy_fileconvert.getFromSimilarFileNew(langpath, opts, (err, langobj) => {      
       if (!langobj) return fn(null, that.contentObj);
 
       that.updateLangKeys(that.contentObj, langobj.contentObj, (err, res) => {
@@ -136,11 +135,14 @@ const deploy_fileconvert = module.exports = (o => {
     }, fn);
 
   o.updateLangDefs = (contentObj, langObj, fn) => {
+    let langkeyre = /^pd\.langkey\./,
+        langobjre = /pd.langobj/;
+
     objobjwalk.type('string', contentObj, (str) => {
-      if (str === 'pd.langobj') {
+      if (langobjre.test(str)) {
         return langObj;
-      } else if (str.match(/^pd\.langkey\./)) {
-        return deploy_pattern.objlookup(str.replace(/^pd\.langkey\./, ''), langObj) || str;
+      } else if (langkeyre.test(str)) {
+        return deploy_pattern.objlookup(str.replace(langkeyre, ''), langObj) || str;
       }
 
       return str;
@@ -306,12 +308,15 @@ const deploy_fileconvert = module.exports = (o => {
 
       if (that.deploy_fileconvertObjCache[filename]) {
         return fn(null, that.deploy_fileconvertObjCache[filename]);
-      }
+      } else if (!deploy_pattern.isvalidpatternfilename(filename)) {
+        return deploy_msg.err_invalidfilename(filename);
+      }      
 
       deploy_file.read(filename, (err, res) => {
         if (err) return fn(new Error(err));
 
         deploy_fileconvertObj = that.getFromFileTypeNew(filename, res, opts);
+        
         deploy_fileconvertObj.getConverted(opts, (err, deploy_fileconvertObj) => {
           if (err) return fn(err);
 
@@ -322,23 +327,17 @@ const deploy_fileconvert = module.exports = (o => {
       });        
     },
 
-    getFromSimilarFileNew : function (filename, opts, fn) {
-      var ext = path.extname(filename),
-          dir = path.dirname(filename),
-          name = path.basename(filename, ext),
-          nameRe = new RegExp(name + '\\.(json|md)'),
-          similarpath;
-
-      fs.readdir(dir, (err, patharr) => {
-        if (err) return fn(err);      
-
-        similarpath = patharr.find(path => path.match(nameRe));
-        if (similarpath) {
-          return deploy_fileconvert.getFromFileNew(path.join(dir, similarpath), opts, fn);
+    // filter out similar path
+    getFromSimilarFileNew : (filename, opts, fn) => {
+      deploy_pattern.getsimilarfilename(filename, opts, (err, simfilename) => {
+        if (err) return fn(err);
+        
+        if (simfilename) {
+          deploy_fileconvert.getFromFileNew(simfilename, opts, fn);
+        } else {
+          fn(new Error('[...] similar file not found, ' + filename));
         }
-
-        return fn(new Error('[...] similar file not found, ' + filename));
-      });      
+      });
     }
   };
 

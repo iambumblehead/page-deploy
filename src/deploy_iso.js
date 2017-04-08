@@ -22,29 +22,24 @@ const deploy_iso = module.exports = (o => {
   // 'base.md',       false
   // 'somenotes.txt', false
   o.getBaseType = (filename) => {
-    var type = o.type,
-        baseFilename,
+    let baseLangLocaleRe = /^(spec|lang)-baseLangLocale/,
+        baseLocaleRe     = /^(spec|lang)-baseLocale/,    
+        baseLangRe       = /^(spec|lang)-baseLang/,
+        basename = typeof filename === 'string'
+          && path.basename(filename),
+        basetype;
 
-        baseType,
-
-        baseLangRe = /^spec-baseLang/,
-        baseLocaleRe = /^spec-baseLocale/,
-        baseLangLocaleRe = /^spec-baseLangLocale/;
-
-    if (typeof filename === 'string') {
-      baseFilename = path.basename(filename);
-
-      if (baseFilename.match(baseLangLocaleRe)) {
-        baseType = type.LangLocale;
-      } else if (baseFilename.match(baseLocaleRe)) {
-        baseType = type.Locale;
-      } else if (baseFilename.match(baseLangRe)) {
-        baseType = type.Lang;
-      }
+    if (!basename) {
+      basetype = null;
+    } else if (baseLangLocaleRe.test(basename)) {
+      basetype = o.type.LangLocale;
+    } else if (baseLocaleRe.test(basename)) {
+      basetype = o.type.Locale;
+    } else if (baseLangRe.test(basename)) {        
+      basetype = o.type.Lang;
     }
 
-
-    return baseType;
+    return basetype;
   };
 
   // return `lang` for `lang-baseLang.json`

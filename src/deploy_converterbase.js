@@ -1,5 +1,5 @@
 // Filename: fileconverterBase.js  
-// Timestamp: 2017.03.25-22:10:49 (last modified)
+// Timestamp: 2017.04.08-12:55:09 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -43,6 +43,12 @@ const deploy_converterbase = module.exports = (o => {
   // << ['en-US.json', 'es-ES.json'], 'en-US', '.md'
   // >>  null
   fcbase.proto.getFromStrArrMatchingISO = (filenameArr, ISO, extn) => {
+    return filenameArr.find(filename => (
+      filename.indexOf(ISO) !== -1 &&
+        path.extname(filename) === extn
+    ));
+
+    /*
     for (var x = filenameArr.length, f; x--;) {
       if (filenameArr[x].indexOf(ISO) !== -1) {
         f = filenameArr[x];
@@ -51,8 +57,9 @@ const deploy_converterbase = module.exports = (o => {
         }
       }
     }
-    
+
     return null;
+     */
   };
 
   // return the ISO filenames that should be generated.
