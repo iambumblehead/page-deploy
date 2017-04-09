@@ -1,5 +1,5 @@
 // Filename: deploy_iso.js  
-// Timestamp: 2017.03.25-21:35:13 (last modified)
+// Timestamp: 2017.04.09-01:34:55 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path');
@@ -7,8 +7,8 @@ const path = require('path');
 const deploy_iso = module.exports = (o => {
 
   o.type = {
-    Lang : 'Lang',
-    Locale : 'Locale',
+    Lang       : 'Lang',
+    Locale     : 'Locale',
     LangLocale : 'LangLocale'
   };
 
@@ -74,11 +74,9 @@ const deploy_iso = module.exports = (o => {
     } else if (ISOType === ISOTypes.Locale) {
       filenameArr = localeArr;
     } else if (ISOType === ISOTypes.LangLocale) {
-      langArr.map(function (lang) {
-        localeArr.map(function (locale) {
-          filenameArr.push(lang + '_' + locale);
-        });
-      });
+      langArr.map(lang => (
+        localeArr.map(locale => (
+          filenameArr.push(lang + '_' + locale)))));
     }
     
     return filenameArr;

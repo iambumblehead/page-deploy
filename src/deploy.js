@@ -1,5 +1,5 @@
 // Filename: deploy.js  
-// Timestamp: 2017.04.08-13:31:28 (last modified)
+// Timestamp: 2017.04.09-01:35:02 (last modified)
 // Author(s): Bumblehead (www.bumblehead.com)
 //
 // uses gfm (github-flavored-markdown): https://github.com/chjj/marked
@@ -13,7 +13,7 @@ var fs = require('fs'),
     deploy_opts = require('./deploy_opts'),    
     deploy_file = require('./deploy_file'),
     deploy_pattern = require('./deploy_pattern'),    
-    deploy_converter = require('./deploy_converter'),
+    deploy_fileconvert = require('./deploy_fileconvert'),
 
     input = argv.i || null;
 
@@ -53,7 +53,8 @@ const deploy = module.exports = (o => {
         o.breadthFirstDirectory(input, opts, fn);
       } else if (stat.isFile() &&
                  deploy_pattern.isvalidpatternfilename(input)) {
-        deploy_converter.convertFilesForBase(input, opts, fn);
+
+        deploy_fileconvert.convertFilesForBase(input, opts, fn);
       } else {
         fn(null, null);
       }
@@ -83,10 +84,9 @@ const deploy = module.exports = (o => {
 // if called from command line...
 if (require.main === module) {
   var opts = deploy_opts.getNew(argv);
-  
-  deploy_converter.convert(opts, (err, res) => {
+
+  deploy.convert(opts, (err, res) => {
     if (err) return console.log(err);
     console.log('[...] finished.');
   });
-  
 } 

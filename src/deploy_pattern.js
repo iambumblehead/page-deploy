@@ -1,5 +1,5 @@
 // Filename: deploy_pattern.js  
-// Timestamp: 2017.04.08-13:59:15 (last modified)
+// Timestamp: 2017.04.08-21:37:14 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const path = require('path'),
@@ -8,6 +8,42 @@ const path = require('path'),
       deploy_file = require('./deploy_file');
 
 const deploy_pattern = module.exports = (o => {
+
+  o.writeAtFilename = (filename, content, opts, fn) => {
+    const outputpath = deploy_pattern.getasoutputpath(filename, opts),
+          outputStr = deploy_pattern.stringify(content);            
+    
+    deploy_file.writeRecursive(outputpath, outputStr, fn);
+  };
+  
+  // return the ISO filenames that should be generated.
+  o.getAssocISOFilenameArr = (opts, filename) => {
+    const ISOType = deploy_iso.getBaseType(filename),
+          langArr = opts.supportedLangArr,
+          localeArr = opts.supportedLocaleArr;
+
+    return deploy_iso.getRequiredFilenameArr(ISOType, langArr, localeArr);
+  };
+  
+  // return a matching ISO file from an array of filenames
+  // 
+  // << ['en-US.json', 'es-ES.json'], 'en-US', '.json'
+  // >> 'en-US.json'
+  // 
+  // << ['en-US.json', 'es-ES.json'], 'en-US', '.md'
+  // >>  null
+  o.arrgetmatchingISOstr = (filenameArr, ISO, extn) =>
+    filenameArr.find(filename => (
+      filename.indexOf(ISO) !== -1 &&
+        path.extname(filename) === extn));
+
+  // filepath : inputpath/spec/data/actions/lang-baseLang.json
+  //
+  // return 'outputpath/spec/data/actions/baseLang.json'
+  o.getasoutputpath = (filepath, opts) => (
+    path.join(opts.outputDir, filepath.replace(opts.inputDir, ''))
+      .replace(/\.([^.]*)$/, '.json')
+      .replace(/spec-|lang-/, ''));
 
   // should not be a hidden '.' file
   // should end in md or json

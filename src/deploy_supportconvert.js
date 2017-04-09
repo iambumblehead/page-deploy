@@ -1,5 +1,5 @@
 // Filename: deploy_supportconvert.js  
-// Timestamp: 2017.04.08-13:31:06 (last modified)
+// Timestamp: 2017.04.09-00:18:23 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 //
 // pickup and use 'support' directory and contents
@@ -10,8 +10,6 @@ const fs = require('fs'),
       path = require('path'),      
       nodefs = require('node-fs'),      
       pathpublic = require('pathpublic'),
-      objobjwalk = require('objobjwalk'),
-
       deploy_msg = require('./deploy_msg');      
 
 const deploy_supportconvert = module.exports = (o => {
@@ -57,14 +55,13 @@ const deploy_supportconvert = module.exports = (o => {
     return publicPath;
   };
 
-    // update the support paths to public support paths.
+  // update the support paths to public support paths.
   o.getWithPublicPathStr = (str, opts, cfg) => {
     let publicPath = o.getpathpublic(opts, cfg),
         supportPathRe = /(["']support\/[^'"]*['"]|^(?:\.\/)?support\/[^\b]*)/gi;
 
-    return str.replace(supportPathRe, (match, m1, m2) => {
-      return match.replace(/support/, publicPath);
-    });
+    return str.replace(supportPathRe, (match, m1, m2) => (
+      match.replace(/support/, publicPath)));
   };
 
   o.writeSupportDir = (opts, cfg, fn) => {
@@ -91,19 +88,15 @@ const deploy_supportconvert = module.exports = (o => {
         }
       });
   };
-
-  o.getUpdatedObjSupportPaths = (obj, opts, cfg) => {
-    obj = objobjwalk.type('string', obj, ob => (
+/*
+  o.getUpdatedObjSupportPaths = (obj, opts, cfg) => 
+    objobjwalk.type('string', obj, ob => (
       o.getWithPublicPathStr(ob, opts, cfg)));
 
-    return obj;
-  };
-
   o.getUpdatedObj = (obj, opts, cfg, fn) => {
-    obj = o.getUpdatedObjSupportPaths(obj, opts, cfg);
-    
-    fn(null , 'success');
+    fn(null, o.getUpdatedObjSupportPaths(obj, opts, cfg));    
   };
+ */
 
   return o;
   

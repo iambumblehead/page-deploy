@@ -1,6 +1,6 @@
 {
   "name" : "page-deploy",
-  "version" : "0.1.95",
+  "version" : "0.1.96",
   "license" : "MIT",
   "readmeFilename": "README.md",
   "description": "deploy page-object data and pattern files",  
@@ -13,7 +13,7 @@
   },
   "dependencies" : {
     "node-fs" : "^0.1.7",
-    "objobjwalk" : "^0.0.6",
+    "objobjwalk" : "^0.0.7",
     "pathpublic" : "^0.0.8",
     "highlight.js" : "^9.10.0",
     "marked" : "0.3.6",

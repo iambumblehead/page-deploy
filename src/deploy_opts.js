@@ -1,5 +1,5 @@
 // Filename: deploy_opts.js  
-// Timestamp: 2017.03.19-14:29:10 (last modified)
+// Timestamp: 2017.04.08-23:01:06 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
@@ -15,7 +15,11 @@ const deploy_opts = module.exports = (o => {
     supportDir : '',
 
     supportedLangArr : false,
-    supportedLocaleArr : false
+    supportedLocaleArr : false,
+
+    // a cache of objects constructed here. often referenced 
+    // many times, but constructed once only using cache    
+    patterncache : {}
   };
 
   o.getasboolorarr = opt => 
