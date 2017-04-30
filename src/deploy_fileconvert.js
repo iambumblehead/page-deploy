@@ -158,6 +158,7 @@ const deploy_fileconvert = module.exports = (o => {
           o.getRefPathFilename(filename, refObj.path);
     
     o.getFromSimilarFileNew(refpath, opts, (err, fcobj) => {
+      if (err) deploy_msg.errorreadingfile(filename, err);
       if (err) return fn(err);
       
       fn(null, fcobj.contentObj);
@@ -255,6 +256,7 @@ const deploy_fileconvert = module.exports = (o => {
     }      
 
     deploy_file.read(filename, (err, res) => {
+      if (err) deploy_msg.errorreadingfile(filename, err);
       if (err) return fn(new Error(err));
 
       let patternobj = o.getFromFileTypeNew(filename, res, opts);

@@ -55,6 +55,14 @@ const deploy_msg = module.exports = (o => {
     console.log(msg.replace(/:directory/, directory));      
   };
 
+  o.errorreadingfile = (filename, err) => {
+    var msg = '[!!!] error reading file: :filename'
+          .replace(/:filename/, filename);
+    
+    console.error(err);    
+    console.error(msg);
+  };
+
   return o;
   
 })({});
