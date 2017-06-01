@@ -1,12 +1,12 @@
 // Filename: deploy_supportconvert.js  
-// Timestamp: 2017.04.09-00:18:23 (last modified)
+// Timestamp: 2017.06.01-02:26:10 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 //
 // pickup and use 'support' directory and contents
 // for given pattern
 
 const fs = require('fs'),
-      cpr = require('recursive-copy'),
+      rcp = require('recursive-copy'),
       path = require('path'),      
       nodefs = require('node-fs'),      
       pathpublic = require('pathpublic'),
@@ -75,10 +75,12 @@ const deploy_supportconvert = module.exports = (o => {
           nodefs.mkdir(outputSupportPath, 0755, true, (err, res) => {
             if (err) return fn(err);
 
-            cpr(inputSupportPath, outputSupportPath, (err, res) => {
+            rcp(inputSupportPath, outputSupportPath, {
+              overwrite: true
+            }, (err, res) => {
               if (err) return fn(err);
 
-              deploy_msg.convertedfilename(relativeSupportPath);
+              deploy_msg.convertedfilename(relativeSupportPath, opts);
               //console.log('[mmm] wrote: ' + relativeSupportPath);
               fn(null, 'success');
             });          
@@ -88,15 +90,6 @@ const deploy_supportconvert = module.exports = (o => {
         }
       });
   };
-/*
-  o.getUpdatedObjSupportPaths = (obj, opts, cfg) => 
-    objobjwalk.type('string', obj, ob => (
-      o.getWithPublicPathStr(ob, opts, cfg)));
-
-  o.getUpdatedObj = (obj, opts, cfg, fn) => {
-    fn(null, o.getUpdatedObjSupportPaths(obj, opts, cfg));    
-  };
- */
 
   return o;
   
