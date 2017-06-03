@@ -1,5 +1,5 @@
 // Filename: deploy_msg.js  
-// Timestamp: 2017.06.01-02:26:00 (last modified)
+// Timestamp: 2017.06.03-01:31:08 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path');
@@ -54,6 +54,13 @@ const deploy_msg = module.exports = (o => {
     
     console.log(msg.replace(/:directory/, directory));      
   };
+
+  o.isnotpublishedfilename = (filename, opts) => {
+    var msg = '[...] unpublished: :filename'
+          .replace(/:filename/g, filename);
+    
+    console.log(msg);      
+  };  
 
   o.errorreadingfile = (filename, err) => {
     var msg = '[!!!] error reading file: :filename'

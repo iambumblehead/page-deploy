@@ -1,5 +1,5 @@
 // Filename: deploy.js  
-// Timestamp: 2017.04.09-01:35:02 (last modified)
+// Timestamp: 2017.06.02-17:17:33 (last modified)
 // Author(s): Bumblehead (www.bumblehead.com)
 //
 // uses gfm (github-flavored-markdown): https://github.com/chjj/marked
@@ -24,20 +24,21 @@ const deploy = module.exports = (o => {
   //
   // should only replace relative directory if it specificies and
   // existing relative path.
-  o.breadthFirstDirectory = (inputDir, opts, fn) => {
-    fs.readdir(inputDir, (err, resArr) => {
-      
+  o.breadthFirstDirectory = (inputdir, opts, fn) => {    
+    fs.readdir(inputdir, (err, resarr) => {
+      if (err) return fn(err);
+
       (function next(x, subDir) {
         if (!x--) return fn(null, []);
 
-        let fullDir = path.join(inputDir, resArr[x]);
+        let fulldir = path.join(inputdir, resarr[x]);
         
-        o.breadthFirstConvert(fullDir, opts, (err, res) => {
+        o.breadthFirstConvert(fulldir, opts, (err, res) => {
           if (err) return fn(err);
           
           next(x);
         });
-      }(resArr.length));
+      }(resarr.length));
     });      
   };
   
@@ -53,7 +54,7 @@ const deploy = module.exports = (o => {
         o.breadthFirstDirectory(input, opts, fn);
       } else if (stat.isFile() &&
                  deploy_pattern.isvalidpatternfilename(input)) {
-
+        
         deploy_fileconvert.convertFilesForBase(input, opts, fn);
       } else {
         fn(null, null);

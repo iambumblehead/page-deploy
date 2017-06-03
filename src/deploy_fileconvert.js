@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.04.09-01:33:19 (last modified)
+// Timestamp: 2017.06.03-01:41:09 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -178,12 +178,16 @@ const deploy_fileconvert = module.exports = (o => {
       (function next(x, filepath) {
         if (!x--) return fn(null, objArr);
 
+        filepath = path.join(fileArr[x], path.basename(filename));
+
         o.getObjAtLocalRef(filename, { 
-          fullpath : path.join(fileArr[x], path.basename(filename))
+          fullpath : filepath
         }, opts, (err, obj) => {
           if (err) return fn(err);
-          
-          objArr.push(obj);
+
+          if (obj.ispublished !== false) {
+            objArr.push(obj);
+          }
           
           next(x);
         });
@@ -347,6 +351,11 @@ const deploy_fileconvert = module.exports = (o => {
 
     o.getFromFileNew(filename, opts, (err, fcobj) => {
       if (err) return fn(err);
+
+      if (fcobj.contentObj.ispublished === false) {
+        deploy_msg.isnotpublishedfilename(path.dirname(filename), opts);
+        return fn(null);
+      }
 
       deploy_pattern.writeAtFilename(filename, fcobj.contentObj, opts, (err, res) => {
         if (err) return fn(err);

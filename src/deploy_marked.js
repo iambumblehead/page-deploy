@@ -1,5 +1,5 @@
 // Filename: marked-augmented.js  
-// Timestamp: 2017.03.25-22:11:19 (last modified)
+// Timestamp: 2017.06.03-01:22:27 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 var marked = require('marked'),
@@ -50,11 +50,12 @@ const deploy_marked = module.exports = (o => {
     
     if (typeof str === 'string') {
       str.replace(metaValRe, (match, m1, m2) => {
-        if (m1.match(/date$/i)) {
+        if (/date$/i.test(m1)) {
           metaDataObj[m1] = marked.parseISO8601(m2).getTime();
-        } else if (m1.match(/arr$/i)) {
+        } else if (/arr$/i.test(m1)) {
           metaDataObj[m1] = m2.split(/,/);        
-        } else if (m1.match(/^is[A-Z]/)) {
+        } else if (/^is/.test(m1) &&
+                   /true|false/g.test(m2)) {
           metaDataObj[m1] = castas.bool(m2);
         } else {
           metaDataObj[m1] = m2;        

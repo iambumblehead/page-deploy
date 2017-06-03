@@ -1,18 +1,19 @@
 // Filename: deploy_pattern.js  
-// Timestamp: 2017.04.08-21:37:14 (last modified)
+// Timestamp: 2017.06.03-01:42:00 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const path = require('path'),
 
       deploy_iso = require('./deploy_iso'),
+      deploy_msg = require('./deploy_msg'),
       deploy_file = require('./deploy_file');
 
 const deploy_pattern = module.exports = (o => {
 
   o.writeAtFilename = (filename, content, opts, fn) => {
-    const outputpath = deploy_pattern.getasoutputpath(filename, opts),
-          outputStr = deploy_pattern.stringify(content);            
-    
+    const outputpath = o.getasoutputpath(filename, opts),
+          outputStr = o.stringify(content);
+
     deploy_file.writeRecursive(outputpath, outputStr, fn);
   };
   

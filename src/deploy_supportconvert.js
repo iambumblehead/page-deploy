@@ -1,5 +1,5 @@
 // Filename: deploy_supportconvert.js  
-// Timestamp: 2017.06.01-02:26:10 (last modified)
+// Timestamp: 2017.06.03-01:45:43 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 //
 // pickup and use 'support' directory and contents
@@ -81,7 +81,7 @@ const deploy_supportconvert = module.exports = (o => {
               if (err) return fn(err);
 
               deploy_msg.convertedfilename(relativeSupportPath, opts);
-              //console.log('[mmm] wrote: ' + relativeSupportPath);
+
               fn(null, 'success');
             });          
           });
