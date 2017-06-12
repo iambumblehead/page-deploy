@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.06.03-01:41:09 (last modified)
+// Timestamp: 2017.06.11-22:05:40 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -164,6 +164,27 @@ const deploy_fileconvert = module.exports = (o => {
       fn(null, fcobj.contentObj);
     });
   };
+
+  o.sortedobjarr = (objarr, sortopts) => {
+    let opts = sortopts || {},
+        sorttype = opts.sorttype,
+        propname = opts.propname,
+        sortedarr = [];
+    
+    if (sortopts) {
+      if (sorttype === 'gtfirst') {
+        sortedarr = objarr.sort((itema, itemb) => (
+          itema[propname] > itemb[propname] ? -1 : 1));
+      } else { // ltfirst
+        sortedarr = objarr.sort((itema, itemb) => (
+          itema[propname] > itemb[propname] ? 1 : -1));
+      }
+    } else {
+      sortedarr = objarr.slice();
+    }
+
+    return sortedarr;
+  };
   
   // should be dependent on type of convert obj.
   // deploy_fileconvert needs type. type determines the baseObj
@@ -176,7 +197,8 @@ const deploy_fileconvert = module.exports = (o => {
       if (err) return fn(new Error(err));
 
       (function next(x, filepath) {
-        if (!x--) return fn(null, objArr);
+        //if (!x--) return fn(null, objArr);
+        if (!x--) return fn(null, o.sortedobjarr(objArr, refObj.sort));
 
         filepath = path.join(fileArr[x], path.basename(filename));
 
