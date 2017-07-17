@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.06.11-22:05:40 (last modified)
+// Timestamp: 2017.07.16-01:56:05 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -239,6 +239,17 @@ const deploy_fileconvert = module.exports = (o => {
     deploy_file.read(langfile, fn);
   };
 
+  o.extractexcerpt = (content) => {
+    let match = String(content).match(/<p>(.*)…/gi),
+        excerpt = match && match[0].slice(0, -1); // remove ellipsis
+    
+    if (excerpt) {
+      content = content.replace(match[0], excerpt);
+    }
+
+    return {excerpt, content};
+  };
+
   o.getFromJSONNew = (filename, fileStr, opts) => {
     return {
       filename,
@@ -247,8 +258,11 @@ const deploy_fileconvert = module.exports = (o => {
   };
 
   o.getFromMDNew = (filename, fileStr, opts) => {
-    let contentObj = deploy_marked.getFromStrMetaObj(fileStr);
-    contentObj.content = deploy_marked(fileStr);
+    let contentObj = deploy_marked.getFromStrMetaObj(fileStr),
+        {content, excerpt} = o.extractexcerpt(deploy_marked(fileStr));
+    
+    contentObj.content = content;
+    contentObj.excerpt = excerpt;
     
     return {
       filename,
