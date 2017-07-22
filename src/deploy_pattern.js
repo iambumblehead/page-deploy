@@ -1,5 +1,5 @@
 // Filename: deploy_pattern.js  
-// Timestamp: 2017.06.03-01:42:00 (last modified)
+// Timestamp: 2017.07.22-01:01:53 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const path = require('path'),
@@ -93,7 +93,7 @@ const deploy_pattern = module.exports = (o => {
         nameRe = new RegExp(name + '\\.(json|md)');
     
     deploy_file.readdir(dir, (err, patharr) => {
-      if (err) return fn(err);      
+      if (err) return fn(err);
       
       let similarpath = patharr.find(p => (
         nameRe.test(p) &&        

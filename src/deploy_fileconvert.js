@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.07.16-01:56:05 (last modified)
+// Timestamp: 2017.07.22-01:25:32 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -16,8 +16,8 @@ const fs = require('fs'),
 const deploy_fileconvert = module.exports = (o => {
 
   // contentObj will be converted to JSON str as final output
-  o.contentObj = null,
-  o.filename = null;
+  //o.contentObj = null,
+  //o.filename = null;
 
   // replace support paths found in contentObj strings.
   // 
@@ -73,9 +73,11 @@ const deploy_fileconvert = module.exports = (o => {
 
       exitfn(null, objobj);
     }, (err, contentobj) => {
+      if (err) throw new Error(err);
+
       o.getWithUpdatedLangKeys(opts, contentobj, filename, (err, contentobj) => {
         if (err) return fn(err);
-
+        
         fn(null, contentobj);
       });
     });
@@ -200,8 +202,12 @@ const deploy_fileconvert = module.exports = (o => {
         //if (!x--) return fn(null, objArr);
         if (!x--) return fn(null, o.sortedobjarr(objArr, refObj.sort));
 
-        filepath = path.join(fileArr[x], path.basename(filename));
+        if (!fs.statSync(fileArr[x]).isDirectory()) {
+          return next(x);
+        }
 
+        filepath = path.join(fileArr[x], path.basename(filename));
+        
         o.getObjAtLocalRef(filename, { 
           fullpath : filepath
         }, opts, (err, obj) => {
