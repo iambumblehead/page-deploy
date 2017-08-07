@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.08.06-14:11:47 (last modified)
+// Timestamp: 2017.08.07-00:18:55 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -26,9 +26,7 @@ module.exports = (o => {
   //
   o.getWithUpdatedSupportPaths = (opts, contentobj, filename, fn) =>
     fn(null, objobjwalk.type('string', contentobj, str => (
-      deploy_supportconvert.getWithPublicPathStr(str, opts, {
-        supportedFilename : filename
-      }))));
+      deploy_supportconvert.getWithPublicPathStr(str, opts, filename))));
 
   o.getWithUpdatedLangKeys = (opts, contentobj, filename, fn) => {
     let langpath = filename.replace(/spec-.*/, 'lang-baseLang.json'),
@@ -53,9 +51,7 @@ module.exports = (o => {
   o.convert = (opts, contentobj, filename, fn) => {    
     objobjwalk.async(contentobj, (objobj, exitfn) => {
       if (typeof objobj === 'string') {
-        objobj = deploy_supportconvert.getWithPublicPathStr(objobj, opts, {
-          supportedFilename : filename
-        });
+        objobj = deploy_supportconvert.getWithPublicPathStr(objobj, opts, filename);
       }
 
       if (objobj) {
@@ -196,7 +192,6 @@ module.exports = (o => {
       if (err) return fn(new Error(err));
 
       (function next(x, filepath) {
-        //if (!x--) return fn(null, objArr);
         if (!x--) return fn(null, o.sortedobjarr(objArr, refObj.sort));
 
         if (!fs.statSync(fileArr[x]).isDirectory()) {
@@ -369,9 +364,9 @@ module.exports = (o => {
 
         fileObj = fileObjArr[x];
 
-        deploy_pattern.writeAtFilename(fileObj.filename, fileObj.contentObj, opts, (err, res) => {
+        deploy_pattern.writeAtFilename(fileObj.filename, fileObj.contentObj, opts, (err, res, filename) => {
           if (err) return fn(err);
-          
+
           next(x);
         });
       }(fileObjArr.length));
@@ -391,12 +386,10 @@ module.exports = (o => {
         return fn(null);
       }
 
-      deploy_pattern.writeAtFilename(filename, fcobj.contentObj, opts, (err, res) => {
+      deploy_pattern.writeAtFilename(filename, fcobj.contentObj, opts, (err, res, filename) => {
         if (err) return fn(err);
         
-        deploy_supportconvert.writeSupportDir(opts, {
-          supportedFilename : fcobj.filename
-        }, (err, res) => {
+        deploy_supportconvert.writeSupportDir(opts, filename, (err, res) => {
           if (err) return fn(err);
 
           o.convertForISO(opts, fcobj, (err, res) => {

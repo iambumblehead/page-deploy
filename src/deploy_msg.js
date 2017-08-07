@@ -1,10 +1,10 @@
 // Filename: deploy_msg.js  
-// Timestamp: 2017.06.03-01:31:08 (last modified)
+// Timestamp: 2017.08.07-00:23:40 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path');
 
-const deploy_msg = module.exports = (o => {
+module.exports = (o => {
 
   o.start = () =>
     console.log('[...] page-deploy: begin.');
@@ -29,15 +29,15 @@ const deploy_msg = module.exports = (o => {
   };
 
   o.err_invalidfilename = (filename) => {
-    let msg = '[!!!] invalid filename: ' + filename;
+    const msg = '[!!!] invalid filename: ' + filename;
     
     throw new Error (msg);
   };
 
   o.convertingfilename = (filename, opts) => {
-    var msg = '[...] read: :directory',
-        directory = path.dirname(filename);
-    
+    const msg = '[...] read: :directory',
+          directory = path.dirname(filename);
+
     directory = directory.replace(opts.inputDir, '');
     directory = directory.replace(/^\//, '');
     //directory = directory.replace(process.env.HOME, '~');
@@ -46,25 +46,33 @@ const deploy_msg = module.exports = (o => {
   };
 
   o.convertedfilename = (filename, opts) => {
-    var msg = '[mmm] wrote: :directory',
-        directory = path.dirname(filename);
-    
-    directory = directory.replace(opts.inputDir, '');
-    directory = directory.replace(/^\//, '');
+    const msg = '[mmm] wrote: :directory',
+          directory = path.dirname(filename)
+            .replace(opts.inputDir, '')
+            .replace(/^\//, '');    
     
     console.log(msg.replace(/:directory/, directory));      
   };
 
+  o.convertedfilenamesupport = (filename, opts) => {
+    const msg = '[mmm] wrote: :directory (support)',
+          directory = path.dirname(filename)
+            .replace(opts.inputDir, '')
+            .replace(/^\//, '');    
+    
+    console.log(msg.replace(/:directory/, directory));      
+  };  
+
   o.isnotpublishedfilename = (filename, opts) => {
-    var msg = '[...] unpublished: :filename'
-          .replace(/:filename/g, filename);
+    const msg = '[...] unpublished: :filename'
+            .replace(/:filename/g, filename);
     
     console.log(msg);      
   };  
 
   o.errorreadingfile = (filename, err) => {
-    var msg = '[!!!] error reading file: :filename'
-          .replace(/:filename/, filename);
+    const msg = '[!!!] error reading file: :filename'
+            .replace(/:filename/, filename);
     
     console.error(err);    
     console.error(msg);

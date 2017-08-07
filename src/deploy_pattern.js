@@ -1,5 +1,5 @@
 // Filename: deploy_pattern.js  
-// Timestamp: 2017.08.06-23:16:34 (last modified)
+// Timestamp: 2017.08.06-23:53:31 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const path = require('path'),
@@ -35,6 +35,7 @@ module.exports = (o => {
     ))) {
       outputdir = o.getasdatetitlesubdir(outputdir, content, opts);
     }
+
     
     return outputdir;
   };
@@ -48,7 +49,8 @@ module.exports = (o => {
     const outputpath = o.getasoutputpath(filename, content, opts),
           outputStr = o.stringify(content);
 
-    deploy_file.writeRecursive(outputpath, outputStr, fn);
+    deploy_file.writeRecursive(outputpath, outputStr, (err, res) => (
+      fn(err, res, outputpath)));
   };
   
   // return the ISO filenames that should be generated.
