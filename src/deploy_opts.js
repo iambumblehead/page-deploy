@@ -1,5 +1,5 @@
 // Filename: deploy_opts.js  
-// Timestamp: 2017.04.08-23:01:06 (last modified)
+// Timestamp: 2017.08.06-20:05:29 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
@@ -22,9 +22,8 @@ const deploy_opts = module.exports = (o => {
     patterncache : {}
   };
 
-  o.getasboolorarr = opt => 
-    /true|false/i.test(opt)
-      ? castas.bool(opt)
+  o.getasboolorarr = opt => /true|false/i.test(opt)
+    ? castas.bool(opt)
     : castas.arr(opt);
 
   o.getaspath = p => (
@@ -51,6 +50,7 @@ const deploy_opts = module.exports = (o => {
       that.supportDir = o.getaspath(path.normalize(spec.supportDir));       
     }
 
+    that.datetitlesubdirs = castas.arr(spec.datetitlesubdirs, []);
     that.supportedLocaleArr = o.getasboolorarr(spec.supportedLocaleArr);
     that.supportedLangArr = o.getasboolorarr(spec.supportedLangArr);
 

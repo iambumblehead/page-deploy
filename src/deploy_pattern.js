@@ -1,17 +1,51 @@
 // Filename: deploy_pattern.js  
-// Timestamp: 2017.07.22-01:01:53 (last modified)
+// Timestamp: 2017.08.06-23:16:34 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const path = require('path'),
-
+      simpletime = require('simpletime'),
+      
       deploy_iso = require('./deploy_iso'),
       deploy_msg = require('./deploy_msg'),
       deploy_file = require('./deploy_file');
 
-const deploy_pattern = module.exports = (o => {
+module.exports = (o => {
 
+  o.getasdatetitlesubdir = (outputpath, content, opts) => {
+    const datefmt='yyyy.MM.dd',
+          basename = path.basename(outputpath),
+          dirname = path.dirname(path.dirname(outputpath)),
+          titlesubdir = ':date-:title'
+            .replace(/:date/, simpletime.applyFormatDate(
+              new Date(content.timeDate), datefmt))
+            .replace(/:title/, content.title.toLowerCase())
+            .replace(/ /g, '-');
+    
+    return path.join(dirname, titlesubdir, basename);
+  };
+  
+  // filepath : inputpath/spec/data/actions/lang-baseLang.json
+  //
+  // return 'outputpath/spec/data/actions/baseLang.json'
+  o.getasoutputdir = (filepath, content, opts) => {
+    let outputdir = filepath.replace(opts.inputDir, '');
+
+    if (opts.datetitlesubdirs.find(subdir => (
+      outputdir.indexOf(subdir) !== -1 && content.timeDate
+    ))) {
+      outputdir = o.getasdatetitlesubdir(outputdir, content, opts);
+    }
+    
+    return outputdir;
+  };
+  
+  o.getasoutputpath = (filepath, content, opts) => (
+    path.join(opts.outputDir, o.getasoutputdir(filepath, content, opts))
+      .replace(/\.([^.]*)$/, '.json')
+      .replace(/spec-|lang-/, ''));
+  
   o.writeAtFilename = (filename, content, opts, fn) => {
-    const outputpath = o.getasoutputpath(filename, opts),
+    const outputpath = o.getasoutputpath(filename, content, opts),
           outputStr = o.stringify(content);
 
     deploy_file.writeRecursive(outputpath, outputStr, fn);
@@ -38,14 +72,6 @@ const deploy_pattern = module.exports = (o => {
       filename.indexOf(ISO) !== -1 &&
         path.extname(filename) === extn));
 
-  // filepath : inputpath/spec/data/actions/lang-baseLang.json
-  //
-  // return 'outputpath/spec/data/actions/baseLang.json'
-  o.getasoutputpath = (filepath, opts) => (
-    path.join(opts.outputDir, filepath.replace(opts.inputDir, ''))
-      .replace(/\.([^.]*)$/, '.json')
-      .replace(/spec-|lang-/, ''));
-
   // should not be a hidden '.' file
   // should end in md or json
   o.isvalidpatternfilename = filename => (
@@ -68,7 +94,6 @@ const deploy_pattern = module.exports = (o => {
 
   o.stringify = obj =>
     JSON.stringify(obj, null, 2);
-  
 
   // return the value defined on the given namespace or null
   //
@@ -83,7 +108,6 @@ const deploy_pattern = module.exports = (o => {
   o.objlookup = (namespacestr, obj) => 
     String(namespacestr).split('.').reduce(
       (a, b) => a ? (b in a ? a[b] : a[Number(b)]) : null, obj);
-
 
   // returns other pattern file in the same directory
   o.getsimilarfilename = (filename, opts, fn) => {

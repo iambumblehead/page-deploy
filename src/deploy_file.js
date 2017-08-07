@@ -9,7 +9,7 @@ const fs = require('fs'), // read/write files
       deploy_iso = require('./deploy_iso'),
       deploy_msg = require('./deploy_msg');
 
-const deploy_file = module.exports = (o => {
+module.exports = (o => {
 
   o.readdir = (dir, fn) =>
     fs.readdir(dir, fn);

@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.07.22-01:25:32 (last modified)
+// Timestamp: 2017.08.06-14:11:47 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -8,16 +8,13 @@ const fs = require('fs'),
       objobjwalk = require('objobjwalk'),
 
       deploy_msg = require('./deploy_msg'),
+      deploy_html = require('./deploy_html'),
       deploy_file = require('./deploy_file'),
       deploy_marked = require('./deploy_marked'),
       deploy_pattern = require('./deploy_pattern'),
       deploy_supportconvert = require('./deploy_supportconvert');
 
-const deploy_fileconvert = module.exports = (o => {
-
-  // contentObj will be converted to JSON str as final output
-  //o.contentObj = null,
-  //o.filename = null;
+module.exports = (o => {
 
   // replace support paths found in contentObj strings.
   // 
@@ -245,34 +242,29 @@ const deploy_fileconvert = module.exports = (o => {
     deploy_file.read(langfile, fn);
   };
 
-  o.extractexcerpt = (content) => {
-    let match = String(content).match(/<p>(.*)…/gi),
-        excerpt = match && match[0].slice(0, -1); // remove ellipsis
-    
-    if (excerpt) {
-      content = content.replace(match[0], excerpt);
-    }
-
-    return {excerpt, content};
-  };
-
-  o.getFromJSONNew = (filename, fileStr, opts) => {
-    return {
-      filename,
-      contentObj : deploy_pattern.parse(fileStr, filename)
-    };
-  };
+  o.getFromJSONNew = (filename, fileStr, opts) => ({
+    filename,
+    contentObj : deploy_pattern.parse(fileStr, filename)
+  });
 
   o.getFromMDNew = (filename, fileStr, opts) => {
-    let contentObj = deploy_marked.getFromStrMetaObj(fileStr),
-        {content, excerpt} = o.extractexcerpt(deploy_marked(fileStr));
+    let metadata = {},
+        content,
+        excerpt;
     
-    contentObj.content = content;
-    contentObj.excerpt = excerpt;
+    [fileStr, metadata] = deploy_marked.extractsymbols(fileStr, metadata);
+    [fileStr, metadata] = deploy_marked.extractmetadata(fileStr, metadata),
+
+    content = deploy_marked(fileStr),
+        
+    [content, excerpt] = deploy_html.extractexcerpt(content);
+    
+    metadata.content = content;
+    metadata.excerpt = excerpt;
     
     return {
       filename,
-      contentObj
+      contentObj : metadata
     };
   };
 
@@ -351,7 +343,7 @@ const deploy_fileconvert = module.exports = (o => {
 
         if (deploy_pattern.arrgetmatchingISOstr(resArr, isoFilename, extname)) {
           isoFilename = path.join(dirname, isoFilename + '.json');
-          deploy_fileconvert.getFromFileNew(isoFilename, opts, (err, fcBase) => {
+          o.getFromFileNew(isoFilename, opts, (err, fcBase) => {
             if (err) return fn(err);
             isodeploy_fileconvertArr.push(fcBase);
             next(x);

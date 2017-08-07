@@ -1,12 +1,13 @@
 // Filename: marked-augmented.js  
-// Timestamp: 2017.06.03-01:22:27 (last modified)
+// Timestamp: 2017.08.06-19:04:57 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-var marked = require('marked'),
+var simpletime = require('simpletime'),
+    marked = require('marked'),
     castas = require('castas'),
     hljs = require('highlight.js');
 
-const deploy_marked = module.exports = (o => {
+module.exports = (o => {
 
   marked.setOptions({
     gfm : true,
@@ -28,41 +29,72 @@ const deploy_marked = module.exports = (o => {
     }
   });
 
-  marked.parseISO8601 = (dateStrInRange) => {
-    var isoExp = /^\s*(\d{4})\.(\d\d)\.(\d\d)-(\d\d):(\d\d):(\d\d)\s*$/,
-        date = new Date(NaN), month,
-        parts = isoExp.exec(dateStrInRange);
+  marked.parsedatestr = (datestr, fmt='yyyy.MM.dd-hh:mm:ss') =>
+    simpletime.extractDateFormatted(datestr, fmt);
 
-    if (parts) {
-      month = +parts[2];
-      date.setFullYear(parts[1], month - 1, parts[3], parts[4], parts[5], parts[6]);
-      if(month != date.getMonth() + 1) {
-        date.setTime(NaN);
-      }
-    }
-    
-    return date;
+  marked.parsedatestrtime = datestr =>
+    marked.parsedatestr(datestr).getTime();
+
+  // return [
+  //   str with symbol matching line removed,
+  //   text found after symbol (if symbol)
+  // ]
+  // 
+  // extractsymboltext('#★ text', '★') => ['', 'text']
+  // extractsymboltext('★ text\n======', '★') => ['', 'text']
+  //
+  //
+  marked.extractsymboltext = (str, symbol) => {
+    const symbolre = new RegExp('(.*)?[#_*`]'+symbol+'(.*)', 'ugi'),
+          symbolunderlinere = new RegExp(symbol+'(.*)\n==*', 'ugi'),
+          endmdtagre = /([#_*`]|\n==*)$/,
+          match = (String(str).match(symbolre) ||
+                   String(str).match(symbolunderlinere));
+
+    return (match && match[0])
+      ? [str.replace(match[0], ''),
+         match[0].split(symbol)[1].trim().replace(endmdtagre, '')]
+      : [str];
   };
 
-  marked.getFromStrMetaObj = (str) => {
-    let metaDataObj = {}, 
-        metaValRe = /\[meta:(.*)\]: <> \((.*)\)/gi;
-    
+  marked.extractsymbols = (str, obj={}, text) => 
+    [['★', 'title'],
+     ['✑', 'author'],
+     ['⌚', 'timeDate', marked.parsedatestrtime]
+    ].reduce(([str, obj], [sym, propname, filter]) => {
+      [str, text] = marked.extractsymboltext(str, sym);
+
+      if (text) {
+        if (filter) {
+          text = filter(text);
+        }
+
+        obj[propname] = text;
+      }
+
+      return [str, obj];
+      
+    }, [str, obj]);
+
+  marked.extractmetadata = (str, metadata={}) => {
+    let metaValRe = /\[meta:(.*)\]: <> \((.*)\)/gi;
+
     if (typeof str === 'string') {
       str.replace(metaValRe, (match, m1, m2) => {
         if (/date$/i.test(m1)) {
-          metaDataObj[m1] = marked.parseISO8601(m2).getTime();
+          metadata[m1] = marked.parsedatestrtime(m2);
         } else if (/arr$/i.test(m1)) {
-          metaDataObj[m1] = m2.split(/,/);        
+          metadata[m1] = m2.split(/,/);        
         } else if (/^is/.test(m1) &&
                    /true|false/g.test(m2)) {
-          metaDataObj[m1] = castas.bool(m2);
+          metadata[m1] = castas.bool(m2);
         } else {
-          metaDataObj[m1] = m2;        
+          metadata[m1] = m2;        
         }
       });
     }
-    return metaDataObj;
+    
+    return [str, metadata];
   };
 
   return marked;

@@ -1,34 +1,34 @@
 {
-  "name" : "page-deploy",
-  "version" : "0.2.2",
-  "license" : "MIT",
-
+  "name": "page-deploy",
+  "version": "0.2.3",
+  "license": "MIT",
   "readmeFilename": "README.md",
-  "description": "deploy page-object data and pattern files",  
+  "description": "deploy page-object data and pattern files",
   "repository": {
     "type": "git",
     "url": "https://github.com/iambumblehead/page-deploy.git"
   },
-  "engines" : { 
-    "node" : ">=0.10.0" 
+  "engines": {
+    "node": ">=0.10.0"
   },
-  "dependencies" : {
-    "node-fs" : "^0.1.7",
-    "objobjwalk" : "^0.0.7",
-    "pathpublic" : "^0.0.8",
-    "highlight.js" : "^9.10.0",
-    "marked" : "0.3.6",
-    "recursive-copy" : "^2.0.6",
-    "glob" : "7.1.1",
+  "dependencies": {
+    "castas": "^0.0.2",
+    "glob": "7.1.1",
+    "highlight.js": "^9.10.0",
+    "marked": "0.3.6",
+    "node-fs": "^0.1.7",
+    "objobjwalk": "^0.0.7",
     "optimist": "^0.3.0",
-    "castas" : "^0.0.2"
+    "pathpublic": "^0.0.8",
+    "recursive-copy": "^2.0.6",
+    "simpletime": "^0.1.27"
   },
-  "devDependencies" : {
+  "devDependencies": {
     "jasmine": "2.5.3",
     "jasmine-spec-reporter": "3.2.0"
   },
-  "scripts" : {
+  "scripts": {
     "test": "node node_modules/jasmine/bin/jasmine.js --verbose",
-    "start" : "node getStarted/go.js"
+    "start": "node getStarted/go.js"
   }
 }
