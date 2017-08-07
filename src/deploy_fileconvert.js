@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.08.07-00:43:03 (last modified)
+// Timestamp: 2017.08.07-01:57:39 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -48,10 +48,17 @@ module.exports = (o => {
     });
   };
 
-  o.convert = (opts, contentobj, filename, fn) => {    
+  o.convert = (opts, contentobj, filename, fn) => {
+    let outfilename = filename;
+    if (opts.datetitlesubdirs.find(subdir => (
+      filename.indexOf(subdir) !== -1 && contentobj.timeDate
+    ))) {
+      outfilename = deploy_pattern.getasdatetitlesubdir(filename, contentobj, opts);
+    }    
+    
     objobjwalk.async(contentobj, (objobj, exitfn) => {
       if (typeof objobj === 'string') {
-        objobj = deploy_supportconvert.getWithPublicPathStr(objobj, opts, filename);
+        objobj = deploy_supportconvert.getWithPublicPathStr(objobj, opts, outfilename);
       }
 
       if (objobj) {
@@ -59,7 +66,9 @@ module.exports = (o => {
       
         if (type === 'local-ref') {
           return o.getObjAtLocalRef(filename, objobj, opts, exitfn);
-        } else if (type === 'local-ref-arr') {
+        }
+
+        if (type === 'local-ref-arr') {
           return o.getObjArrAtLocalRef(filename, objobj, opts, exitfn);
         }
       }
