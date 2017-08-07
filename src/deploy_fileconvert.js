@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.08.07-00:18:55 (last modified)
+// Timestamp: 2017.08.07-00:43:03 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -386,16 +386,16 @@ module.exports = (o => {
         return fn(null);
       }
 
-      deploy_pattern.writeAtFilename(filename, fcobj.contentObj, opts, (err, res, filename) => {
+      deploy_pattern.writeAtFilename(filename, fcobj.contentObj, opts, (err, res, outfilename) => {
         if (err) return fn(err);
         
-        deploy_supportconvert.writeSupportDir(opts, filename, (err, res) => {
+        deploy_supportconvert.writeSupportDir(opts, filename, outfilename, (err, res) => {
           if (err) return fn(err);
 
           o.convertForISO(opts, fcobj, (err, res) => {
             if (err) return fn(err);
 
-            deploy_msg.convertedfilename(filename, opts);
+            deploy_msg.convertedfilename(outfilename, opts);
 
             fn(err, 'success');
           });

@@ -1,5 +1,5 @@
 // Filename: deploy_supportconvert.js  
-// Timestamp: 2017.08.07-00:21:32 (last modified)
+// Timestamp: 2017.08.07-00:57:48 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 //
 // pickup and use 'support' directory and contents
@@ -21,17 +21,13 @@ module.exports = (o => {
     //  - inputPath, outputPath, publicPath
   o.supportedFilename = '';
 
-  o.getpathin = (opts, filename) => {
-    const dirname = path.dirname(filename),
-          inputPath = path.join(dirname, o.supportSubDirName);
-
-    return inputPath;
-  };
+  o.getpathsupportdir = filename =>
+    path.join(path.dirname(filename), o.supportSubDirName);
 
   o.getpathout = (opts, filename) => {
     let inputDir = path.normalize(opts.inputDir),
         outputDir = path.normalize(opts.outputDir),
-        inputPath = o.getpathin(opts, filename),
+        inputPath = o.getpathsupportdir(filename),
         inputPathRel = inputPath.replace(inputDir, ''),
         outputPath = path.join(outputDir, inputPathRel);
 
@@ -63,10 +59,11 @@ module.exports = (o => {
       match.replace(/support/, publicPath)));
   };
 
-  o.writeSupportDir = (opts, rootfilename, fn) => {
-    const inputSupportPath = o.getpathin(opts, rootfilename),
-          outputSupportPath = o.getpathout(opts, rootfilename),
-          relativeSupportPath = o.getRelativeOutputPath(opts, rootfilename);
+  o.writeSupportDir = (opts, rootfilename, outfilename, fn) => {
+    // take output and inputdir...
+    const inputSupportPath = o.getpathsupportdir(rootfilename),
+          outputSupportPath = o.getpathsupportdir(outfilename),
+          relativeSupportPath = o.getRelativeOutputPath(opts, outfilename);
 
     // read dir... if dir, copy
     fs.stat(inputSupportPath, (err, stat) => {
