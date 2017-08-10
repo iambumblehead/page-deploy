@@ -1,18 +1,15 @@
 // Filename: index.js  
-// Timestamp: 2017.03.19-14:10:52 (last modified)
+// Timestamp: 2017.08.09-00:57:45 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
-var converter = require('./src/deploy'),
-    deploy_err = require('./src/deploy_err'),
-    UserOptions = require('./src/deploy_opts'),
-    userOptions;
+const deploy = require('./src/deploy'),
+      deploy_opts = require('./src/deploy_opts');
 
 module.exports = {
-  convert : function (opts, fn) {
-    userOptions = UserOptions.getNew(opts);
-    converter.convert(userOptions, function (err, res) {
-      if (err) return fn(deploy_err.AbstractError(err));
-      if (typeof fn === 'function') fn(err, res);
-    });
-  }
+  convert : (opts, fn) => 
+    deploy.convert(deploy_opts(opts), (err, res) => {
+      if (err) throw new Error(err);
+      
+      typeof fn === 'function' && fn(err, res);
+    })
 };

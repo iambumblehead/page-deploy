@@ -1,5 +1,5 @@
 // Filename: deploy_pattern.js  
-// Timestamp: 2017.08.06-23:53:31 (last modified)
+// Timestamp: 2017.08.10-00:17:50 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const path = require('path'),
@@ -27,7 +27,7 @@ module.exports = (o => {
   // filepath : inputpath/spec/data/actions/lang-baseLang.json
   //
   // return 'outputpath/spec/data/actions/baseLang.json'
-  o.getasoutputdir = (filepath, content, opts) => {
+  o.getasoutputdir = (opts, filepath, content) => {
     let outputdir = filepath.replace(opts.inputDir, '');
 
     if (opts.datetitlesubdirs.find(subdir => (
@@ -40,13 +40,13 @@ module.exports = (o => {
     return outputdir;
   };
   
-  o.getasoutputpath = (filepath, content, opts) => (
-    path.join(opts.outputDir, o.getasoutputdir(filepath, content, opts))
+  o.getasoutputpath = (opts, filepath, content) => (
+    path.join(opts.outputDir, o.getasoutputdir(opts, filepath, content))
       .replace(/\.([^.]*)$/, '.json')
       .replace(/spec-|lang-/, ''));
   
   o.writeAtFilename = (filename, content, opts, fn) => {
-    const outputpath = o.getasoutputpath(filename, content, opts),
+    const outputpath = o.getasoutputpath(opts, filename, content),
           outputStr = o.stringify(content);
 
     deploy_file.writeRecursive(outputpath, outputStr, (err, res) => (
@@ -80,6 +80,7 @@ module.exports = (o => {
     deploy_iso.isBaseFilename(filename)
       && /^[^.].*(json|md)$/.test(filename));
 
+  /*
   // filename given here for error scenario only  
   o.parse = (JSONStr, filename) => {
     let obj = null;
@@ -93,6 +94,7 @@ module.exports = (o => {
 
     return obj;
   };
+   */
 
   o.stringify = obj =>
     JSON.stringify(obj, null, 2);

@@ -1,5 +1,5 @@
 // Filename: deploy_opts.js  
-// Timestamp: 2017.08.06-20:05:29 (last modified)
+// Timestamp: 2017.08.09-00:55:30 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
@@ -8,7 +8,7 @@ const path = require('path'),
 
 const deploy_opts = module.exports = (o => {
 
-  var userOptions = {
+  const userOptions = {
     inputDir : './convert/',
     outputDir : './converted/',
     publicPath : 'domain.com/converted',
@@ -21,6 +21,9 @@ const deploy_opts = module.exports = (o => {
     // many times, but constructed once only using cache    
     patterncache : {}
   };
+
+  o = (spec) =>
+    o.getNew(spec);
 
   o.getasboolorarr = opt => /true|false/i.test(opt)
     ? castas.bool(opt)
@@ -59,6 +62,6 @@ const deploy_opts = module.exports = (o => {
 
   return o;
 
-})({});
+})();
 
 

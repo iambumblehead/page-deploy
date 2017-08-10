@@ -3,11 +3,13 @@ page-deploy
 
 **NOT FOR PRODUCTION USE -ALPHA QUALITY**
 
-It deploys page-object data and pattern files. This is most useful for web applications using locale and language specific data. 
+Deploys page-object data and pattern files and is useful for web applications using locale and language specific data.
 
 For example, your application may use locale files to render an input for a social-security-number. _Locale_ files would describe the input for 'en-US', but not for 'es-ES', while _language_ files would describe a label for the input, such as 'ssn number:' or 'ssn numero:'.
 
 Page-deploy strategically organizes these files for deployment. This positively affects the way you test, deploy, translate and develop an application using such files.
+
+<!--
 
 ----------------------------------------------------------------------
 ### About
@@ -141,3 +143,6 @@ pd.langkey
 #### Overview, Support Files
 
 Use local paths to support files such as images. page-deploy will update the paths to web accessible ones.
+
+
+-->

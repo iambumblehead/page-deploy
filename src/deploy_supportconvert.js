@@ -1,5 +1,5 @@
 // Filename: deploy_supportconvert.js  
-// Timestamp: 2017.08.07-00:57:48 (last modified)
+// Timestamp: 2017.08.10-00:12:39 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 //
 // pickup and use 'support' directory and contents
@@ -15,11 +15,6 @@ const fs = require('fs'),
 module.exports = (o => {
   
   o.supportSubDirName = '/support';
-
-    // supportedFilename is used to construct
-    // all paths for the support directory,
-    //  - inputPath, outputPath, publicPath
-  o.supportedFilename = '';
 
   o.getpathsupportdir = filename =>
     path.join(path.dirname(filename), o.supportSubDirName);
