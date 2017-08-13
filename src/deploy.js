@@ -1,5 +1,5 @@
 // Filename: deploy.js  
-// Timestamp: 2017.06.02-17:17:33 (last modified)
+// Timestamp: 2017.08.13-14:18:43 (last modified)
 // Author(s): Bumblehead (www.bumblehead.com)
 //
 // uses gfm (github-flavored-markdown): https://github.com/chjj/marked
@@ -79,8 +79,6 @@ const deploy = module.exports = (o => {
   return o;
 
 })({});
-
-                                        
 
 // if called from command line...
 if (require.main === module) {

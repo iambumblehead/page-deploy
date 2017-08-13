@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.08.10-01:04:41 (last modified)
+// Timestamp: 2017.08.13-14:30:56 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -11,13 +11,13 @@ const fs = require('fs'),
       deploy_msg = require('./deploy_msg'),
       deploy_html = require('./deploy_html'),
       deploy_file = require('./deploy_file'),
+      deploy_sort = require('./deploy_sort'),
       deploy_marked = require('./deploy_marked'),
       deploy_tokens = require('./deploy_tokens'),
+      deploy_fileobj = require('./deploy_fileobj'),
       deploy_pattern = require('./deploy_pattern'),
       deploy_convert = require('./deploy_convert'),
       deploy_supportconvert = require('./deploy_supportconvert');
-
-const deploy_fileobj = require('./deploy_fileobj');
 
 module.exports = (o => {
 
@@ -106,24 +106,6 @@ module.exports = (o => {
     });
   };
 
-  o.getConverted = (opts, patternobj, fn) => {
-    let contentobj = patternobj.contentObj,
-        filename = patternobj.filename;
-
-    if (patternobj.isConverted) {
-      return fn(null, patternobj);
-    }
-
-    o.convert(opts, contentobj, filename, (err, contentobj) => {
-      if (err) return fn(err);
-      
-      patternobj.contentObj = contentobj;
-      patternobj.isConverted = true;
-      
-      fn(null, patternobj);
-    });
-  };
-
   o.getRefPath = (filepath, refPath) =>
     path.join(path.dirname(filepath), refPath);
 
@@ -147,14 +129,14 @@ module.exports = (o => {
     }, fn);
 
   o.updateLangDefs = (contentObj, langObj, fn) => {
-    let langkeyre = /^pd\.langkey\./,
-        langobjre = /pd\.langobj/;
+    const langkeyre = /^pd\.langkey\./,
+          langobjre = /pd\.langobj/;
 
     fn(null, objobjwalk.type('string', contentObj, (str) => {
       if (langobjre.test(str)) {
-        return langObj;
+        str = langObj;
       } else if (langkeyre.test(str)) {
-        return deploy_pattern.objlookup(str.replace(langkeyre, ''), langObj) || str;
+        str = deploy_pattern.objlookup(str.replace(langkeyre, ''), langObj) || str;
       }
 
       return str;
@@ -182,34 +164,12 @@ module.exports = (o => {
     var refpath = refObj.fullpath ||
           o.getRefPathFilename(filename, refObj.path);
     
-    //o.getFromSimilarFileNew(refpath, opts, (err, fcobj) => {
     deploy_fileobj.getfromfilesimilar(opts, refpath, (err, fileobj) => {
       if (err) deploy_msg.errorreadingfile(filename, err);
       if (err) return fn(err);
       
       fn(null, fileobj);
     });
-  };
-
-  o.sortedobjarr = (objarr, sortopts) => {
-    let opts = sortopts || {},
-        sorttype = opts.sorttype,
-        propname = opts.propname,
-        sortedarr = [];
-    
-    if (sortopts) {
-      if (sorttype === 'gtfirst') {
-        sortedarr = objarr.sort((itema, itemb) => (
-          itema[propname] > itemb[propname] ? -1 : 1));
-      } else { // ltfirst
-        sortedarr = objarr.sort((itema, itemb) => (
-          itema[propname] > itemb[propname] ? 1 : -1));
-      }
-    } else {
-      sortedarr = objarr.slice();
-    }
-
-    return sortedarr;
   };
 
   // not ideal -uses langfilepath to find lang, used
@@ -225,53 +185,48 @@ module.exports = (o => {
   // if an iso file is found, return deploy_fileconvert objects from file
   // if no iso file is found, return cloned `this` (a deploy_fileconvert object)
   // matching extension checked for precision.
-  //o.getAssocISOFileObjArr = (opts, patternobj, fn) => {
   o.getAssocISOFileObjArr = (opts, filename, fileobj, fn) => {
-    var isoFilenameArr = deploy_pattern.getAssocISOFilenameArr(opts, filename),
-        isodeploy_fileconvertArr = [],
+    var ISOnamearr = deploy_pattern.getAssocISOFilenameArr(opts, filename),
+        isofileobjarr = [],
         extname = path.extname(filename),
         dirname = path.dirname(filename);
 
     fs.readdir(dirname, (err, resArr) => {
       if (err) return fn(err);
 
-      (function next (x, isoFilename, fcBase) {
-        if (!x--) return fn(null, isodeploy_fileconvertArr);
+      (function next (x, ISOname) {
+        if (!x--) return fn(null, isofileobjarr);
 
-        isoFilename = isoFilenameArr[x];
+        ISOname = ISOnamearr[x];
 
-        if (deploy_pattern.arrgetmatchingISOstr(resArr, isoFilename, extname)) {
-          isoFilename = path.join(dirname, isoFilename + '.json');
-          //o.getFromFileNew(isoFilename, opts, (err, fcBase) => {
-          deploy_fileobj.getfromfile(opts, isoFilename, (err, fileobj) => {
+        if (deploy_pattern.arrgetmatchingISOstr(resArr, ISOname, extname)) {
+          ISOname = path.join(dirname, ISOname + '.json');
+
+          deploy_fileobj.getfromfile(opts, ISOname, (err, fileobj) => {
             if (err) return fn(err);
-
-            isodeploy_fileconvertArr.push([
-              isoFilename,
+            
+            isofileobjarr.push([
+              ISOname,
               fileobj
             ]);
-            //isodeploy_fileconvertArr.push(fcBase);
             next(x);
           });
-        } else {
-          //fcBase = Object.create(patternobj);
-          //fcBase.filename = path.join(dirname, isoFilename + '.json');
-          //isodeploy_fileconvertArr.push(fcBase);
-          isodeploy_fileconvertArr.push([
-            path.join(dirname, isoFilename + '.json'),
-            Object.assign({}, fileobj)
+        } else {          
+          isofileobjarr.push([
+            path.join(dirname, ISOname + '.json'),
+            Array.isArray(fileobj)
+              ? fileobj.slice()
+              : Object.assign({}, fileobj)
           ]);
           next(x);
         }
-      }(isoFilenameArr.length));
+      }(ISOnamearr.length));
     });
   };
 
-  //o.convertForISO = (opts, patternobj, fn) => {
   o.convertForISO = (opts, filename, fileobj, fn) => {
 
     // needs to write files not found in isofilenamearr.
-    //o.getAssocISOFileObjArr(opts, patternobj, (err, fileObjArr) => {
     o.getAssocISOFileObjArr(opts, filename, fileobj, (err, fileObjArr) => {
       if (err) return fn(err);
 
@@ -280,7 +235,6 @@ module.exports = (o => {
 
         let [filename, fileobj] = fileObjArr[x];
 
-        //deploy_pattern.writeAtFilename(fileObj.filename, fileObj.contentObj, opts, (err, res, filename) => {
         deploy_pattern.writeAtFilename(filename, fileobj, opts, (err, res, filename) => {
           if (err) return fn(err);
 
@@ -295,7 +249,6 @@ module.exports = (o => {
       return deploy_msg.err_invalidfilename(filename);
     }
 
-    //o.getFromFileNew(filename, opts, (err, fcobj) => {
     deploy_fileobj.getfromfile(opts, filename, (err, fileobj) => {
       if (err) return fn(err);
 

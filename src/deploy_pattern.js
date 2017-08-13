@@ -1,5 +1,5 @@
 // Filename: deploy_pattern.js  
-// Timestamp: 2017.08.10-00:17:50 (last modified)
+// Timestamp: 2017.08.13-15:03:13 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const path = require('path'),
@@ -28,7 +28,7 @@ module.exports = (o => {
   //
   // return 'outputpath/spec/data/actions/baseLang.json'
   o.getasoutputdir = (opts, filepath, content) => {
-    let outputdir = filepath.replace(opts.inputDir, '');
+    let outputdir = filepath.replace(path.normalize(opts.inputDir), '');
 
     if (opts.datetitlesubdirs.find(subdir => (
       outputdir.indexOf(subdir) !== -1 && content.timeDate
@@ -36,7 +36,6 @@ module.exports = (o => {
       outputdir = o.getasdatetitlesubdir(outputdir, content, opts);
     }
 
-    
     return outputdir;
   };
   

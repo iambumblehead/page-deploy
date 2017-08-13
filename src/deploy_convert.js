@@ -1,5 +1,5 @@
 // Filename: deploy_convert.js  
-// Timestamp: 2017.08.10-01:07:56 (last modified)
+// Timestamp: 2017.08.13-14:31:52 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 //
 // meant to replace deploy_fileconvert
@@ -11,6 +11,7 @@ const fs = require('fs'),
 
       deploy_msg = require('./deploy_msg'),
       deploy_file = require('./deploy_file'),
+      deploy_sort = require('./deploy_sort'),
       deploy_pattern = require('./deploy_pattern'),
       deploy_paginate = require('./deploy_paginate');
 
@@ -72,35 +73,13 @@ module.exports = (o => {
       o.createRefSpecFileArr(opts, filename, filearr, (err, objarr) => {
         if (err) return fn(err);
         
-        objarr = o.sortedobjarr(objarr, fileobj.sort);
+        objarr = deploy_sort(objarr, fileobj.sort);
 
         fn(null, objarr);
       });
     });
 
-  };
-
-  o.sortedobjarr = (objarr, sortopts) => {
-    let opts = sortopts || {},
-        sorttype = opts.sorttype,
-        propname = opts.propname,
-        sortedarr = [];
-    
-    if (sortopts) {
-      if (sorttype === 'gtfirst') {
-        sortedarr = objarr.sort((itema, itemb) => (
-          itema[propname] > itemb[propname] ? -1 : 1));
-      } else { // ltfirst
-        sortedarr = objarr.sort((itema, itemb) => (
-          itema[propname] > itemb[propname] ? 1 : -1));
-      }
-    } else {
-      sortedarr = objarr.slice();
-    }
-
-    return sortedarr;
   };  
-  
   
   return o;
   

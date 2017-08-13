@@ -1,10 +1,10 @@
 // Filename: deploy_iso.js  
-// Timestamp: 2017.04.09-01:34:55 (last modified)
+// Timestamp: 2017.08.13-14:17:53 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path');
 
-const deploy_iso = module.exports = (o => {
+module.exports = (o => {
 
   o.type = {
     Lang       : 'Lang',
@@ -21,7 +21,7 @@ const deploy_iso = module.exports = (o => {
   // 'spec-baseLang.json', true
   // 'base.md',       false
   // 'somenotes.txt', false
-  o.getBaseType = (filename) => {
+  o.getBaseType = filename => {
     let baseLangLocaleRe = /^(spec|lang)-baseLangLocale/,
         baseLocaleRe     = /^(spec|lang)-baseLocale/,    
         baseLangRe       = /^(spec|lang)-baseLang/,
@@ -44,29 +44,25 @@ const deploy_iso = module.exports = (o => {
 
   // return `lang` for `lang-baseLang.json`
   // lang and locale files *must* be prefixed
-  o.getPrefix = (filename) => {
-    var prefix,
-        prefixre = /(spec|lang)-base(?:LangLocale|Lang|Locale)/,
-        prefixmatch = filename.match(prefixre);
+  o.getPrefix = filename => {
+    const prefixre = /(spec|lang)-base(?:LangLocale|Lang|Locale)/,
+          prefixmatch = filename.match(prefixre);
 
     if (!prefixmatch) throw new Error('[!!!] file must be prefixed `-spec` or `-lang`: ' + filename);
     
     return prefixmatch[1];
   };
 
-  o.getRmPrefix = (filename) => {
-    var prefixre = /(spec-|lang-)/;
-    
-    return filename.replace(prefixre, '');
-  };
+  o.getRmPrefix = filename =>
+    filename.replace(/(spec-|lang-)/, '');
 
-  o.isBaseFilename = (filename) =>
+  o.isBaseFilename = filename =>
     Boolean(o.getBaseType(filename));
 
   // return all combinations of filename
   // for the given ISOType.
   o.getRequiredFilenameArr = (ISOType, langArr, localeArr) => {
-    var ISOTypes = o.type, 
+    let ISOTypes = o.type, 
         filenameArr = [];
 
     if (ISOType === ISOTypes.Lang) {

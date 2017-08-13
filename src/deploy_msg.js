@@ -1,5 +1,5 @@
 // Filename: deploy_msg.js  
-// Timestamp: 2017.08.07-00:23:40 (last modified)
+// Timestamp: 2017.08.13-14:34:37 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path');
@@ -15,19 +15,6 @@ module.exports = (o => {
   o.pathInvalid = (path) =>
     '[!!!] pmc: path is invalid: ' + path;
   
-  o.status = {
-    pathCreated : (path) =>
-      '[mmm] pmc: path created: ' + path
-  };
-  
-  o.error = {
-    pathInvalid : (path) =>
-      '[!!!] pmc: path is invalid: ' + path,
-
-    pathCreation : (path) =>
-      '[!!!] pmc: path not created: ' + path
-  };
-
   o.err_invalidfilename = (filename) => {
     const msg = '[!!!] invalid filename: ' + filename;
     
@@ -40,7 +27,6 @@ module.exports = (o => {
 
     directory = directory.replace(opts.inputDir, '');
     directory = directory.replace(/^\//, '');
-    //directory = directory.replace(process.env.HOME, '~');
     
     console.log(msg.replace(/:directory/, directory));      
   };

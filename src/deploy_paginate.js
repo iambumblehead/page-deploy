@@ -1,11 +1,11 @@
 // Filename: deploy_paginate.js  
-// Timestamp: 2017.08.10-01:08:25 (last modified)
+// Timestamp: 2017.08.13-14:13:47 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
-      pathpublic = require('pathpublic');
+      pathpublic = require('pathpublic'),
 
-const deploy_file = require('./deploy_file'),
+      deploy_file = require('./deploy_file'),
       deploy_pattern = require('./deploy_pattern');
 
 module.exports = (o => {
@@ -48,6 +48,30 @@ module.exports = (o => {
     return path.join(dirname, 'pg' + chunknum, basename);
   };
 
+  // 
+  // temporary --wtites the same baseLangLocale chunks to supported ISOs
+  // long-term solution would develop ISO-specific chunks
+  //
+  o.writeISOchunks = (opts, filename, outputpath, filobj, chunkobjarr, fn) => {
+    const ISOnamearr = deploy_pattern.getAssocISOFilenameArr(opts, filename),
+          extname = path.extname(outputpath),
+          dirname = path.dirname(outputpath);
+
+    (function next (x, ISOname, ISOpath) {
+      if (!x--) return fn(null, ISOnamearr);
+
+      ISOname = ISOnamearr[x];
+      ISOpath = path.join(dirname, ISOname + '.json');
+
+      deploy_file.writeRecursive(ISOpath, chunkobjarr, (err, res) => {
+        if (err) return fn(err);
+
+        next(x);
+      });
+      
+    }(ISOnamearr.length));
+  };
+
   // return this meta data...
   //
   // {
@@ -68,13 +92,16 @@ module.exports = (o => {
     const outputpath = o.getchunkoutfilename(opts, filename, fileobj, chunknum),
           urlrefpath = pathpublic.get(outputpath, opts.publicPath);
 
-    deploy_file.writeRecursive(outputpath, chunkobjarr, (err, res) => 
-      fn(err, {
-        type : 'url-ref',
-        path : urlrefpath,
-        pagenum : chunknum,
-        items : chunkobjarr.length
-      }));
+    o.writeISOchunks(opts, filename, outputpath, fileobj, chunkobjarr, (err, res) => {
+      deploy_file.writeRecursive(outputpath, chunkobjarr, (err, res) => {
+        fn(err, {
+          type : 'url-ref',
+          path : urlrefpath,
+          pagenum : chunknum,
+          items : chunkobjarr.length
+        });
+      });
+    });
   };
   
   o.writechunks = (opts, filename, fileobj, childobjarr, fn, chunknum = 0, chunkmetaarr = []) => {
@@ -84,7 +111,6 @@ module.exports = (o => {
             ? childobjarr.slice(0, chunksize)
             : childobjarr.slice();
 
-    //if (childobjarr.length > chunksize) {
     o.writechunk(opts, filename, fileobj, chunk, chunknum, (err, chunkmeta) => {
       if (err) return fn(err);
 
@@ -94,7 +120,6 @@ module.exports = (o => {
         ? o.writechunks(opts, filename, fileobj, nextchunks, fn, ++chunknum, chunkmetaarr)
         : fn(null, chunkmetaarr);
       });
-    //}
   };
 
   //    "itemstotal" : 31,

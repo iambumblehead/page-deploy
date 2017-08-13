@@ -1,14 +1,14 @@
 // Filename: deploy_opts.js  
-// Timestamp: 2017.08.09-00:55:30 (last modified)
+// Timestamp: 2017.08.13-15:09:11 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
       util = require('util'),
       castas = require('castas');
 
-const deploy_opts = module.exports = (o => {
+module.exports = (o => {
 
-  const userOptions = {
+  const defaultopts = {
     inputDir : './convert/',
     outputDir : './converted/',
     publicPath : 'domain.com/converted',
@@ -22,42 +22,25 @@ const deploy_opts = module.exports = (o => {
     patterncache : {}
   };
 
-  o = (spec) =>
+  o = spec =>
     o.getNew(spec);
 
   o.getasboolorarr = opt => /true|false/i.test(opt)
     ? castas.bool(opt)
     : castas.arr(opt);
 
-  o.getaspath = p => (
-    String(p)
-      .replace(/^~(?=\/)/, process.env.HOME)
-      .replace(/^.(?=\/)/, process.cwd()));    
-
   o.getNew = (spec) => {
-    var that = Object.create(userOptions);
+    var opts = Object.create(defaultopts);
 
-    if (spec.inputDir) {
-      that.inputDir = o.getaspath(path.normalize(spec.inputDir));       
-    }
+    opts.inputDir = castas.str(spec.inputDir, './');
+    opts.publicPath = castas.str(spec.publicPath, './spec');
+    opts.outputDir = castas.str(spec.outputDir, './build/spec');
+    opts.supportDir = castas.str(spec.supportDir, '');
+    opts.datetitlesubdirs = castas.arr(spec.datetitlesubdirs, []);
+    opts.supportedLocaleArr = o.getasboolorarr(spec.supportedLocaleArr);
+    opts.supportedLangArr = o.getasboolorarr(spec.supportedLangArr);
 
-    if (spec.publicPath) {
-      that.publicPath = o.getaspath(path.normalize(spec.publicPath));       
-    }
-
-    if (spec.outputDir) {
-      that.outputDir = o.getaspath(path.normalize(spec.outputDir));       
-    }
-
-    if (spec.supportDir) {
-      that.supportDir = o.getaspath(path.normalize(spec.supportDir));       
-    }
-
-    that.datetitlesubdirs = castas.arr(spec.datetitlesubdirs, []);
-    that.supportedLocaleArr = o.getasboolorarr(spec.supportedLocaleArr);
-    that.supportedLangArr = o.getasboolorarr(spec.supportedLangArr);
-
-    return that;
+    return opts;
   };
 
   return o;

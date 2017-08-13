@@ -1,12 +1,10 @@
 // Filename: deploy_file.js  a
-// Timestamp: 2017.08.10-00:39:30 (last modified)
+// Timestamp: 2017.08.13-15:16:21 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'), // read/write files
-      cpr = require('recursive-copy'),
       path = require('path'),
       nodefs = require('node-fs'),
-      deploy_iso = require('./deploy_iso'),
       deploy_msg = require('./deploy_msg');
 
 module.exports = (o => {
@@ -35,17 +33,10 @@ module.exports = (o => {
   // only creates the path if it does not exist
   // https://github.com/bpedro/node-fs/blob/master/lib/fs.js
   o.createPath = (directory, fn) =>
-    fs.stat(directory, (err, stat) => { 
-      if (stat && stat.isDirectory()) {
-        fn(null, directory);
-      } else {
-        
-        nodefs.mkdir(directory, 0755, true, (err, res) => {
-          if (err) return fn(err);
-          fn(err, res);
-        });
-      }
-    });
+    fs.stat(directory, (err, stat) =>
+       (stat && stat.isDirectory())
+         ? fn(null, directory)
+         : nodefs.mkdir(directory, 0755, true, fn));
 
   o.writeRecursive = (filename, content, fn) =>
     o.createPath(path.dirname(filename), (err, res) => {
