@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.08.13-14:30:56 (last modified)
+// Timestamp: 2017.08.13-16:16:14 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -12,6 +12,7 @@ const fs = require('fs'),
       deploy_html = require('./deploy_html'),
       deploy_file = require('./deploy_file'),
       deploy_sort = require('./deploy_sort'),
+      deploy_paths = require('./deploy_paths'),
       deploy_marked = require('./deploy_marked'),
       deploy_tokens = require('./deploy_tokens'),
       deploy_fileobj = require('./deploy_fileobj'),
@@ -37,7 +38,7 @@ module.exports = (o => {
   //
   o.getWithUpdatedSupportPaths = (opts, contentobj, filename, fn) =>
     fn(null, objobjwalk.type('string', contentobj, str => (
-      deploy_supportconvert.getWithPublicPathStr(str, opts, filename))));
+      deploy_paths.withpublicpath(opts, str, filename))));
 
   o.getWithUpdatedLangKeys = (opts, contentobj, filename, fn) => {
     let langpath = filename.replace(/spec-.*/, 'lang-baseLang.json'),
@@ -69,7 +70,7 @@ module.exports = (o => {
     
     objobjwalk.async(contentobj, (objobj, exitfn) => {
       if (typeof objobj === 'string') {
-        objobj = deploy_supportconvert.getWithPublicPathStr(objobj, opts, outfilename);
+        objobj = deploy_paths.withpublicpath(opts, objobj, outfilename);
       }
 
       if (objobj) {
