@@ -1,19 +1,18 @@
 // Filename: deploy_fileobj.js  
-// Timestamp: 2017.08.09-23:05:53 (last modified)
+// Timestamp: 2017.08.14-02:14:43 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
-      objobjwalk = require('objobjwalk');
+      objobjwalk = require('objobjwalk'),
 
-const deploy_pattern = require('./deploy_pattern'),
+      deploy_fileconvert = require('./deploy_fileconvert'),
+      deploy_pattern = require('./deploy_pattern'),
       deploy_convert = require('./deploy_convert'),
       deploy_marked = require('./deploy_marked'),
       deploy_tokens = require('./deploy_tokens'),
       deploy_file = require('./deploy_file'),
       deploy_html = require('./deploy_html'),
       deploy_msg = require('./deploy_msg');
-
-const deploy_fileconvert = require('./deploy_fileconvert');
 
 module.exports = (o => {
 
@@ -98,14 +97,13 @@ module.exports = (o => {
     });
 
   o.getConverted = (opts, filename, fileobj, fn) => {
-    if (fileobj.isConverted) {
+    if (opts.patterncache[filename])
       return fn(null, fileobj);
-    }
 
     require('./deploy_fileconvert').convert(opts, fileobj, filename, (err, fileobj) => {
       if (err) return fn(err);
-      
-      fileobj.isConverted = true;
+
+      opts.patterncache[filename] = true;
       
       fn(null, fileobj);
     });

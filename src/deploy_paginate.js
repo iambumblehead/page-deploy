@@ -1,5 +1,5 @@
 // Filename: deploy_paginate.js  
-// Timestamp: 2017.08.13-14:13:47 (last modified)
+// Timestamp: 2017.08.13-21:27:19 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
@@ -131,7 +131,8 @@ module.exports = (o => {
       if (err) return fn(err);
 
       fn(null, {
-        itemmstotal : childobjarr.length,
+        itemstotal : childobjarr.length,
+        pagestotal : childmetaarr.length,
         pages : childmetaarr
       });
     });
