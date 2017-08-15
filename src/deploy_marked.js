@@ -1,5 +1,5 @@
 // Filename: marked-augmented.js  
-// Timestamp: 2017.08.06-19:04:57 (last modified)
+// Timestamp: 2017.08.15-01:16:32 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 var simpletime = require('simpletime'),
@@ -29,7 +29,7 @@ module.exports = (o => {
     }
   });
 
-  marked.parsedatestr = (datestr, fmt='yyyy.MM.dd-hh:mm:ss') =>
+  marked.parsedatestr = (datestr, fmt='yyyy.MM.dd-HH:mm:ss') =>
     simpletime.extractDateFormatted(datestr, fmt);
 
   marked.parsedatestrtime = datestr =>
