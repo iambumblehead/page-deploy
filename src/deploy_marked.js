@@ -1,5 +1,5 @@
 // Filename: marked-augmented.js  
-// Timestamp: 2017.08.23-12:28:49 (last modified)
+// Timestamp: 2017.08.24-03:00:04 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const simpletime = require('simpletime'),
@@ -51,6 +51,7 @@ module.exports = (o => {
   o.extractsymbols = (str, obj={}, text) => 
     [['★', 'title'],
      ['✑', 'author'],
+     ['☆', 'excerptnohtml'],
      ['⌚', 'timeDate', o.parsedatestrtime]
     ].reduce(([str, obj], [sym, propname, filter]) => {
       [str, text] = o.extractsymboltext(str, sym);
