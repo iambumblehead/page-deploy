@@ -1,5 +1,5 @@
 // Filename: deploy_paginate.js  
-// Timestamp: 2017.08.13-21:27:19 (last modified)
+// Timestamp: 2017.08.23-14:06:17 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
@@ -45,7 +45,9 @@ module.exports = (o => {
           dirname = path.dirname(poutfilename),
           basename = path.basename(poutfilename);
 
-    return path.join(dirname, 'pg' + chunknum, basename);
+    //return path.join(dirname, 'pg' + chunknum, basename);
+    
+    return path.join(dirname, 'pg', String(chunknum), basename);
   };
 
   // 
@@ -122,18 +124,41 @@ module.exports = (o => {
       });
   };
 
+
+  o.writechunkall = (opts, filename, fileobj, chunkobjarr, chunknum, fn) => {
+    const outputpath = o.getchunkoutfilename(opts, filename, fileobj, chunknum),
+          urlrefpath = pathpublic.get(outputpath, opts.publicPath);
+
+    o.writeISOchunks(opts, filename, outputpath, fileobj, chunkobjarr, (err, res) => {
+      deploy_file.writeRecursive(outputpath, chunkobjarr, (err, res) => {
+        fn(err, {
+          type : 'url-ref',
+          path : urlrefpath,
+          pagenum : chunknum,
+          items : chunkobjarr.length
+        });
+      });
+    });
+  };
+  
   //    "itemstotal" : 31,
   //    "itemsperpage" : 10,
   //    "pages" : [ ... ] // childmeta
   //
   o.writepages = (opts, filename, fileobj, childobjarr, fn) => {
-    o.writechunks(opts, filename, fileobj, childobjarr, (err, childmetaarr) => {
+    o.writechunks(opts, filename, fileobj, childobjarr, (err, chunkmetaarr) => {
       if (err) return fn(err);
 
-      fn(null, {
-        itemstotal : childobjarr.length,
-        pagestotal : childmetaarr.length,
-        pages : childmetaarr
+      // write all chunk...
+      o.writechunk(opts, filename, fileobj, childobjarr, 'all', (err, chunkmeta) => {
+        //chunkmetaarr.push(chunkmeta);
+
+        fn(null, {
+          itemstotal : childobjarr.length,
+          pagestotal : chunkmetaarr.length,
+          pages : chunkmetaarr,
+          pageall : chunkmeta
+        });
       });
     });
   };

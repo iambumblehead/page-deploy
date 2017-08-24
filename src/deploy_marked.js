@@ -1,39 +1,30 @@
 // Filename: marked-augmented.js  
-// Timestamp: 2017.08.15-01:16:32 (last modified)
+// Timestamp: 2017.08.23-12:28:49 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-var simpletime = require('simpletime'),
-    marked = require('marked'),
-    castas = require('castas'),
-    hljs = require('highlight.js');
+const simpletime = require('simpletime'),
+      marked = require('marked'),
+      castas = require('castas'),
+      hljs = require('highlight.js');
+
+marked.setOptions({
+  gfm : true,
+  breaks : true,
+  highlight: (code, lang) => lang
+    ? hljs.highlight(lang, code).value
+    : hljs.highlightAuto(code)
+});
 
 module.exports = (o => {
 
-  marked.setOptions({
-    gfm : true,
-    breaks : true,
-    highlight: (code, lang) => {
-      if (lang === 'javascript') {
-        code = hljs.highlight(lang, code).value;
-      } else if (lang === 'json') {
-        code = hljs.highlight(lang, code).value;
-      } else if (lang === 'lisp') {        
-        code = hljs.highlight(lang, code).value;
-      } else if (lang === 'python') {
-        code = hljs.highlight(lang, code).value;
-      } else if (lang === 'bash') {
-        code = hljs.highlight(lang, code).value;
-      }
-      
-      return code;
-    }
-  });
-
-  marked.parsedatestr = (datestr, fmt='yyyy.MM.dd-HH:mm:ss') =>
+  o = filestr =>
+    marked(filestr);
+  
+  o.parsedatestr = (datestr, fmt='yyyy.MM.dd-HH:mm:ss') =>
     simpletime.extractDateFormatted(datestr, fmt);
 
-  marked.parsedatestrtime = datestr =>
-    marked.parsedatestr(datestr).getTime();
+  o.parsedatestrtime = datestr =>
+    o.parsedatestr(datestr).getTime();
 
   // return [
   //   str with symbol matching line removed,
@@ -44,7 +35,7 @@ module.exports = (o => {
   // extractsymboltext('★ text\n======', '★') => ['', 'text']
   //
   //
-  marked.extractsymboltext = (str, symbol) => {
+  o.extractsymboltext = (str, symbol) => {
     const symbolre = new RegExp('(.*)?[#_*`]'+symbol+'(.*)', 'ugi'),
           symbolunderlinere = new RegExp(symbol+'(.*)\n==*', 'ugi'),
           endmdtagre = /([#_*`]|\n==*)$/,
@@ -57,12 +48,12 @@ module.exports = (o => {
       : [str];
   };
 
-  marked.extractsymbols = (str, obj={}, text) => 
+  o.extractsymbols = (str, obj={}, text) => 
     [['★', 'title'],
      ['✑', 'author'],
-     ['⌚', 'timeDate', marked.parsedatestrtime]
+     ['⌚', 'timeDate', o.parsedatestrtime]
     ].reduce(([str, obj], [sym, propname, filter]) => {
-      [str, text] = marked.extractsymboltext(str, sym);
+      [str, text] = o.extractsymboltext(str, sym);
 
       if (text) {
         if (filter) {
@@ -76,13 +67,13 @@ module.exports = (o => {
       
     }, [str, obj]);
 
-  marked.extractmetadata = (str, metadata={}) => {
+  o.extractmetadata = (str, metadata={}) => {
     let metaValRe = /\[meta:(.*)\]: <> \((.*)\)/gi;
 
     if (typeof str === 'string') {
       str.replace(metaValRe, (match, m1, m2) => {
         if (/date$/i.test(m1)) {
-          metadata[m1] = marked.parsedatestrtime(m2);
+          metadata[m1] = o.parsedatestrtime(m2);
         } else if (/arr$/i.test(m1)) {
           metadata[m1] = m2.split(/,/);        
         } else if (/^is/.test(m1) &&
@@ -97,6 +88,6 @@ module.exports = (o => {
     return [str, metadata];
   };
 
-  return marked;
+  return o;
 
 })({});
