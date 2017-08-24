@@ -1,6 +1,6 @@
 {
   "name": "page-deploy",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "license": "MIT",
   "readmeFilename": "README.md",
   "description": "deploy page-object data and pattern files",
@@ -18,7 +18,8 @@
     "optimist": "^0.3.0",
     "pathpublic": "0.0.8",
     "recursive-copy": "^2.0.6",
-    "simpletime": "^0.1.28"
+    "simpletime": "^0.1.28",
+    "strip-html-tags": "0.0.3"
   },
   "devDependencies": {
     "jasmine": "2.5.3",
