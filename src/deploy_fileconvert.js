@@ -1,5 +1,5 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.08.13-16:16:14 (last modified)
+// Timestamp: 2017.08.25-01:56:12 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
@@ -13,7 +13,6 @@ const fs = require('fs'),
       deploy_file = require('./deploy_file'),
       deploy_sort = require('./deploy_sort'),
       deploy_paths = require('./deploy_paths'),
-      deploy_marked = require('./deploy_marked'),
       deploy_tokens = require('./deploy_tokens'),
       deploy_fileobj = require('./deploy_fileobj'),
       deploy_pattern = require('./deploy_pattern'),

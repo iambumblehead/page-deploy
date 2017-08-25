@@ -1,9 +1,10 @@
 // Filename: deploy_fileobj.js  
-// Timestamp: 2017.08.24-00:13:29 (last modified)
+// Timestamp: 2017.08.25-01:57:07 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
       objobjwalk = require('objobjwalk'),
+      htmldecoder = require('html-decoder'),
       striphtmltags = require('strip-html-tags'),
 
       deploy_fileconvert = require('./deploy_fileconvert'),
@@ -51,7 +52,7 @@ module.exports = (o => {
 
     if (excerpt) {
       metadata.excerpthtml = excerpt;
-      metadata.excerptnohtml = striphtmltags(excerpt);
+      metadata.excerptnohtml = htmldecoder.decode(striphtmltags(excerpt));
     }
 
     return metadata;
