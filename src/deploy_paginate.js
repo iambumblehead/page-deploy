@@ -1,5 +1,5 @@
 // Filename: deploy_paginate.js  
-// Timestamp: 2017.08.23-14:06:17 (last modified)
+// Timestamp: 2017.09.02-18:24:18 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
@@ -47,7 +47,8 @@ module.exports = (o => {
 
     //return path.join(dirname, 'pg' + chunknum, basename);
     
-    return path.join(dirname, 'pg', String(chunknum), basename);
+    //return path.join(dirname, 'pg', String(chunknum), basename);
+    return path.join(dirname, String(chunknum), basename);
   };
 
   // 

@@ -1,5 +1,5 @@
 // Filename: deploy_file.js  a
-// Timestamp: 2017.08.13-15:16:21 (last modified)
+// Timestamp: 2017.09.03-13:23:35 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'), // read/write files
@@ -8,35 +8,66 @@ const fs = require('fs'), // read/write files
       deploy_msg = require('./deploy_msg');
 
 module.exports = (o => {
+  o.exists = filepath =>
+    fs.existsSync(filepath);
+
+  o.isdir = filepath =>
+    o.exists(filepath) && fs.statSync(filepath).isDirectory();
+
+  o.isfile = filepath =>
+    o.exists(filepath) && fs.statSync(filepath).isFile();
 
   o.readdir = (dir, fn) =>
     fs.readdir(dir, fn);
+
+  o.readdirfullpath = (dir, fn) =>
+    fs.readdir(dir, (err, namearr) => (
+      fn(err, err ? null : namearr.map(name => path.join(dir, name)))));
 
   o.stringify = obj =>
     (/string|boolean|number/.test(typeof obj)
      ? obj : JSON.stringify(obj, null, '  '));    
 
-  o.read = (file, fn) =>
-    fs.readFile(file, 'utf8', (err, fd) => {
-      if (err) return fn(deploy_msg.pathInvalid(file));
-      
-      fn(err, fd);
-    });
+  o.read = (filepath, fn) =>
+    fs.readFile(filepath, 'utf8', (err, fd) => (
+      fn(err, err ? deploy_msg.pathInvalid(filepath) : fd)));
 
-  o.write = (file, content, fn) =>
-    fs.writeFile(file, o.stringify(content), (err, res) => {
-      if (err) return fn(new Error(res));
+  o.readobj = (filepath, fn) => {
+    o.read(filepath, (err, file) => {
+      if (err) return fn(err);
+
+      try {
+        file = JSON.parse(file);
+      } catch (e) {
+        err = e;
+      }
       
-      fn(null, res);
+      fn(err, file);
+    });
+  };
+
+  o.write = (filename, content, fn) =>
+    fs.writeFile(filename, o.stringify(content), (err, res) => (
+      fn(err && new Error(err), res)));
+
+  o.writeassign = (filename, content, fn) =>
+    o.readobj(filename, (err, obj) => {
+      if (err) return fn(err);
+
+      obj = Object.assign(obj, content);
+
+      o.write(filename, obj, (err, res) => {
+        if (err) return fn(err);
+
+        fn(null, obj);
+      });
     });
 
   // only creates the path if it does not exist
   // https://github.com/bpedro/node-fs/blob/master/lib/fs.js
-  o.createPath = (directory, fn) =>
-    fs.stat(directory, (err, stat) =>
-       (stat && stat.isDirectory())
-         ? fn(null, directory)
-         : nodefs.mkdir(directory, 0755, true, fn));
+  o.createPath = (directory, fn) => o.isdir(directory)
+    ? fn(null, directory)
+    : nodefs.mkdir(directory, 0755, true, fn);
 
   o.writeRecursive = (filename, content, fn) =>
     o.createPath(path.dirname(filename), (err, res) => {

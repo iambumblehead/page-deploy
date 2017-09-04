@@ -1,5 +1,5 @@
 // Filename: deploy_msg.js  
-// Timestamp: 2017.08.13-14:34:37 (last modified)
+// Timestamp: 2017.09.03-12:55:49 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path');
@@ -13,7 +13,7 @@ module.exports = (o => {
     console.log('[...] page-deploy: done.');  
   
   o.pathInvalid = (path) =>
-    '[!!!] pmc: path is invalid: ' + path;
+    '[!!!] page-deploy: path is invalid: ' + path;
   
   o.err_invalidfilename = (filename) => {
     const msg = '[!!!] invalid filename: ' + filename;
@@ -54,7 +54,14 @@ module.exports = (o => {
             .replace(/:filename/g, filename);
     
     console.log(msg);      
-  };  
+  };
+
+  o.applyuniverse = (filename, opts) => {
+    const msg = '[...] universe: :filename'
+            .replace(/:filename/g, filename);
+    
+    console.log(msg);
+  };
 
   o.errorreadingfile = (filename, err) => {
     const msg = '[!!!] error reading file: :filename'

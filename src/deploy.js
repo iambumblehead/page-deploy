@@ -1,75 +1,78 @@
 // Filename: deploy.js  
-// Timestamp: 2017.08.13-14:18:43 (last modified)
+// Timestamp: 2017.09.03-22:41:45 (last modified)
 // Author(s): Bumblehead (www.bumblehead.com)
 //
 // uses gfm (github-flavored-markdown): https://github.com/chjj/marked
 
 
-var fs = require('fs'),
-    path = require('path'),
-    argv = require('optimist').argv,
+const fs = require('fs'),
+      path = require('path'),
 
-    deploy_msg = require('./deploy_msg'),
-    deploy_opts = require('./deploy_opts'),    
-    deploy_file = require('./deploy_file'),
-    deploy_pattern = require('./deploy_pattern'),    
-    deploy_fileconvert = require('./deploy_fileconvert'),
+      deploy_msg = require('./deploy_msg'),
+      deploy_opts = require('./deploy_opts'),    
+      deploy_file = require('./deploy_file'),
+      deploy_tokens = require('./deploy_tokens'),
+      deploy_pattern = require('./deploy_pattern'),    
+      deploy_fileconvert = require('./deploy_fileconvert');
 
-    input = argv.i || null;
+module.exports = (o => {
 
-const deploy = module.exports = (o => {
-  
-  // be careful building  a data array...
-  // base data array should not be overwritten. need a merged array.
-  //
-  // should only replace relative directory if it specificies and
-  // existing relative path.
-  o.breadthFirstDirectory = (inputdir, opts, fn) => {    
-    fs.readdir(inputdir, (err, resarr) => {
-      if (err) return fn(err);
+  const {
+    UNIVERSAL
+  } = deploy_tokens;  
 
-      (function next(x, subDir) {
-        if (!x--) return fn(null, []);
+  o.bfsconvertarr = (opts, inputarr, fn) => {
+    if (inputarr.length) {
+      o.bfsconvert(opts, inputarr[0], (err, res) => {
+        if (err) return fn(err);
 
-        let fulldir = path.join(inputdir, resarr[x]);
-        
-        o.breadthFirstConvert(fulldir, opts, (err, res) => {
-          if (err) return fn(err);
-          
-          next(x);
-        });
-      }(resarr.length));
-    });      
+        o.bfsconvertarr(opts, inputarr.slice(1), fn);
+      });
+    } else {
+      fn(null);
+    }
   };
-  
+
   // recurse through directories, depth-first.
   // identify locale files ('base'|\S\S-\S\S).(json|md)
   // update references in either type.
   // write the new content to outputDir
-  o.breadthFirstConvert = (input, opts, fn) => {
-    fs.stat(input, (err, stat) => {
-      if (err) return fn(err);
+  o.bfsconvert = (opts, input, fn) => {
+    if (deploy_file.isdir(input)) {
+      deploy_file.readdirfullpath(input, (err, inputarr) => {
+        if (err) return fn(err);
 
-      if (stat.isDirectory()) {
-        o.breadthFirstDirectory(input, opts, fn);
-      } else if (stat.isFile() &&
-                 deploy_pattern.isvalidpatternfilename(input)) {
-        
-        deploy_fileconvert.convertFilesForBase(input, opts, fn);
-      } else {
-        fn(null, null);
-      }
-    });
+        o.bfsconvertarr(opts, inputarr, (err, res) => {
+          if (err) return fn(err);
+          
+          if (deploy_file.isdir(path.join(input, UNIVERSAL))) {
+            deploy_msg.applyuniverse(path.join(input, UNIVERSAL));
+            deploy_fileconvert.applyuniverse(opts, input, (err, res) => {
+              if (err) return fn(err);
+
+              fn(err, res);
+            });
+          } else {
+            fn(err, res);
+          }
+        });
+      });
+    } else if (deploy_file.isfile(input) &&
+               deploy_pattern.isvalidpatternfilename(input)) {
+      deploy_fileconvert(opts, input, fn);
+    } else {
+      fn(null, null);
+    }
   };
 
   o.convert = (opts, fn) => {
     deploy_msg.start();
-    
-    o.breadthFirstConvert(opts.inputDir, opts, (err, res) => {
-      if (err) return console.log(err, (err.stack) ? err.stack : '');
 
-      deploy_msg.finish();
-      
+    opts = deploy_opts(opts);
+    
+    o.bfsconvert(opts, opts.inputDir, (err, res) => {
+      if (err) return console.log(err, err.stack ? err.stack : '');
+
       if (typeof fn === 'function') {
         fn(null, 'success');
       }
@@ -79,13 +82,3 @@ const deploy = module.exports = (o => {
   return o;
 
 })({});
-
-// if called from command line...
-if (require.main === module) {
-  var opts = deploy_opts.getNew(argv);
-
-  deploy.convert(opts, (err, res) => {
-    if (err) return console.log(err);
-    console.log('[...] finished.');
-  });
-} 

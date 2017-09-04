@@ -1,12 +1,11 @@
 // Filename: deploy_fileconvert.js  
-// Timestamp: 2017.08.25-01:56:12 (last modified)
+// Timestamp: 2017.09.03-22:40:33 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
 const fs = require('fs'),
       path = require('path'),
       glob = require('glob'),
       objobjwalk = require('objobjwalk'),
-
 
       deploy_msg = require('./deploy_msg'),
       deploy_html = require('./deploy_html'),
@@ -17,15 +16,21 @@ const fs = require('fs'),
       deploy_fileobj = require('./deploy_fileobj'),
       deploy_pattern = require('./deploy_pattern'),
       deploy_convert = require('./deploy_convert'),
+      deploy_article = require('./deploy_article'),
       deploy_supportconvert = require('./deploy_supportconvert');
 
 module.exports = (o => {
 
   const {
+    UNIVERSAL,
     LOCALREF,
     LOCALREFARR,
     LOCALREFPAGEARR
   } = deploy_tokens;
+
+  o = (opts, filename, fn) =>
+    o.convertbase(opts, filename, fn);
+
 
   // replace support paths found in contentObj strings.
   // 
@@ -81,16 +86,11 @@ module.exports = (o => {
 
         // inplace update of this file
         if (type === LOCALREFARR) {
-          //return o.getObjArrAtLocalRef(opts, filename, objobj, exitfn);
           return deploy_convert.createRefSpecArr(opts, filename, objobj, exitfn);
         }
         
         if (type === LOCALREFPAGEARR) {
           return deploy_convert.createRefSpecPages(opts, filename, objobj, exitfn);
-          //console.log('aaaa', objobj.grouptype, contentobj);
-          // constructed paginated groups...
-          
-          //return o.getObjArrAtLocalRef(opts, filename, objobj, exitfn);
         }
       }
 
@@ -231,7 +231,7 @@ module.exports = (o => {
       if (err) return fn(err);
 
       (function next (x, fileObj) {
-        if (!x--) return fn(null, fileObjArr);         
+        if (!x--) return fn(null, fileObjArr);
 
         let [filename, fileobj] = fileObjArr[x];
 
@@ -244,11 +244,105 @@ module.exports = (o => {
     });
   };
 
-  o.convertFilesForBase = (filename, opts, fn) => {
+  // filename is spec-baseLang.md... you need spec-baseLang.json
+  o.convertuniverse = (opts, filename, fileobj, fn) => {
+    const universalfilepath = deploy_pattern.getuniversefilepath(filename);
+
+    if (!deploy_file.isfile(universalfilepath) ||
+        !deploy_article.isarticledir(path.dirname(filename))) {
+      return fn(null, fileobj);
+    }
+
+    deploy_fileobj.getfromfile(opts, universalfilepath, (err, universeobj) => {
+      if (err) return fn(err);
+
+      objobjwalk.async(universeobj, (objobj, exitfn) => {
+        if (typeof objobj === 'string') {
+          if (o.nsre.test(objobj)) {
+            objobj = o.nsrm(objobj);
+
+            const ns = String(objobj).split('.')[0];
+
+            if (ns === 'next') {
+              return deploy_article.getnextarticlepathcache(opts, filename, (err, nextpath, nextobj) => {
+                if (err) return exitfn(err);
+
+                exitfn(null, o.objlookup(objobj, {
+                  next : nextobj
+                }));
+              });
+            }
+
+            if (ns === 'prev') {
+              return deploy_article.getprevarticlepathcache(opts, filename, (err, prevpath, prevobj) => {
+                if (err) return exitfn(err);
+
+                exitfn(null, o.objlookup(objobj, {
+                  prev : prevobj
+                }));
+              });
+            }
+          }
+        }
+        exitfn(null, objobj);
+      }, (err, finfileobj) => {
+        if (err) throw new Error(err);
+
+        return fn(null, finfileobj);
+      });        
+    });
+  };
+
+  o.applyuniversefilearticlearr = (opts, inputarr, fn) => {
+    if (inputarr.length) {
+      o.applyuniversearticle(inputarr[0], opts, (err, res) => {
+        if (err) return fn(err);
+
+        o.applyuniversearticlearr(opts, inputarr.slice(1), fn);
+      });
+    } else {
+      fn(null);
+    }
+  };
+
+  o.applyuniversefile = (opts, outputdir, universefile, fn) => {
+    deploy_file.readobj(universefile, (err, uobj) => {
+      if (err) return fn(err);
+
+      o.getAssocISOFileObjArr(opts, universefile, uobj, (err, objarr) => {
+        if (err) return fn(err);
+
+        deploy_article.applyuniverseisoobjarr(opts, outputdir, objarr, fn);
+      });
+    });
+  };
+
+  o.applyuniversefilearr = (opts, outputdir, universefilearr, fn) => {
+    if (universefilearr.length) {
+      o.applyuniversefile(opts, outputdir, universefilearr[0], (err, res) => {
+        if (err) return fn(err);
+
+        o.applyuniversefilearr(opts, outputdir, universefilearr.slice(1), fn);
+      });
+    } else {
+      fn(null);
+    }
+  };  
+
+  o.applyuniverse = (opts, input, fn) => {
+    const universedir = path.join(input, UNIVERSAL),
+          outputdir = deploy_paths.dirout(opts, input);
+    
+    deploy_file.readdirfullpath(universedir, (err, universefilearr) => {
+      o.applyuniversefilearr(opts, outputdir, universefilearr, fn);
+    });
+  };
+
+  o.convertbase = (opts, filename, fn) => {
     if (!deploy_pattern.isvalidpatternfilename(filename)) {
       return deploy_msg.err_invalidfilename(filename);
     }
-
+    
     deploy_fileobj.getfromfile(opts, filename, (err, fileobj) => {
       if (err) return fn(err);
 
@@ -259,7 +353,7 @@ module.exports = (o => {
 
       deploy_pattern.writeAtFilename(filename, fileobj, opts, (err, res, outfilename) => {
         if (err) return fn(err);
-        
+
         deploy_supportconvert.writeSupportDir(opts, filename, outfilename, (err, res) => {
           if (err) return fn(err);
 

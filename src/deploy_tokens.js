@@ -1,10 +1,16 @@
 // Filename: deploy_tokens.js  
-// Timestamp: 2017.08.07-22:45:39 (last modified)
+// Timestamp: 2017.09.03-22:44:14 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 
 module.exports = {
+  UNIVERSAL : 'universal',
+  
   LOCALREF : 'local-ref',
   LOCALREFARR : 'local-ref-arr',
-  LOCALREFPAGEARR : 'local-ref-pagearr'
+  LOCALREFPAGEARR : 'local-ref-pagearr',
+
+  LANG       : 'Lang',
+  LOCALE     : 'Locale',
+  LANGLOCALE : 'LangLocale'
 };

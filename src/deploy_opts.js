@@ -1,5 +1,5 @@
 // Filename: deploy_opts.js  
-// Timestamp: 2017.08.13-15:09:11 (last modified)
+// Timestamp: 2017.09.02-22:17:28 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
@@ -19,7 +19,8 @@ module.exports = (o => {
 
     // a cache of objects constructed here. often referenced 
     // many times, but constructed once only using cache    
-    patterncache : {}
+    patterncache : {},
+    articlescache : {}
   };
 
   o = spec =>

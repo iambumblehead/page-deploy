@@ -1,5 +1,5 @@
 // Filename: deploy_convert.js  
-// Timestamp: 2017.08.13-14:31:52 (last modified)
+// Timestamp: 2017.09.02-21:54:20 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 //
 // meant to replace deploy_fileconvert
@@ -12,6 +12,7 @@ const fs = require('fs'),
       deploy_msg = require('./deploy_msg'),
       deploy_file = require('./deploy_file'),
       deploy_sort = require('./deploy_sort'),
+      deploy_article = require('./deploy_article'),
       deploy_pattern = require('./deploy_pattern'),
       deploy_paginate = require('./deploy_paginate');
 
@@ -67,7 +68,7 @@ module.exports = (o => {
       if (err) return fn(new Error(err));
 
       filearr = filearr
-        .filter(file => fs.statSync(file).isDirectory())
+        .filter(deploy_article.isarticledir)
         .map(file =>  path.join(file, path.basename(filename)));
 
       o.createRefSpecFileArr(opts, filename, filearr, (err, objarr) => {

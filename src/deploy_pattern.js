@@ -1,15 +1,27 @@
 // Filename: deploy_pattern.js  
-// Timestamp: 2017.08.13-15:03:13 (last modified)
+// Timestamp: 2017.09.03-05:00:37 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
+//
+//  specfilepath: /path/to/spec/name/spec-baseLangLocale.json
+//   specdirpath: /path/to/spec/name/
+// parentdirpath: /path/to/spec/
 
 const path = require('path'),
       simpletime = require('simpletime'),
       
       deploy_iso = require('./deploy_iso'),
       deploy_msg = require('./deploy_msg'),
-      deploy_file = require('./deploy_file');
+      deploy_file = require('./deploy_file'),
+      deploy_tokens = require('./deploy_tokens');
 
 module.exports = (o => {
+
+  const {
+    UNIVERSAL
+  } = deploy_tokens;
+
+  //o.getparentdirpath = (filepath) => 
+  //  path.dirname(path.dirname(filepath));
 
   o.getasdatetitlesubdir = (outputpath, content, opts) => {
     const datefmt='yyyy.MM.dd',
@@ -23,6 +35,25 @@ module.exports = (o => {
     
     return path.join(dirname, titlesubdir, basename);
   };
+
+  //
+  // unversedirpath relatative to filepath
+  //
+  o.getuniversaldirpath = filepath =>
+    path.join(path.dirname(path.dirname(filepath)), UNIVERSAL);
+
+  //
+  // unversefilepath relatative to filepath
+  //
+  // should be elaborated to locate lang/local or default paths
+  //
+  o.getuniversefilepath = filepath => {
+    const specname = path.basename(filepath),
+          universaldirpath = o.getuniversaldirpath(filepath);
+          
+    return path.join(universaldirpath, specname.replace(/\.([^.]*)$/, '.json'));
+  };
+  
   
   // filepath : inputpath/spec/data/actions/lang-baseLang.json
   //
@@ -31,7 +62,7 @@ module.exports = (o => {
     let outputdir = filepath.replace(path.normalize(opts.inputDir), '');
 
     if (opts.datetitlesubdirs.find(subdir => (
-      outputdir.indexOf(subdir) !== -1 && content.timeDate
+      outputdir.indexOf(subdir) !== -1 && content && content.timeDate
     ))) {
       outputdir = o.getasdatetitlesubdir(outputdir, content, opts);
     }
@@ -78,22 +109,6 @@ module.exports = (o => {
   o.isvalidpatternfilename = filename => (
     deploy_iso.isBaseFilename(filename)
       && /^[^.].*(json|md)$/.test(filename));
-
-  /*
-  // filename given here for error scenario only  
-  o.parse = (JSONStr, filename) => {
-    let obj = null;
-
-    try {
-      obj = JSON.parse(JSONStr);        
-    } catch (x) {
-      console.log('[!!!] locale-deploy, parse error: ' + filename);
-      throw new Error('[!!!] locale-deploy, parse error: ' + JSONStr);
-    }
-
-    return obj;
-  };
-   */
 
   o.stringify = obj =>
     JSON.stringify(obj, null, 2);
