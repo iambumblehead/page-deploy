@@ -1,5 +1,5 @@
 // Filename: deploy_paginate.js  
-// Timestamp: 2017.09.02-18:24:18 (last modified)
+// Timestamp: 2017.09.05-03:34:49 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 const path = require('path'),
@@ -147,6 +147,11 @@ module.exports = (o => {
   //    "pages" : [ ... ] // childmeta
   //
   o.writepages = (opts, filename, fileobj, childobjarr, fn) => {
+    // sort newest to oldest
+    childobjarr = childobjarr.sort((obja, objb) => (
+      obja.timeDate < objb.timeDate ? 1 : -1
+    ));
+    
     o.writechunks(opts, filename, fileobj, childobjarr, (err, chunkmetaarr) => {
       if (err) return fn(err);
 
