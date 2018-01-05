@@ -1,7 +1,7 @@
 {
   "name": "page-deploy",
   "main": "src/deploy",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "license": "MIT",
   "readmeFilename": "README.md",
   "description": "deploy page-object data and pattern files",
@@ -10,11 +10,11 @@
     "url": "https://github.com/iambumblehead/page-deploy.git"
   },
   "dependencies": {
-    "castas": "^0.0.2",
+    "castas": "^0.0.3",
     "glob": "7.1.1",
     "highlight.js": "^9.10.0",
     "html-decoder": "^1.0.2",
-    "marked": "0.3.6",
+    "marked": "0.3.9",
     "node-fs": "^0.1.7",
     "objobjwalk": "^0.0.7",
     "optimist": "^0.3.0",
