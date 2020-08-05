@@ -22,3 +22,23 @@ function log () { console.log('yes!') }
 
   t.is(deploy_marked(MDStringCode), HTMLStringCode);
 });
+
+test("extractsymbols should return symbol mapping", t => {
+  const MDStringSymbols = `
+[meta:type]: <> (blog)
+[meta:tagsArr]: <> (misc)
+[meta:isComments]: <> (false)
+[meta:ispublished]: <> (true)
+[meta:posterimg]: <> (support/img/pyramid.jpg)
+
+★ pyramid
+==========
+\`✑ bumblehead\`
+_⌚ 2008.09.27-22:45:00_`;
+
+  t.deepEqual(deploy_marked.extractsymbols(MDStringSymbols)[1], {
+    author: 'bumblehead',
+    timeDate: 1222580700000,
+    title: 'pyramid'
+  });
+});
