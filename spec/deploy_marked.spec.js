@@ -17,8 +17,7 @@ function log () { console.log('yes!') }
 \`\`\``;
 
   const HTMLStringCode = `<p>a code block</p>
-<pre><code class="lang-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">log</span> (<span class="hljs-params"></span>) </span>{ <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&#x27;yes!&#x27;</span>) }
-</code></pre>
+<pre><code class="language-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">log</span> (<span class="hljs-params"></span>) </span>{ <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&#x27;yes!&#x27;</span>) }</code></pre>
 `;
 
   t.is(deploy_marked(MDStringCode), HTMLStringCode);
