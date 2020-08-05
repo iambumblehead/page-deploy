@@ -10,9 +10,11 @@ const simpletime = require('simpletime'),
 marked.setOptions({
   gfm : true,
   breaks : true,
-  highlight: (code, lang) => lang
-    ? hljs.highlight(lang, code).value
-    : hljs.highlightAuto(code)
+  highlight: (code, lang) => {
+    return lang
+      ? hljs.highlight(lang, code).value
+      : hljs.highlightAuto(code);
+  }
 });
 
 module.exports = (o => {
