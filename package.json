@@ -15,7 +15,6 @@
     "highlight.js": "^10.1.2",
     "html-decoder": "^1.0.2",
     "marked": "1.1.1",
-    "node-fs": "^0.1.7",
     "objobjwalk": "^0.0.7",
     "pathpublic": "0.0.8",
     "recursive-copy": "^2.0.6",
