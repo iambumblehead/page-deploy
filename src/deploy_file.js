@@ -4,7 +4,6 @@
 
 const fs = require('fs'), // read/write files
       path = require('path'),
-      nodefs = require('node-fs'),
       deploy_msg = require('./deploy_msg');
 
 module.exports = (o => {
@@ -64,10 +63,9 @@ module.exports = (o => {
     });
 
   // only creates the path if it does not exist
-  // https://github.com/bpedro/node-fs/blob/master/lib/fs.js
   o.createPath = (directory, fn) => o.isdir(directory)
     ? fn(null, directory)
-    : nodefs.mkdir(directory, 0755, true, fn);
+    : fs.mkdir(directory, {recursive: true}, fn);
 
   o.writeRecursive = (filename, content, fn) =>
     o.createPath(path.dirname(filename), (err, res) => {

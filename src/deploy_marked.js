@@ -2,7 +2,7 @@
 // Timestamp: 2017.08.24-03:00:04 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-const simpletime = require('simpletime'),
+const simpletime = require('simpletime').default,
       marked = require('marked'),
       castas = require('castas'),
       hljs = require('highlight.js');
@@ -10,9 +10,11 @@ const simpletime = require('simpletime'),
 marked.setOptions({
   gfm : true,
   breaks : true,
-  highlight: (code, lang) => lang
-    ? hljs.highlight(lang, code).value
-    : hljs.highlightAuto(code)
+  highlight: (code, lang) => {
+    return lang
+      ? hljs.highlight(lang, code).value
+      : hljs.highlightAuto(code);
+  }
 });
 
 module.exports = (o => {

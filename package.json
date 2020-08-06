@@ -1,7 +1,7 @@
 {
   "name": "page-deploy",
   "main": "src/deploy",
-  "version": "0.3.9",
+  "version": "0.4.0",
   "license": "MIT",
   "readmeFilename": "README.md",
   "description": "deploy page-object data and pattern files",
@@ -10,25 +10,22 @@
     "url": "https://github.com/iambumblehead/page-deploy.git"
   },
   "dependencies": {
-    "castas": "^0.0.3",
-    "glob": "7.1.1",
-    "highlight.js": "^9.10.0",
+    "castas": "^0.1.3",
+    "glob": "7.1.6",
+    "highlight.js": "^10.1.2",
     "html-decoder": "^1.0.2",
-    "marked": "0.3.9",
-    "node-fs": "^0.1.7",
+    "marked": "1.1.1",
     "objobjwalk": "^0.0.7",
-    "optimist": "^0.3.0",
     "pathpublic": "0.0.8",
     "recursive-copy": "^2.0.6",
-    "simpletime": "^0.1.28",
+    "simpletime": "^0.2.0",
     "strip-html-tags": "0.0.3"
   },
   "devDependencies": {
-    "jasmine": "2.5.3",
-    "jasmine-spec-reporter": "3.2.0"
+    "ava": "^3.11.1"
   },
   "scripts": {
-    "test": "node node_modules/jasmine/bin/jasmine.js --verbose",
+    "test": "ava",
     "start": "node getStarted/go.js"
   }
 }
