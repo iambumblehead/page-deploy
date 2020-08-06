@@ -2,7 +2,7 @@
 // Timestamp: 2017.08.24-03:00:04 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-const simpletime = require('simpletime'),
+const simpletime = require('simpletime').default,
       marked = require('marked'),
       castas = require('castas'),
       hljs = require('highlight.js');

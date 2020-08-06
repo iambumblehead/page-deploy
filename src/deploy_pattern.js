@@ -7,7 +7,7 @@
 // parentdirpath: /path/to/spec/
 
 const path = require('path'),
-      simpletime = require('simpletime'),
+      simpletime = require('simpletime').default,
       
       deploy_iso = require('./deploy_iso'),
       deploy_msg = require('./deploy_msg'),
