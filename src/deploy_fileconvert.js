@@ -6,6 +6,8 @@ const fs = require('fs'),
       path = require('path'),
       glob = require('glob'),
       objobjwalk = require('objobjwalk'),
+      htmldecoder = require('html-decoder'),
+      striphtmltags = require('strip-html-tags'),
 
       deploy_msg = require('./deploy_msg'),
       deploy_html = require('./deploy_html'),
@@ -13,21 +15,21 @@ const fs = require('fs'),
       deploy_sort = require('./deploy_sort'),
       deploy_paths = require('./deploy_paths'),
       deploy_tokens = require('./deploy_tokens'),
-      deploy_fileobj = require('./deploy_fileobj'),
       deploy_pattern = require('./deploy_pattern'),
       deploy_convert = require('./deploy_convert'),
       deploy_article = require('./deploy_article'),
-      deploy_supportconvert = require('./deploy_supportconvert');
+      deploy_marked = require('./deploy_marked'),
+      deploy_supportconvert = require('./deploy_supportconvert'),
+      deploy_fileconvert = require('./deploy_fileconvert');
+
+const {
+  UNIVERSAL,
+  LOCALREF,
+  LOCALREFARR,
+  LOCALREFPAGEARR
+} = deploy_tokens;  
 
 module.exports = (o => {
-
-  const {
-    UNIVERSAL,
-    LOCALREF,
-    LOCALREFARR,
-    LOCALREFPAGEARR
-  } = deploy_tokens;
-
   o = (opts, filename, fn) =>
     o.convertbase(opts, filename, fn);
 
@@ -52,7 +54,7 @@ module.exports = (o => {
       return fn(null, contentobj);
     }
     
-    deploy_fileobj.getfromfilesimilar(opts, langpath, (err, langfileobj) => {
+    o.getfromfilesimilar(opts, langpath, (err, langfileobj) => {
       if (!langfileobj) return fn(null, contentobj);
 
       langcontent = langfileobj;
@@ -169,7 +171,7 @@ module.exports = (o => {
     var refpath = refObj.fullpath ||
           o.getRefPathFilename(filename, refObj.path);
     
-    deploy_fileobj.getfromfilesimilar(opts, refpath, (err, fileobj) => {
+    o.getfromfilesimilar(opts, refpath, (err, fileobj) => {
       if (err) deploy_msg.errorreadingfile(filename, err);
       if (err) return fn(err);
       
@@ -207,7 +209,7 @@ module.exports = (o => {
         if (deploy_pattern.arrgetmatchingISOstr(resArr, ISOname, extname)) {
           ISOname = path.join(dirname, ISOname + '.json');
 
-          deploy_fileobj.getfromfile(opts, ISOname, (err, fileobj) => {
+          o.getfromfile(opts, ISOname, (err, fileobj) => {
             if (err) return fn(err);
             
             isofileobjarr.push([
@@ -259,7 +261,7 @@ module.exports = (o => {
       return fn(null, fileobj);
     }
 
-    deploy_fileobj.getfromfile(opts, universalfilepath, (err, universeobj) => {
+    o.getfromfile(opts, universalfilepath, (err, universeobj) => {
       if (err) return fn(err);
 
       objobjwalk.async(universeobj, (objobj, exitfn) => {
@@ -351,7 +353,7 @@ module.exports = (o => {
       return deploy_msg.err_invalidfilename(filename);
     }
     
-    deploy_fileobj.getfromfile(opts, filename, (err, fileobj) => {
+    o.getfromfile(opts, filename, (err, fileobj) => {
       if (err) return fn(err);
 
       if (fileobj.ispublished === false) {
@@ -376,6 +378,99 @@ module.exports = (o => {
           });
         });
       });
+    });
+  };
+
+  o.parse = (JSONStr, filename) => {
+    try {
+      return JSON.parse(JSONStr);        
+    } catch (x) {
+      console.log('[!!!] locale-deploy, parse error: ' + filename);
+      throw new Error('[!!!] locale-deploy, parse error: ' + JSONStr);
+    }
+  };
+  
+  o.parseJSON = (opts, filestr, filename) =>
+    o.parse(filestr, filename);
+
+  o.parseMD = (opts, filestr, filename) => {
+    let metadata = {},
+        content,
+        excerpt;
+    
+    [ filestr, metadata ] = deploy_marked.extractsymbols(filestr, metadata);
+    [ filestr, metadata ] = deploy_marked.extractmetadata(filestr, metadata);
+
+    content = deploy_marked(filestr);
+    
+    [ content, excerpt ] = deploy_html.extractexcerpt(content);
+    
+    metadata.content = content;
+
+    if (excerpt) {
+      metadata.excerpthtml = excerpt;
+      metadata.excerptnohtml = htmldecoder.decode(striphtmltags(excerpt));
+    }
+
+    return metadata;
+  };
+
+  o.parsefile = (filename, filestr) => {
+    let extname = path.extname(filename);
+
+    if (extname === '.json') {
+      return o.parseJSON(filename, filestr);
+    } else if (extname === '.md') {
+      return o.parseMD(filename, filestr);
+    } else {
+      throw new Error(
+        '[!!!] convert-locale, file type not supported: ' + filename);
+    }
+  };
+
+  o.getfromfile = (opts, filename, fn) => {
+    if (opts.patterncache[filename]) {
+      return fn(null, opts.patterncache[filename]);
+    }
+
+    if (!deploy_pattern.isvalidpatternfilename(filename)) {
+      return deploy_msg.err_invalidfilename(filename);
+    }      
+
+    deploy_file.read(filename, (err, res) => {
+      if (err) deploy_msg.errorreadingfile(filename, err);
+      if (err) return fn(new Error(err));
+
+      // eslint-disable-next-line max-len
+      o.getConverted(opts, filename, o.parsefile(filename, res), (err, fileobj) => {
+        if (err) return fn(err);
+
+        opts.patterncache[filename] = fileobj;
+        
+        fn(null, fileobj);
+      });
+    });        
+  };
+
+  o.getfromfilesimilar = (opts, filename, fn) =>
+    deploy_pattern.getsimilarfilename(filename, opts, (err, simfilename) => {
+      if (err) return fn(err);
+      
+      simfilename
+        ? o.getfromfile(opts, simfilename, fn)
+        : fn(new Error('[...] similar file not found, ' + filename));
+    });
+
+  o.getConverted = (opts, filename, fileobj, fn) => {
+    if (opts.patterncache[filename])
+      return fn(null, fileobj);
+
+    o.convert(opts, fileobj, filename, (err, fileobj) => {
+      if (err) return fn(err);
+
+      opts.patterncache[filename] = true;
+      
+      fn(null, fileobj);
     });
   };
 

@@ -2,9 +2,9 @@
 // Timestamp: 2017.09.02-22:17:28 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
-const path = require('path');
-const util = require('util');
-const castas = require('castas');
+const path = require('path'),
+      util = require('util'),
+      castas = require('castas').default;
 
 module.exports = (o => {
 
