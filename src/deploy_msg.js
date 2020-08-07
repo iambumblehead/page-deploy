@@ -21,6 +21,20 @@ module.exports = (o => {
     throw new Error (msg);
   };
 
+  o.invalidpatternfilename = filename => (
+    `[!!!] page-deploy: path is invalid: ${filename}
+ * must not be hidden '.' file
+ * must end in .md or .json
+ * must have spec or lang prefix
+ * must have base qualifier and suffix
+
+ex, spec-baseLang.md, lang-baseLocal.json, spec-baseLangLocal.json
+`);
+
+  o.err_invalidpatternfilename = filename => {
+    throw new Error(o.invalidpatternfilename(filename));
+  };
+
   o.convertingfilename = (filename, opts) => {
     const msg = '[...] read: :directory',
           directory = path.dirname(filename);

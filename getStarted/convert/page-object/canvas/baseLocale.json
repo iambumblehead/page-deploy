@@ -1,8 +1,0 @@
-{
-    "type" : "single",
-    "inputsArr" : [{
-        "type" : "local-ref",
-        "path" : "./blocks/nav-top"
-    }]
-}
-

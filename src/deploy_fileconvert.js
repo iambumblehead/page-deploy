@@ -350,7 +350,7 @@ module.exports = (o => {
 
   o.convertbase = (opts, filename, fn) => {
     if (!deploy_pattern.isvalidpatternfilename(filename)) {
-      return deploy_msg.err_invalidfilename(filename);
+      return deploy_msg.err_invalidpatternfilename(filename);
     }
     
     o.getfromfile(opts, filename, (err, fileobj) => {
@@ -434,7 +434,7 @@ module.exports = (o => {
     }
 
     if (!deploy_pattern.isvalidpatternfilename(filename)) {
-      return deploy_msg.err_invalidfilename(filename);
+      return deploy_msg.err_invalidpatternfilename(filename);
     }      
 
     deploy_file.read(filename, (err, res) => {

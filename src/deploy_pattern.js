@@ -123,8 +123,8 @@ module.exports = (o => {
   //
   //   'world'
   //
-  o.objlookup = (namespacestr, obj) => 
-    String(namespacestr).split('.').reduce(
+  o.objlookup = (namespacestr, obj) => String(namespacestr)
+    .split('.').reduce(
       (a, b) => a ? (b in a ? a[b] : a[Number(b)]) : null, obj);
 
   // returns other pattern file in the same directory
