@@ -23,6 +23,6 @@ I have:
      i.onload = function() { alert("hi"); }
      i.src = src;
  }
- ```  
+ ```
  
  * A huge .emacs file with a treasure of well-tested code that automates much of my development (especially JavaScript).

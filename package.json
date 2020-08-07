@@ -1,7 +1,7 @@
 {
   "name": "page-deploy",
   "main": "src/deploy",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "license": "MIT",
   "readmeFilename": "README.md",
   "description": "deploy page-object data and pattern files",
@@ -22,10 +22,13 @@
     "strip-html-tags": "0.0.3"
   },
   "devDependencies": {
+    "babel-eslint": "^10.0.1",
+    "eslint": "^7.6.0",    
     "ava": "^3.11.1"
   },
   "scripts": {
     "test": "ava",
-    "start": "node getStarted/go.js"
+    "start": "node getStarted/go.js",
+    "lint": "eslint src/*.js spec/*js"
   }
 }
