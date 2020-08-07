@@ -1,19 +1,20 @@
-[meta:title]: <> (Big UPDATE)
 [meta:type]: <> (blog)
-[meta:author]: <> (Bumblehead)
-[meta:date]: <> (2009.05.05)
-[meta:href]: <> (/blog/big-update)
-[meta:tags]: <> (video,photography,software,art)
-[meta:comments]: <> (off)
+[meta:tagsArr]: <> (video,photography,software,art)
+[meta:isComments]: <> (off)
+[meta:ispublished]: <> (true)
+[meta:posterimg]: <> (support/stobo_logo.png)
 
-### Big UPDATE!
+★ big update
+=============
+`✑ bumblehead`
+_⌚ 2009.05.05-20:47:00_
 
- * [![screenshot](support/img/vista-screen.jpg)](support/img/full/justin-screenshot.png)
- * [![screenshot](support/img/linux-screen.jpg)](support/img/full/jgalligher-workflow.png)
- * [![screenshot](support/img/stobo-osx.jpg)](support/img/full/stobo-screenshot.png)
- * [![screenshot](support/img/about-screen.jpg)](support/img/full/stobo-screenshot.png)
+ * [![screenshot][10]][11]
+ * [![screenshot][12]][13]
+ * [![screenshot][14]][15]
+ * [![screenshot][16]][17]
 
-Today I'm releasing Stobo-1.0
+Today I'm releasing Stobo-1.0…
 
 ![stobo](support/img/stobo_linux.png)
 
@@ -24,3 +25,12 @@ Here's what Stobo is. It's the missing stop-motion link in the free software cha
 It's free. it's cross-platform. It's camera-agnostic. It's easy to use. If you don't see the utility of this, you are either a) not a stopmotion animator, b) using the wrong work-flow or c) you are person who likes spending money (don't be ashamed).
 
 If you are 'c)', I still recommend that you take a look at Stobo. If you use Stobo, you'll be able to access the developer, me, for suggestions or help at any time. Note: I do love you, but don't abuse that :).
+
+[10]: support/img/vista-screen.jpg
+[11]: support/img/full/vista-screen.jpg
+[12]: support/img/linux-screen.jpg
+[13]: support/img/full/linux-screen.jpg
+[14]: support/img/stobo-osx.jpg
+[15]: support/img/full/stobo-osx.jpg
+[16]: support/img/about-screen.jpg
+[17]: support/img/full/about-screen.jpg
