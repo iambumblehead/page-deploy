@@ -14,7 +14,7 @@ const fs = require('fs'),
       deploy_sort = require('./deploy_sort'),
       deploy_article = require('./deploy_article'),
       deploy_pattern = require('./deploy_pattern'),
-      deploy_fileobj = require('./deploy_fileobj'),
+      deploy_fileconvert = require('./deploy_fileconvert'),
       deploy_paginate = require('./deploy_paginate');
 
 module.exports = (o => {
@@ -36,7 +36,7 @@ module.exports = (o => {
     //var refpath = refObj.fullpath ||
     //      o.getRefPathFilename(filename, refObj.path);
 
-    deploy_fileobj.getfromfilesimilar(opts, refpath, (err, fileobj) => {
+    deploy_fileconvert.getfromfilesimilar(opts, refpath, (err, fileobj) => {
       if (err) deploy_msg.errorreadingfile(filename, err);
       if (err) return fn(err);
       
