@@ -12,10 +12,10 @@ module.exports = (o => {
   o.finish = () =>
     console.log('[...] page-deploy: done.');  
   
-  o.pathInvalid = (path) =>
+  o.pathInvalid = path =>
     '[!!!] page-deploy: path is invalid: ' + path;
   
-  o.err_invalidfilename = (filename) => {
+  o.err_invalidfilename = filename => {
     const msg = '[!!!] invalid filename: ' + filename;
     
     throw new Error (msg);
@@ -44,28 +44,28 @@ module.exports = (o => {
     const msg = '[mmm] wrote: :directory (support)',
           directory = path.dirname(filename)
             .replace(opts.inputDir, '')
-            .replace(/^\//, '');    
+            .replace(/^\//, '');
     
     console.log(msg.replace(/:directory/, directory));      
   };  
 
   o.isnotpublishedfilename = (filename, opts) => {
     const msg = '[...] unpublished: :filename'
-            .replace(/:filename/g, filename);
+      .replace(/:filename/g, filename);
     
     console.log(msg);      
   };
 
   o.applyuniverse = (filename, opts) => {
     const msg = '[...] universe: :filename'
-            .replace(/:filename/g, filename);
+      .replace(/:filename/g, filename);
     
     console.log(msg);
   };
 
   o.errorreadingfile = (filename, err) => {
     const msg = '[!!!] error reading file: :filename'
-            .replace(/:filename/, filename);
+      .replace(/:filename/, filename);
     
     console.error(err);    
     console.error(msg);

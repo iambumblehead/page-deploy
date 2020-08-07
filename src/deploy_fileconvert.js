@@ -69,6 +69,7 @@ module.exports = (o => {
     if (opts.datetitlesubdirs.find(subdir => (
       filename.indexOf(subdir) !== -1 && contentobj.timeDate
     ))) {
+      // eslint-disable-next-line max-len
       outfilename = deploy_pattern.getasdatetitlesubdir(filename, contentobj, opts);
     }    
     
@@ -78,7 +79,7 @@ module.exports = (o => {
       }
 
       if (objobj) {
-        var type = objobj.type;
+        let { type } = objobj;
       
         if (type === LOCALREF) {
           return o.getObjAtLocalRef(filename, objobj, opts, exitfn);
@@ -86,10 +87,12 @@ module.exports = (o => {
 
         // inplace update of this file
         if (type === LOCALREFARR) {
+          // eslint-disable-next-line max-len
           return deploy_convert.createRefSpecArr(opts, filename, objobj, exitfn);
         }
         
         if (type === LOCALREFPAGEARR) {
+          // eslint-disable-next-line max-len
           return deploy_convert.createRefSpecPages(opts, filename, objobj, exitfn);
         }
       }
@@ -98,6 +101,7 @@ module.exports = (o => {
     }, (err, contentobj) => {
       if (err) throw new Error(err);
 
+      // eslint-disable-next-line max-len
       o.getWithUpdatedLangKeys(opts, contentobj, filename, (err, contentobj) => {
         if (err) return fn(err);
         
@@ -109,9 +113,9 @@ module.exports = (o => {
   o.getRefPath = (filepath, refPath) =>
     path.join(path.dirname(filepath), refPath);
 
-  // refpath,  '../main-editor-scenenav-actionedit-seq-portal-action-linkedscene'
+  // refpath,  '../main-linkedscene'
   //
-  // return 'src/spec/view/main-editor-scenenav-actionedit-seq-portal-action-linkedscene/spec-baseLocale.json '
+  // return 'src/spec/view/main-linkedscene/spec-baseLocale.json '
   o.getRefPathFilename = (filepath, refPath) =>
     path.join(o.getRefPath(filepath, refPath), path.basename(filepath));
   
@@ -132,10 +136,11 @@ module.exports = (o => {
     const langkeyre = /^pd\.langkey\./,
           langobjre = /pd\.langobj/;
 
-    fn(null, objobjwalk.type('string', contentObj, (str) => {
+    fn(null, objobjwalk.type('string', contentObj, str => {
       if (langobjre.test(str)) {
         str = langObj;
       } else if (langkeyre.test(str)) {
+        // eslint-disable-next-line max-len
         str = deploy_pattern.objlookup(str.replace(langkeyre, ''), langObj) || str;
       }
 
@@ -187,9 +192,9 @@ module.exports = (o => {
   // matching extension checked for precision.
   o.getAssocISOFileObjArr = (opts, filename, fileobj, fn) => {
     var ISOnamearr = deploy_pattern.getAssocISOFilenameArr(opts, filename),
-        isofileobjarr = [],
-        extname = path.extname(filename),
-        dirname = path.dirname(filename);
+      isofileobjarr = [],
+      extname = path.extname(filename),
+      dirname = path.dirname(filename);
 
     fs.readdir(dirname, (err, resArr) => {
       if (err) return fn(err);
@@ -233,8 +238,9 @@ module.exports = (o => {
       (function next (x, fileObj) {
         if (!x--) return fn(null, fileObjArr);
 
-        let [filename, fileobj] = fileObjArr[x];
+        let [ filename, fileobj ] = fileObjArr[x];
 
+        // eslint-disable-next-line max-len
         deploy_pattern.writeAtFilename(filename, fileobj, opts, (err, res, filename) => {
           if (err) return fn(err);
 
@@ -261,9 +267,10 @@ module.exports = (o => {
           if (o.nsre.test(objobj)) {
             objobj = o.nsrm(objobj);
 
-            const ns = String(objobj).split('.')[0];
+            const [ ns ] = String(objobj).split('.');
 
             if (ns === 'next') {
+              // eslint-disable-next-line max-len
               return deploy_article.getnextarticlepathcache(opts, filename, (err, nextpath, nextobj) => {
                 if (err) return exitfn(err);
 
@@ -274,6 +281,7 @@ module.exports = (o => {
             }
 
             if (ns === 'prev') {
+              // eslint-disable-next-line max-len
               return deploy_article.getprevarticlepathcache(opts, filename, (err, prevpath, prevobj) => {
                 if (err) return exitfn(err);
 
@@ -351,9 +359,11 @@ module.exports = (o => {
         return fn(null);
       }
 
+      // eslint-disable-next-line max-len
       deploy_pattern.writeAtFilename(filename, fileobj, opts, (err, res, outfilename) => {
         if (err) return fn(err);
 
+        // eslint-disable-next-line max-len
         deploy_supportconvert.writeSupportDir(opts, filename, outfilename, (err, res) => {
           if (err) return fn(err);
 

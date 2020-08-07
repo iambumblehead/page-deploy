@@ -23,9 +23,9 @@ module.exports = (o => {
     fs.readdir(dir, (err, namearr) => (
       fn(err, err ? null : namearr.map(name => path.join(dir, name)))));
 
-  o.stringify = obj =>
-    (/string|boolean|number/.test(typeof obj)
-     ? obj : JSON.stringify(obj, null, '  '));    
+  o.stringify = obj => /string|boolean|number/.test(typeof obj)
+    ? obj
+    : JSON.stringify(obj, null, '  ');
 
   o.read = (filepath, fn) =>
     fs.readFile(filepath, 'utf8', (err, fd) => (
@@ -65,7 +65,7 @@ module.exports = (o => {
   // only creates the path if it does not exist
   o.createPath = (directory, fn) => o.isdir(directory)
     ? fn(null, directory)
-    : fs.mkdir(directory, {recursive: true}, fn);
+    : fs.mkdir(directory, {recursive : true}, fn);
 
   o.writeRecursive = (filename, content, fn) =>
     o.createPath(path.dirname(filename), (err, res) => {

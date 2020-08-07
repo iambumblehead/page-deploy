@@ -118,6 +118,7 @@ module.exports = (o => {
         fn(err, nextpath, fileobj);
       });
     } else {
+      // eslint-disable-next-line max-len
       o.getnextprevarticlepath(opts, filepath, nextprev, (err, nextpath, fileobj) => {
         if (err) return fn(err);
         
@@ -134,7 +135,8 @@ module.exports = (o => {
   o.getprevarticlepathcache = (opts, filepath, fn) => 
     o.getnextprevarticlepathcache(opts, filepath, -1, fn);
 
-  o.applyuniversearticleisoobj = (opts, articledir, [isopath, isoobj], fn) => {
+  // eslint-disable-next-line max-len
+  o.applyuniversearticleisoobj = (opts, articledir, [ isopath, isoobj ], fn) => {
     let articlepath = path.join(articledir, path.basename(isopath));
 
     objobjwalk.async(JSON.parse(JSON.stringify(isoobj)), (objobj, exitfn) => {
@@ -142,9 +144,10 @@ module.exports = (o => {
         if (o.nsre.test(objobj)) {
           objobj = o.nsrm(objobj);
 
-          const ns = String(objobj).split('.')[0];
+          const [ ns ] = String(objobj).split('.');
 
           if (ns === 'next') {
+            // eslint-disable-next-line max-len
             return o.getnextarticlepathcache(opts, articlepath, (err, nextpath, nextobj) => {
               if (err) return exitfn(err);
 
@@ -155,6 +158,7 @@ module.exports = (o => {
           }
 
           if (ns === 'prev') {
+            // eslint-disable-next-line max-len
             return o.getprevarticlepathcache(opts, articlepath, (err, prevpath, prevobj) => {
               if (err) return exitfn(err);
 
@@ -182,9 +186,11 @@ module.exports = (o => {
 
   o.applyuniversearticleisoobjarr = (opts, articledir, isoobjarr, fn) => {
     if (isoobjarr.length) {
+      // eslint-disable-next-line max-len
       o.applyuniversearticleisoobj(opts, articledir, isoobjarr[0], (err, res) => {
         if (err) return fn(err);
 
+        // eslint-disable-next-line max-len
         o.applyuniversearticleisoobjarr(opts, articledir, isoobjarr.slice(1), fn);
       });
     } else {
@@ -199,6 +205,7 @@ module.exports = (o => {
       (function next (x, articledirarr) {
         if (!x--) return fn(null, articledirarr);
 
+        // eslint-disable-next-line max-len
         o.applyuniversearticleisoobjarr(opts, articledirarr[x], isoobjarr, (err, res) => {
           if (err) return fn(err);
 

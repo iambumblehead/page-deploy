@@ -2,15 +2,15 @@
 // Timestamp: 2017.08.24-03:00:04 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-const simpletime = require('simpletime').default,
-      marked = require('marked'),
-      castas = require('castas'),
-      hljs = require('highlight.js');
+const simpletime = require('simpletime').default;
+const marked = require('marked');
+const castas = require('castas');
+const hljs = require('highlight.js');
 
 marked.setOptions({
   gfm : true,
   breaks : true,
-  highlight: (code, lang) => {
+  highlight : (code, lang) => {
     return lang
       ? hljs.highlight(lang, code).value
       : hljs.highlightAuto(code);
@@ -45,18 +45,18 @@ module.exports = (o => {
                    String(str).match(symbolunderlinere));
 
     return (match && match[0])
-      ? [str.replace(match[0], ''),
-         match[0].split(symbol)[1].trim().replace(endmdtagre, '')]
-      : [str];
+      ? [ str.replace(match[0], ''),
+        match[0].split(symbol)[1].trim().replace(endmdtagre, '') ]
+      : [ str ];
   };
 
   o.extractsymbols = (str, obj={}, text) => 
-    [['★', 'title'],
-     ['✑', 'author'],
-     ['☆', 'excerptnohtml'],
-     ['⌚', 'timeDate', o.parsedatestrtime]
-    ].reduce(([str, obj], [sym, propname, filter]) => {
-      [str, text] = o.extractsymboltext(str, sym);
+    [ [ '★', 'title' ],
+      [ '✑', 'author' ],
+      [ '☆', 'excerptnohtml' ],
+      [ '⌚', 'timeDate', o.parsedatestrtime ]
+    ].reduce(([ str, obj ], [ sym, propname, filter ]) => {
+      [ str, text ] = o.extractsymboltext(str, sym);
 
       if (text) {
         if (filter) {
@@ -66,9 +66,9 @@ module.exports = (o => {
         obj[propname] = text;
       }
 
-      return [str, obj];
+      return [ str, obj ];
       
-    }, [str, obj]);
+    }, [ str, obj ]);
 
   o.extractmetadata = (str, metadata={}) => {
     let metaValRe = /\[meta:(.*)\]: <> \((.*)\)/gi;
@@ -88,7 +88,7 @@ module.exports = (o => {
       });
     }
     
-    return [str, metadata];
+    return [ str, metadata ];
   };
 
   return o;

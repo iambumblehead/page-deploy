@@ -7,8 +7,8 @@ const path = require('path');
 module.exports = (o => {
 
   o.type = {
-    Lang       : 'Lang',
-    Locale     : 'Locale',
+    Lang : 'Lang',
+    Locale : 'Locale',
     LangLocale : 'LangLocale'
   };
 
@@ -48,7 +48,10 @@ module.exports = (o => {
     const prefixre = /(spec|lang)-base(?:LangLocale|Lang|Locale)/,
           prefixmatch = filename.match(prefixre);
 
-    if (!prefixmatch) throw new Error('[!!!] file must be prefixed `-spec` or `-lang`: ' + filename);
+    if (!prefixmatch) {
+      throw new Error(
+        `[!!!] file must be prefixed '-spec' or '-lang': ${filename}`);
+    }
     
     return prefixmatch[1];
   };

@@ -7,8 +7,8 @@
 // parentdirpath: /path/to/spec/
 //
 
-const path = require('path'),
-      pathpublic = require('pathpublic');
+const path = require('path');
+const pathpublic = require('pathpublic');
 
 module.exports = (o => {
 
@@ -30,8 +30,9 @@ module.exports = (o => {
     return path.join(outputDir, dirname.replace(inputDir, ''));
   };
 
-  // filename filename build/bumblehead-0.0.3/spec/data/gallery/baseLocale.json
-  // return   build/bumblehead-0.0.3/spec/build/bumblehead-0.0.3/spec/data/gallery/support  
+  // filename filename build/bumblehead-0.3/spec/data/gallery/baseLocale.json
+  // return
+  // build/bumblehead-0.3/spec/build/bumblehead-0.3/spec/data/gallery/support
   o.pathout = (opts, filename) => {
     let inputDir = path.normalize(opts.inputDir),
         outputDir = path.normalize(opts.outputDir),
@@ -48,6 +49,7 @@ module.exports = (o => {
   // update the support paths to public support paths.
   o.withpublicpath = (opts, str, filename) => {
     const publicPath = o.pathpublic(opts, filename),
+          // eslint-disable-next-line max-len
           supportPathRe = /(["']support\/[^'"]*['"]|^(?:\.\/)?support\/[^\b]*)/gi;
 
     return str.replace(supportPathRe, (match, m1, m2) => (

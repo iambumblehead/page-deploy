@@ -2,9 +2,9 @@
 // Timestamp: 2017.09.02-22:17:28 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
-const path = require('path'),
-      util = require('util'),
-      castas = require('castas');
+const path = require('path');
+const util = require('util');
+const castas = require('castas');
 
 module.exports = (o => {
 
@@ -30,8 +30,8 @@ module.exports = (o => {
     ? castas.bool(opt)
     : castas.arr(opt);
 
-  o.getNew = (spec) => {
-    var opts = Object.create(defaultopts);
+  o.getNew = spec => {
+    const opts = Object.create(defaultopts);
 
     opts.inputDir = castas.str(spec.inputDir, './');
     opts.publicPath = castas.str(spec.publicPath, './spec');
@@ -47,5 +47,3 @@ module.exports = (o => {
   return o;
 
 })();
-
-

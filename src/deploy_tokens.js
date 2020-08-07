@@ -2,7 +2,7 @@
 // Timestamp: 2017.09.03-22:44:14 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
-
+// TODO needs documentation
 module.exports = {
   UNIVERSAL : 'universal',
   
@@ -10,7 +10,7 @@ module.exports = {
   LOCALREFARR : 'local-ref-arr',
   LOCALREFPAGEARR : 'local-ref-pagearr',
 
-  LANG       : 'Lang',
-  LOCALE     : 'Locale',
+  LANG : 'Lang',
+  LOCALE : 'Locale',
   LANGLOCALE : 'LangLocale'
 };

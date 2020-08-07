@@ -13,7 +13,7 @@ module.exports = (o => {
       content = content.replace(match[0], excerpt);
     }
 
-    return [content, excerpt];
+    return [ content, excerpt ];
   };
 
   return o;

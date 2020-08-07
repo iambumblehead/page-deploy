@@ -70,7 +70,7 @@ module.exports = (o => {
     opts = deploy_opts(opts);
     
     o.bfsconvert(opts, opts.inputDir, (err, res) => {
-      if (err) return console.log(err, err.stack ? err.stack : '');
+      if (err) return console.log(err, err.stack || '');
 
       if (typeof fn === 'function') {
         fn(null, 'success');

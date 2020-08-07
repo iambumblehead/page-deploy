@@ -41,12 +41,12 @@ module.exports = (o => {
         content,
         excerpt;
     
-    [filestr, metadata] = deploy_marked.extractsymbols(filestr, metadata);
-    [filestr, metadata] = deploy_marked.extractmetadata(filestr, metadata),
+    [ filestr, metadata ] = deploy_marked.extractsymbols(filestr, metadata);
+    [ filestr, metadata ] = deploy_marked.extractmetadata(filestr, metadata);
 
-    content = deploy_marked(filestr),
+    content = deploy_marked(filestr);
     
-    [content, excerpt] = deploy_html.extractexcerpt(content);
+    [ content, excerpt ] = deploy_html.extractexcerpt(content);
     
     metadata.content = content;
 
@@ -66,7 +66,8 @@ module.exports = (o => {
     } else if (extname === '.md') {
       return o.parseMD(filename, filestr);
     } else {
-      throw new Error('[!!!] convert-locale, file type not supported: ' + filename);
+      throw new Error(
+        '[!!!] convert-locale, file type not supported: ' + filename);
     }
   };
 
@@ -83,6 +84,7 @@ module.exports = (o => {
       if (err) deploy_msg.errorreadingfile(filename, err);
       if (err) return fn(new Error(err));
 
+      // eslint-disable-next-line max-len
       o.getConverted(opts, filename, o.parsefile(filename, res), (err, fileobj) => {
         if (err) return fn(err);
 
@@ -106,7 +108,7 @@ module.exports = (o => {
     if (opts.patterncache[filename])
       return fn(null, fileobj);
 
-    require('./deploy_fileconvert').convert(opts, fileobj, filename, (err, fileobj) => {
+    deploy_fileconvert.convert(opts, fileobj, filename, (err, fileobj) => {
       if (err) return fn(err);
 
       opts.patterncache[filename] = true;
