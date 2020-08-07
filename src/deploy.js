@@ -22,15 +22,14 @@ module.exports = (o => {
   } = deploy_tokens;  
 
   o.bfsconvertarr = (opts, inputarr, fn) => {
-    if (inputarr.length) {
-      o.bfsconvert(opts, inputarr[0], (err, res) => {
-        if (err) return fn(err);
+    if (!inputarr.length)
+      return fn(null);
+    
+    o.bfsconvert(opts, inputarr[0], (err, res) => {
+      if (err) return fn(err);
 
-        o.bfsconvertarr(opts, inputarr.slice(1), fn);
-      });
-    } else {
-      fn(null);
-    }
+      o.bfsconvertarr(opts, inputarr.slice(1), fn);
+    });
   };
 
   // recurse through directories, depth-first.
