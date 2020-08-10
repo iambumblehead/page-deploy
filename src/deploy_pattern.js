@@ -12,13 +12,11 @@ const path = require('path'),
       deploy_iso = require('./deploy_iso'),
       deploy_msg = require('./deploy_msg'),
       deploy_file = require('./deploy_file'),
-      deploy_tokens = require('./deploy_tokens');
+      deploy_tokens = require('./deploy_tokens'),
+
+      { UNIVERSAL } = deploy_tokens;
 
 module.exports = (o => {
-
-  const {
-    UNIVERSAL
-  } = deploy_tokens;
 
   //o.getparentdirpath = (filepath) => 
   //  path.dirname(path.dirname(filepath));
@@ -53,7 +51,11 @@ module.exports = (o => {
           
     return path.join(universaldirpath, specname.replace(/\.([^.]*)$/, '.json'));
   };
-  
+
+  o.isdatetitlecontent = (opts, contentobj, filename) => (
+    opts.datetitlesubdirs
+      .some(subdir => filename.indexOf(subdir) !== -1 && contentobj.timeDate)
+  );
   
   // filepath : inputpath/spec/data/actions/lang-baseLang.json
   //
@@ -61,9 +63,7 @@ module.exports = (o => {
   o.getasoutputdir = (opts, filepath, content) => {
     let outputdir = filepath.replace(path.normalize(opts.inputDir), '');
 
-    if (opts.datetitlesubdirs.find(subdir => (
-      outputdir.indexOf(subdir) !== -1 && content && content.timeDate
-    ))) {
+    if (o.isdatetitlecontent(opts, content, filepath)) {
       outputdir = o.getasdatetitlesubdir(outputdir, content, opts);
     }
 
@@ -77,20 +77,26 @@ module.exports = (o => {
   
   o.writeAtFilename = (filename, content, opts, fn) => {
     const outputpath = o.getasoutputpath(opts, filename, content),
-          outputStr = o.stringify(content);
+          outputStr = deploy_file.stringify(content);
 
     deploy_file.writeRecursive(outputpath, outputStr, (err, res) => (
       fn(err, res, outputpath)));
   };
   
   // return the ISO filenames that should be generated.
-  o.getAssocISOFilenameArr = (opts, filename) => {
+  o.getisooutputfilenamearr = (opts, filename) => {
     const ISOType = deploy_iso.getBaseType(filename),
           langArr = opts.supportedLangArr,
           localeArr = opts.supportedLocaleArr;
 
-    return deploy_iso.getRequiredFilenameArr(ISOType, langArr, localeArr);
+    return deploy_iso.getisofilenamearr(ISOType, langArr, localeArr);
   };
+
+  // input 'en-US.json', 'en-US', '.json'
+  // return true
+  o.isfilenameisomatch = (filename, ISO, extn) => (
+    filename.indexOf(ISO) !== -1 && path.extname(filename) === extn);
+
   
   // return a matching ISO file from an array of filenames
   // 
@@ -100,19 +106,29 @@ module.exports = (o => {
   // << ['en-US.json', 'es-ES.json'], 'en-US', '.md'
   // >>  null
   o.arrgetmatchingISOstr = (filenameArr, ISO, extn) =>
-    filenameArr.find(filename => (
-      filename.indexOf(ISO) !== -1 &&
-        path.extname(filename) === extn));
+    filenameArr.find(filename => o.isfilenameisomatch(filename, ISO, extn));
 
   // should not be a hidden '.' file
   // should end in md or json
-  o.isvalidpatternfilename = filename => (
-    deploy_iso.isBaseFilename(filename)
-      && /^[^.].*(json|md)$/.test(filename));
+  // o.isvalidpatternfilename = filename => {
+  o.patternisvalidinputfilename = filename => {
+    const extn = path.extname(filename),
+          name = path.basename(filename, extn);
 
-  o.stringify = obj =>
-    JSON.stringify(obj, null, 2);
+    return deploy_iso.isPatternExtnRe.test(extn) && (
+      deploy_iso.isPatternBaseNameRe.test(name) ||
+        deploy_iso.isPatternBaseISORe.test(name));
+  };
 
+  o.patternisvalidoutputfilename = filename => {
+    const extn = path.extname(filename),
+          name = path.basename(filename, extn);
+
+    return deploy_iso.isPatternExtnRe.test(extn) && (
+      deploy_iso.isPatternBaseNameRe.test(name) ||
+        deploy_iso.isPatternISORe.test(name));
+  };
+  
   // return the value defined on the given namespace or null
   //
   // ex,
@@ -127,25 +143,22 @@ module.exports = (o => {
     .split('.').reduce(
       (a, b) => a ? (b in a ? a[b] : a[Number(b)]) : null, obj);
 
+  // unit test this
   // returns other pattern file in the same directory
   o.getsimilarfilename = (filename, opts, fn) => {
-    let ext = path.extname(filename),    
-        dir = path.dirname(filename),
-        name = path.basename(filename, ext),
-        nameRe = new RegExp(name + '\\.(json|md)');
+    const ext = path.extname(filename),
+          dir = path.dirname(filename),
+          basename = path.basename(filename),
+          basenameRe = new RegExp(
+            `${path.basename(filename, ext)}\\.(json|md)`);
     
     deploy_file.readdir(dir, (err, patharr) => {
       if (err) return fn(err);
-      
-      let similarpath = patharr.find(p => (
-        nameRe.test(p) &&        
-          o.isvalidpatternfilename(p)));
-      
-      if (similarpath) {
-        similarpath = path.join(dir, similarpath);
-      }
 
-      return fn(null, similarpath);      
+      fn(null, patharr.filter(p => (
+        p !== basename
+          && basenameRe.test(p)
+          && o.patternisvalidinputfilename(p))));
     });      
   };
   

@@ -56,7 +56,7 @@ module.exports = (o => {
   // long-term solution would develop ISO-specific chunks
   //
   o.writeISOchunks = (opts, filename, outputpath, filobj, chunkobjarr, fn) => {
-    const ISOnamearr = deploy_pattern.getAssocISOFilenameArr(opts, filename),
+    const ISOnamearr = deploy_pattern.getisooutputfilenamearr(opts, filename),
           extname = path.extname(outputpath),
           dirname = path.dirname(outputpath);
 

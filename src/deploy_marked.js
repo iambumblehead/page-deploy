@@ -2,10 +2,10 @@
 // Timestamp: 2017.08.24-03:00:04 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-const simpletime = require('simpletime').default;
-const marked = require('marked');
-const castas = require('castas');
-const hljs = require('highlight.js');
+const simpletime = require('simpletime').default,
+      marked = require('marked'),
+      castas = require('castas').default,
+      hljs = require('highlight.js');
 
 marked.setOptions({
   gfm : true,

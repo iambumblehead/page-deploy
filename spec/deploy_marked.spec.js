@@ -1,4 +1,3 @@
-// const os = require('os');
 const test = require('ava'),
       deploy_marked = require('../src/deploy_marked');
 

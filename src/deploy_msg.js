@@ -5,85 +5,50 @@
 const path = require('path');
 
 module.exports = (o => {
+  o.removedir = (filepath, dir, sep = path.sep) => filepath
+    .replace(dir + (dir.substr(-1) === sep ? '' : sep), '');
 
-  o.start = () =>
-    console.log('[...] page-deploy: begin.');
+  o.removeinputdir = (opts, filepath) => o.removedir(filepath, opts.inputDir);
 
-  o.finish = () =>
-    console.log('[...] page-deploy: done.');  
+  o.removeoutputdir = (opts, filepath) => o.removedir(filepath, opts.outputDir);
   
-  o.pathInvalid = path =>
-    '[!!!] page-deploy: path is invalid: ' + path;
-  
-  o.err_invalidfilename = filename => {
-    const msg = '[!!!] invalid filename: ' + filename;
-    
-    throw new Error (msg);
-  };
+  o.narrowdir = (opts, filepath) =>
+    o.removeoutputdir(opts, o.removeinputdir(opts, filepath))
+      .replace(process.cwd(), '.')
+      .replace(process.env.HOME, '~');
 
-  o.invalidpatternfilename = filename => (
+  o.start = () => console.log('[...] page-deploy: begin.');
+
+  o.finish = () => console.log('[...] page-deploy: done.');  
+
+  o.throw = err => { throw new Error(err); };
+
+  o.err_invalidpatternfilename = filename => o.throw(
     `[!!!] page-deploy: path is invalid: ${filename}
- * must not be hidden '.' file
- * must end in .md or .json
- * must have spec or lang prefix
+ * must not be hidden '.' file,
+ * must end in .md or .json,
+ * must have spec or lang prefix,
  * must have base qualifier and suffix
 
-ex, spec-baseLang.md, lang-baseLocal.json, spec-baseLangLocal.json
+ex, spec-baseLang.md, lang-baseLangLocale.json, spec-spa-ES_ES.json
 `);
 
-  o.err_invalidpatternfilename = filename => {
-    throw new Error(o.invalidpatternfilename(filename));
-  };
+  o.convertedfilename = (opts, filename) => console.log(
+    '[mmm] wrote: :filepath'
+      .replace(/:filepath/, o.narrowdir(opts, filename))
+  );
 
-  o.convertingfilename = (filename, opts) => {
-    const msg = '[...] read: :directory',
-          directory = path.dirname(filename);
+  o.convertedfilenamesupport = (opts, filename) => console.log(
+    '[mmm] wrote: :directory (support)'
+      .replace(/:directory/, o.narrowdir(path.dirname(filename))));
 
-    directory = directory.replace(opts.inputDir, '');
-    directory = directory.replace(/^\//, '');
-    
-    console.log(msg.replace(/:directory/, directory));      
-  };
+  o.isnotpublishedfilename = (opts, filename) => console.log(
+    '[...] unpublished: :filename'
+      .replace(/:filename/g, filename));
 
-  o.convertedfilename = (filename, opts) => {
-    const msg = '[mmm] wrote: :directory',
-          directory = path.dirname(filename)
-            .replace(opts.inputDir, '')
-            .replace(/^\//, '');    
-    
-    console.log(msg.replace(/:directory/, directory));      
-  };
-
-  o.convertedfilenamesupport = (filename, opts) => {
-    const msg = '[mmm] wrote: :directory (support)',
-          directory = path.dirname(filename)
-            .replace(opts.inputDir, '')
-            .replace(/^\//, '');
-    
-    console.log(msg.replace(/:directory/, directory));      
-  };  
-
-  o.isnotpublishedfilename = (filename, opts) => {
-    const msg = '[...] unpublished: :filename'
-      .replace(/:filename/g, filename);
-    
-    console.log(msg);      
-  };
-
-  o.applyuniverse = (filename, opts) => {
-    const msg = '[...] universe: :filename'
-      .replace(/:filename/g, filename);
-    
-    console.log(msg);
-  };
-
-  o.errorreadingfile = (filename, err) => {
-    const msg = '[!!!] error reading file: :filename'
-      .replace(/:filename/, filename);
-    
-    console.error(err);    
-    console.error(msg);
-  };
+  o.applyuniverse = (opts, filename) => console.log(
+    '[...] universe: :filename'
+      .replace(/:filename/g, o.narrowdir(opts, filename)));
 
   return o;
   

@@ -1,6 +1,8 @@
 // Filename: deploy_file.js  a
 // Timestamp: 2017.09.03-13:23:35 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
+//
+// useful for mocking with tests
 
 const fs = require('fs'), // read/write files
       path = require('path'),
@@ -16,24 +18,27 @@ module.exports = (o => {
   o.isfile = filepath =>
     o.exists(filepath) && fs.statSync(filepath).isFile();
 
-  o.readdir = (dir, fn) =>
-    fs.readdir(dir, fn);
+  o.readdir = (filepath, fn) => fs.readdir(filepath, fn);
 
-  o.readdirfullpath = (dir, fn) =>
-    fs.readdir(dir, (err, namearr) => (
-      fn(err, err ? null : namearr.map(name => path.join(dir, name)))));
+  o.read = (filepath, fn) => fs.readFile(filepath, 'utf8', fn);
 
   o.stringify = obj => /string|boolean|number/.test(typeof obj)
     ? obj
     : JSON.stringify(obj, null, '  ');
 
-  o.read = (filepath, fn) =>
-    fs.readFile(filepath, 'utf8', (err, fd) => (
-      fn(err, err ? deploy_msg.pathInvalid(filepath) : fd)));
+  o.write = (filename, content, fn) =>
+    fs.writeFile(filename, o.stringify(content), fn);
 
-  o.readobj = (filepath, fn) => {
+  o.readobj = (filepath, fn, defaultobj) => {
+    if (typeof defaultobj === 'object' && !o.isfile(filepath)) {
+      return fn(null, defaultobj);
+    }
+    
     o.read(filepath, (err, file) => {
       if (err) return fn(err);
+      
+      if (!/json$/.test(filepath))
+        return fn(null, file);
 
       try {
         file = JSON.parse(file);
@@ -45,11 +50,7 @@ module.exports = (o => {
     });
   };
 
-  o.write = (filename, content, fn) =>
-    fs.writeFile(filename, o.stringify(content), (err, res) => (
-      fn(err && new Error(err), res)));
-
-  o.writeassign = (filename, content, fn) =>
+  o.writeassign = (filename, content, fn) => {
     o.readobj(filename, (err, obj) => {
       if (err) return fn(err);
 
@@ -60,7 +61,8 @@ module.exports = (o => {
 
         fn(null, obj);
       });
-    });
+    }, {});
+  };
 
   // only creates the path if it does not exist
   o.createPath = (directory, fn) => o.isdir(directory)

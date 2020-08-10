@@ -177,8 +177,6 @@ module.exports = (o => {
       deploy_file.writeassign(articlepath, obj, (err, resobj) => {
         if (err) return fn(err);
 
-        //console.log('resobj', resobj);
-        
         fn(null, resobj);
       });
     });

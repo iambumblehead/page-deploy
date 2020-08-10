@@ -9,6 +9,7 @@ const fs = require('fs'),
       htmldecoder = require('html-decoder'),
       striphtmltags = require('strip-html-tags'),
 
+      deploy_iso = require('./deploy_iso'),
       deploy_msg = require('./deploy_msg'),
       deploy_html = require('./deploy_html'),
       deploy_file = require('./deploy_file'),
@@ -16,9 +17,9 @@ const fs = require('fs'),
       deploy_paths = require('./deploy_paths'),
       deploy_tokens = require('./deploy_tokens'),
       deploy_pattern = require('./deploy_pattern'),
-      deploy_convert = require('./deploy_convert'),
       deploy_article = require('./deploy_article'),
       deploy_marked = require('./deploy_marked'),
+      deploy_paginate = require('./deploy_paginate'),
       deploy_supportconvert = require('./deploy_supportconvert'),
       deploy_fileconvert = require('./deploy_fileconvert');
 
@@ -50,17 +51,16 @@ module.exports = (o => {
     let langpath = filename.replace(/spec-.*/, 'lang-baseLang.json'),
         langcontent;
 
-    if (!filename.match(/spec-/)) {
-      return fn(null, contentobj);
-    }
-    
+    // if (!filename.match(/spec-/)) {
+    //   return fn(null, contentobj);
+    // }
+
     o.getfromfilesimilar(opts, langpath, (err, langfileobj) => {
       if (!langfileobj) return fn(null, contentobj);
 
       langcontent = langfileobj;
 
       o.updateLangKeys(contentobj, langcontent, (err, contentobj) => {
-
         o.updateLangDefs(contentobj, langcontent, fn);
       });        
     });
@@ -68,13 +68,12 @@ module.exports = (o => {
 
   o.convert = (opts, contentobj, filename, fn) => {
     let outfilename = filename;
-    if (opts.datetitlesubdirs.find(subdir => (
-      filename.indexOf(subdir) !== -1 && contentobj.timeDate
-    ))) {
-      // eslint-disable-next-line max-len
-      outfilename = deploy_pattern.getasdatetitlesubdir(filename, contentobj, opts);
+
+    if (deploy_pattern.isdatetitlecontent(opts, contentobj, filename)) {
+      outfilename = deploy_pattern
+        .getasdatetitlesubdir(filename, contentobj, opts);
     }    
-    
+
     objobjwalk.async(contentobj, (objobj, exitfn) => {
       if (typeof objobj === 'string') {
         objobj = deploy_paths.withpublicpath(opts, objobj, outfilename);
@@ -89,13 +88,11 @@ module.exports = (o => {
 
         // inplace update of this file
         if (type === LOCALREFARR) {
-          // eslint-disable-next-line max-len
-          return deploy_convert.createRefSpecArr(opts, filename, objobj, exitfn);
+          return o.createRefSpecArr(opts, filename, objobj, exitfn);
         }
         
         if (type === LOCALREFPAGEARR) {
-          // eslint-disable-next-line max-len
-          return deploy_convert.createRefSpecPages(opts, filename, objobj, exitfn);
+          return o.createRefSpecPages(opts, filename, objobj, exitfn);
         }
       }
 
@@ -170,9 +167,8 @@ module.exports = (o => {
   o.getObjAtLocalRef = (filename, refObj, opts, fn) => {
     var refpath = refObj.fullpath ||
           o.getRefPathFilename(filename, refObj.path);
-    
+
     o.getfromfilesimilar(opts, refpath, (err, fileobj) => {
-      if (err) deploy_msg.errorreadingfile(filename, err);
       if (err) return fn(err);
       
       fn(null, fileobj);
@@ -188,47 +184,50 @@ module.exports = (o => {
     deploy_file.read(langfile, fn);
   };
 
+  // try to read file
+  // does it need spec- and lang- prefix?
+  // filepath is full
+  o.getisofileobj = (opts, ISOfilepath, fn) => {
+    if (deploy_file.exists(ISOfilepath)) {
+      o.getfromfile(opts, ISOfilepath, (err, fileobj) => {
+        if (err) return fn(err);
+
+        fn(null, fileobj);
+      });
+    } else {
+      fn(null);
+    }
+  };
+
   // return an array of deploy_fileconvert objects suited to the iso options
   // if an iso file is found, return deploy_fileconvert objects from file
   // if no iso file is found, return cloned `this` (a deploy_fileconvert object)
-  // matching extension checked for precision.
   o.getAssocISOFileObjArr = (opts, filename, fileobj, fn) => {
-    var ISOnamearr = deploy_pattern.getAssocISOFilenameArr(opts, filename),
-      isofileobjarr = [],
-      extname = path.extname(filename),
-      dirname = path.dirname(filename);
+    const ISOnamearr = deploy_pattern.getisooutputfilenamearr(opts, filename),
+          isofileobjarr = [],
+          dirname = path.dirname(filename);
 
-    fs.readdir(dirname, (err, resArr) => {
-      if (err) return fn(err);
+    (function next (x, ISOname) {
+      if (!x--) return fn(null, isofileobjarr);
 
-      (function next (x, ISOname) {
-        if (!x--) return fn(null, isofileobjarr);
+      const specISOfilepath = path.join(dirname, `spec-${ISOnamearr[x]}.json`);
 
-        ISOname = ISOnamearr[x];
+      // if base version doesn't exist...
+      // messy refactor no-tests note: not sure if lang-ISO needed here...
+      // langISOfilepath = path.join(dirname, `lang-${ISOname}.json`);
 
-        if (deploy_pattern.arrgetmatchingISOstr(resArr, ISOname, extname)) {
-          ISOname = path.join(dirname, ISOname + '.json');
+      o.getisofileobj(opts, specISOfilepath, (err, specfileobj) => {
+        if (err) return fn(err);
 
-          o.getfromfile(opts, ISOname, (err, fileobj) => {
-            if (err) return fn(err);
-            
-            isofileobjarr.push([
-              ISOname,
-              fileobj
-            ]);
-            next(x);
-          });
-        } else {          
-          isofileobjarr.push([
-            path.join(dirname, ISOname + '.json'),
-            Array.isArray(fileobj)
-              ? fileobj.slice()
-              : Object.assign({}, fileobj)
-          ]);
-          next(x);
-        }
-      }(ISOnamearr.length));
-    });
+        isofileobjarr.push([
+          // messy refactor note: perhaps path should not have 'spec' suffix?
+          specISOfilepath,
+          specfileobj || fileobj
+        ]);
+
+        next(x);
+      });
+    }(ISOnamearr.length));
   };
 
   o.convertForISO = (opts, filename, fileobj, fn) => {
@@ -343,13 +342,17 @@ module.exports = (o => {
     const universedir = path.join(input, UNIVERSAL),
           outputdir = deploy_paths.dirout(opts, input);
     
-    deploy_file.readdirfullpath(universedir, (err, universefilearr) => {
+    // deploy_file.readdirfullpath(universedir, (err, universefilearr) => {
+    deploy_file.readdir(universedir, (err, universefilearr) => {
+      universefilearr = universefilearr
+        .map(name => path.join(universedir, name));
+      
       o.applyuniversefilearr(opts, outputdir, universefilearr, fn);
     });
   };
 
   o.convertbase = (opts, filename, fn) => {
-    if (!deploy_pattern.isvalidpatternfilename(filename)) {
+    if (!deploy_pattern.patternisvalidinputfilename(filename)) {
       return deploy_msg.err_invalidpatternfilename(filename);
     }
     
@@ -357,10 +360,11 @@ module.exports = (o => {
       if (err) return fn(err);
 
       if (fileobj.ispublished === false) {
-        deploy_msg.isnotpublishedfilename(path.dirname(filename), opts);
+        deploy_msg.isnotpublishedfilename(opts, path.dirname(filename));
         return fn(null);
       }
 
+      
       // eslint-disable-next-line max-len
       deploy_pattern.writeAtFilename(filename, fileobj, opts, (err, res, outfilename) => {
         if (err) return fn(err);
@@ -369,10 +373,15 @@ module.exports = (o => {
         deploy_supportconvert.writeSupportDir(opts, filename, outfilename, (err, res) => {
           if (err) return fn(err);
 
+          '## messy refactor note: why deeply recursing convertISO calls?';
+          // if (!deploy_iso.isPatternBaseISORe.test(filename)) {
+          //   return fn(err, 'success');
+          // }
+
           o.convertForISO(opts, filename, fileobj, (err, res) => {
             if (err) return fn(err);
 
-            deploy_msg.convertedfilename(outfilename, opts);
+            deploy_msg.convertedfilename(opts, outfilename);
 
             fn(err, 'success');
           });
@@ -433,12 +442,11 @@ module.exports = (o => {
       return fn(null, opts.patterncache[filename]);
     }
 
-    if (!deploy_pattern.isvalidpatternfilename(filename)) {
-      return deploy_msg.err_invalidpatternfilename(filename);
+    if (!deploy_pattern.patternisvalidoutputfilename(filename)) {
+      deploy_msg.err_invalidpatternfilename(filename);
     }      
 
     deploy_file.read(filename, (err, res) => {
-      if (err) deploy_msg.errorreadingfile(filename, err);
       if (err) return fn(new Error(err));
 
       // eslint-disable-next-line max-len
@@ -455,7 +463,11 @@ module.exports = (o => {
   o.getfromfilesimilar = (opts, filename, fn) =>
     deploy_pattern.getsimilarfilename(filename, opts, (err, simfilename) => {
       if (err) return fn(err);
+
+      [ simfilename ] = simfilename.map( sim => (
+        path.join(path.dirname(filename), sim)));
       
+      // simfilename = path.join(path.dirname(filename), simfilename);
       simfilename
         ? o.getfromfile(opts, simfilename, fn)
         : fn(new Error('[...] similar file not found, ' + filename));
@@ -473,6 +485,68 @@ module.exports = (o => {
       fn(null, fileobj);
     });
   };
+
+  o.relpath = (filepath, refpath) =>
+    path.join(path.dirname(filepath), refpath);
+
+  // consider reading and saving files in chunks
+  o.createRefSpecPages = (opts, filename, fileobj, exitfn) => {
+    o.createRefSpecArr(opts, filename, fileobj, (err, specarr) => {
+      if (err) return exitfn(err);      
+      
+      deploy_paginate(opts, filename, fileobj, specarr, exitfn);
+    });
+  };
+
+  o.createRefObj = (opts, filename, refpath, fn) => {
+    //let fullpath = path.join(filename, path.basename(filename));
+    //var refpath = refObj.fullpath ||
+    //      o.getRefPathFilename(filename, refObj.path);
+
+    o.getfromfilesimilar(opts, refpath, (err, fileobj) => {
+      if (err) return fn(err);
+      
+      fn(null, fileobj);
+    });
+  };
+
+  // return array of reference objects from filepatharr
+  o.createRefSpecFileArr = (opts, filename, filepatharr, fn) => {
+    (function next (x, refobjarr, filepath) {
+      if (!x--) return fn(null, refobjarr);
+      
+      o.createRefObj(opts, filename, filepatharr[x], (err, reffileobj) => {
+        if (err) return fn(err);
+        
+        if (reffileobj.ispublished !== false)
+          refobjarr.push(reffileobj);
+
+        next(x, refobjarr);
+      });
+    }(filepatharr.length, []));
+  };
+
+  // return array of reference objects using properties
+  // defined on fileobj
+  o.createRefSpecArr = (opts, filename, fileobj, fn) => {
+    const fullpath = o.relpath(filename, fileobj.path);
+
+    glob(fullpath, {}, (err, filearr) => {
+      if (err) return fn(new Error(err));
+
+      filearr = filearr
+        .filter(deploy_article.isarticledir)
+        .map(file =>  path.join(file, path.basename(filename)));
+
+      o.createRefSpecFileArr(opts, filename, filearr, (err, objarr) => {
+        if (err) return fn(err);
+        
+        objarr = deploy_sort(objarr, fileobj.sort);
+
+        fn(null, objarr);
+      });
+    });
+  };  
 
   return o;
 

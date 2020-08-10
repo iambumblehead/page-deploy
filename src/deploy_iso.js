@@ -12,6 +12,23 @@ module.exports = (o => {
     LangLocale : 'LangLocale'
   };
 
+  o.ISOTypeLang = 'Lang',
+  o.ISOTypeLocale = 'Locale',
+  o.ISOTypeLangLocale = 'LangLocale';
+
+  o.supportedfileextensions = [ 'json', 'md' ];
+
+  o.isPatternISORe = /^\w\w\w?[-_]?\w?\w?\w?_?\w?\w?\w?/;
+  o.isPatternNameRe = /^base(LangLocale|Lang|Locale)/;
+
+  o.isPatternPrefixRe         = /^(spec|lang)-/;
+  o.isPatternBaseISORe        = /^(spec|lang)-\w\w\w?[-_]?\w?\w?\w?_?\w?\w?\w?/;
+  o.isPatternBaseNameRe       = /^(spec|lang)-base(LangLocale|Lang|Locale)/;
+  o.isPatternBaseLangLocaleRe = /^(spec|lang)-baseLangLocale/;
+  o.isPatternBaseLocaleRe     = /^(spec|lang)-baseLocale/;
+  o.isPatternBaseLangRe       = /^(spec|lang)-baseLang/;
+  o.isPatternExtnRe           = /\.(json|md)/;
+
   // determine if filename string is 'base'.
   // files must be hyphen-prefixed with one meta-data item, for example,
   //  `spec` in spec-baseLang.json
@@ -21,21 +38,16 @@ module.exports = (o => {
   // 'spec-baseLang.json', true
   // 'base.md',       false
   // 'somenotes.txt', false
-  o.getBaseType = filename => {
-    let baseLangLocaleRe = /^(spec|lang)-baseLangLocale/,
-        baseLocaleRe     = /^(spec|lang)-baseLocale/,    
-        baseLangRe       = /^(spec|lang)-baseLang/,
-        basename = typeof filename === 'string'
-          && path.basename(filename),
-        basetype;
+  o.getBaseType = (filename, basetype = null) => {
+    const basename = path.basename(String(filename));
 
     if (!basename) {
       basetype = null;
-    } else if (baseLangLocaleRe.test(basename)) {
+    } else if (o.isPatternBaseLangLocaleRe.test(basename)) {
       basetype = o.type.LangLocale;
-    } else if (baseLocaleRe.test(basename)) {
+    } else if (o.isPatternBaseLocaleRe.test(basename)) {
       basetype = o.type.Locale;
-    } else if (baseLangRe.test(basename)) {        
+    } else if (o.isPatternBaseLangRe.test(basename)) {
       basetype = o.type.Lang;
     }
 
@@ -45,8 +57,7 @@ module.exports = (o => {
   // return `lang` for `lang-baseLang.json`
   // lang and locale files *must* be prefixed
   o.getPrefix = filename => {
-    const prefixre = /(spec|lang)-base(?:LangLocale|Lang|Locale)/,
-          prefixmatch = filename.match(prefixre);
+    const prefixmatch = o.isPatternBaseNameRe.test(filename);
 
     if (!prefixmatch) {
       throw new Error(
@@ -64,21 +75,18 @@ module.exports = (o => {
 
   // return all combinations of filename
   // for the given ISOType.
-  o.getRequiredFilenameArr = (ISOType, langArr, localeArr) => {
-    let ISOTypes = o.type, 
-        filenameArr = [];
-
-    if (ISOType === ISOTypes.Lang) {
-      filenameArr = langArr;
-    } else if (ISOType === ISOTypes.Locale) {
-      filenameArr = localeArr;
-    } else if (ISOType === ISOTypes.LangLocale) {
-      langArr.map(lang => (
-        localeArr.map(locale => (
-          filenameArr.push(lang + '_' + locale)))));
+  // o.getRequiredFilenameArr = (ISOType, langArr, localeArr) => {
+  o.getisofilenamearr = (ISOType, langArr, localeArr, defaultarr = []) => {
+    if (ISOType === o.ISOTypeLang) {
+      defaultarr = langArr;
+    } else if (ISOType === o.ISOTypeLocale) {
+      defaultarr = localeArr;
+    } else if (ISOType === o.ISOTypeLangLocale) {
+      defaultarr = langArr
+        .map(lang => localeArr.map(locale => lang + '_' + locale)).flat();
     }
     
-    return filenameArr;
+    return defaultarr;
   };
 
   return o;

@@ -28,7 +28,7 @@ module.exports = (o => {
         rcp(inputSupportPath, outputSupportPath, {overwrite}, (err, res) => {
           if (err) return fn(err);
 
-          deploy_msg.convertedfilenamesupport(relativeSupportPath, opts);
+          deploy_msg.convertedfilenamesupport(opts, relativeSupportPath);
 
           fn(null, 'success');
         });          
