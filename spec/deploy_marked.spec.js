@@ -1,5 +1,8 @@
 const test = require('ava'),
+      timezone_mock = require('timezone-mock'),
       deploy_marked = require('../src/deploy_marked');
+
+timezone_mock.register('US/Pacific');
 
 test("default should return marked content", t => {
   t.is(

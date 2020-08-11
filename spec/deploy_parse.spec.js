@@ -1,5 +1,8 @@
 const test = require('ava'),
+      timezone_mock = require('timezone-mock'),
       deploy_parse = require('../src/deploy_parse');
+
+timezone_mock.register('US/Pacific');
 
 // eslint-disable-next-line one-var
 const fileMD = `
