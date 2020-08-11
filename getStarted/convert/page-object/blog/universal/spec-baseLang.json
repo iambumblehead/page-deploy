@@ -1,0 +1,23 @@
+{
+  "note": "overlay into article props",
+  "next" : {
+    "type" : "newer",
+    "labeltertiary" : "newer",
+    "title" : "ns.next.title",
+    "author" : "ns.next.author",
+    "timeDate" : "ns.next.timeDate",
+    "tagsArr" : "ns.next.tagsArr",
+    "posterimg" : "ns.next.posterimg",
+    "excerptnohtml" : "ns.next.excerptnohtml"
+  },
+  "prev" : {
+    "type" : "older",
+    "labeltertiary" : "older",
+    "title" : "ns.prev.title",
+    "author" : "ns.prev.author",
+    "timeDate" : "ns.prev.timeDate",
+    "tagsArr" : "ns.prev.tagsArr",
+    "posterimg" : "ns.prev.posterimg",
+    "excerptnohtml" : "ns.prev.excerptnohtml"
+  }
+}

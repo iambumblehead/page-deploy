@@ -13,56 +13,47 @@ const fs = require('fs'),
       deploy_file = require('./deploy_file'),
       deploy_tokens = require('./deploy_tokens'),
       deploy_pattern = require('./deploy_pattern'),    
-      deploy_fileconvert = require('./deploy_fileconvert');
+      deploy_fileconvert = require('./deploy_fileconvert'),
 
-module.exports = (o => {
+      { UNIVERSAL } = deploy_tokens;
 
-  const {
-    UNIVERSAL
-  } = deploy_tokens;  
-
-  o.bfsconvertarr = (opts, inputarr, fn) => {
-    if (inputarr.length) {
-      o.bfsconvert(opts, inputarr[0], (err, res) => {
-        if (err) return fn(err);
-
-        o.bfsconvertarr(opts, inputarr.slice(1), fn);
-      });
-    } else {
-      fn(null);
+module.exports = (o => {  
+  o.bfsconvertdir = (opts, input, fn) => {
+    if (deploy_file.isdir(!input)) {
+      throw new Error(`input must be a file: ${input}`);
     }
-  };
 
-  // recurse through directories, depth-first.
-  // identify locale files ('base'|\S\S-\S\S).(json|md)
-  // update references in either type.
-  // write the new content to outputDir
-  o.bfsconvert = (opts, input, fn) => {
-    if (deploy_file.isdir(input)) {
-      deploy_file.readdirfullpath(input, (err, inputarr) => {
+    fs.readdir(input, { withFileTypes : true }, (err, direntarr) => {
+      if (err) return fn(err);
+
+      deploy_fileconvert.foreachasync(opts, direntarr, (opts, dirent, fn) => {
+        const filepath = path.join(input, dirent.name);
+        
+        if (dirent.isFile() &&
+            deploy_pattern.patternisvalidinputfilename(dirent.name)) {
+          return deploy_fileconvert.convertbase(opts, filepath, fn);
+        }
+
+        if (dirent.isDirectory()) {
+          return o.bfsconvertdir(opts, filepath, fn);
+        }
+
+        return fn(null, null);
+      }, (err, res) => {
         if (err) return fn(err);
-
-        o.bfsconvertarr(opts, inputarr, (err, res) => {
-          if (err) return fn(err);
-          
-          if (deploy_file.isdir(path.join(input, UNIVERSAL))) {
-            deploy_msg.applyuniverse(path.join(input, UNIVERSAL));
-            deploy_fileconvert.applyuniverse(opts, input, (err, res) => {
-              if (err) return fn(err);
-
-              fn(err, res);
-            });
-          } else {
+        
+        if (deploy_file.isdir(path.join(input, UNIVERSAL))) {
+          deploy_msg.applyuniverse(opts, path.join(input, UNIVERSAL));
+          deploy_fileconvert.applyuniverse(opts, input, (err, res) => {
+            if (err) return fn(err);
+            
             fn(err, res);
-          }
-        });
+          });
+        } else {
+          fn(err, res);
+        }
       });
-    } else if (deploy_file.isfile(input) &&
-               deploy_pattern.isvalidpatternfilename(input)) {
-      deploy_fileconvert(opts, input, fn);
-    } else {
-      fn(null, null);
-    }
+    });
   };
 
   o.convert = (opts, fn) => {
@@ -70,9 +61,10 @@ module.exports = (o => {
 
     opts = deploy_opts(opts);
     
-    o.bfsconvert(opts, opts.inputDir, (err, res) => {
-      if (err) return console.log(err, err.stack ? err.stack : '');
+    o.bfsconvertdir(opts, opts.inputDir, (err, res) => {
+      if (err) return deploy_msg.throw(err, err.stack || '');
 
+      deploy_msg.finish();
       if (typeof fn === 'function') {
         fn(null, 'success');
       }

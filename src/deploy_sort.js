@@ -14,9 +14,7 @@ module.exports = (o => {
     objarr.sort((obja, objb) => obja[prop] > objb[prop] ? 1 : -1);
 
   o.sort = (objarr, sortopts) => {
-    let opts = sortopts || {},
-        sorttype = opts.sorttype,
-        propname = opts.propname,
+    let { sorttype, propname } = sortopts || {},
         sortedarr = [];
 
     if (!sorttype) {

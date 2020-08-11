@@ -1,0 +1,9 @@
+{
+  "sort" : {
+    "prop" : "timeDate",
+    "sorttype" : "gtfirst"
+  },
+  "type" : "local-ref-pagearr",
+  "path" : "../*",
+  "itemsperpage" : 8
+}

@@ -7,12 +7,24 @@
 // parentdirpath: /path/to/spec/
 //
 
-const path = require('path'),
-      pathpublic = require('pathpublic');
+const path = require('path');
+const pathpublic = require('pathpublic');
 
 module.exports = (o => {
 
   o.supportSubDirName = '/support';
+
+  o.removedir = (filepath, dir, sep = path.sep) => filepath
+    .replace(dir + (dir.substr(-1) === sep ? '' : sep), '');
+
+  o.removeinputdir = (opts, filepath) => o.removedir(filepath, opts.inputDir);
+
+  o.removeoutputdir = (opts, filepath) => o.removedir(filepath, opts.outputDir);
+
+  o.narrowdir = (opts, filepath) =>
+    o.removeoutputdir(opts, o.removeinputdir(opts, filepath))
+      .replace(process.cwd(), '.')
+      .replace(process.env.HOME, '~');  
 
   o.pathsupportdir = filename =>
     path.join(path.dirname(filename), o.supportSubDirName);
@@ -30,15 +42,16 @@ module.exports = (o => {
     return path.join(outputDir, dirname.replace(inputDir, ''));
   };
 
-  // filename filename build/bumblehead-0.0.3/spec/data/gallery/baseLocale.json
-  // return   build/bumblehead-0.0.3/spec/build/bumblehead-0.0.3/spec/data/gallery/support  
+  // filename filename build/bumblehead-0.3/spec/data/gallery/baseLocale.json
+  // return
+  // build/bumblehead-0.3/spec/build/bumblehead-0.3/spec/data/gallery/support
   o.pathout = (opts, filename) => {
     let inputDir = path.normalize(opts.inputDir),
         outputDir = path.normalize(opts.outputDir),
         inputPath = o.pathsupportdir(filename),
-        inputPathRel = inputPath.replace(inputDir, ''),
+        inputPathRel = o.narrowdir(opts, inputPath),
         outputPath = path.join(outputDir, inputPathRel);
-
+    
     return outputPath;
   };
 
@@ -48,6 +61,7 @@ module.exports = (o => {
   // update the support paths to public support paths.
   o.withpublicpath = (opts, str, filename) => {
     const publicPath = o.pathpublic(opts, filename),
+          // eslint-disable-next-line max-len
           supportPathRe = /(["']support\/[^'"]*['"]|^(?:\.\/)?support\/[^\b]*)/gi;
 
     return str.replace(supportPathRe, (match, m1, m2) => (

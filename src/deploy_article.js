@@ -40,6 +40,7 @@ module.exports = (o => {
     o.readdirarticles(opts, dirpath, (err, filearr) => {
       if (err) return fn(err);
 
+      // TODO remove silly map
       fn(null, filearr.map(file => path.join(dirpath, file)));
     });  
 
@@ -110,6 +111,7 @@ module.exports = (o => {
     });
   };
 
+  
   o.getnextprevarticlepathcache = (opts, filepath, nextprev, fn, indexnum) => {
     const nextpath = opts.articlescache[filepath + nextprev];
 
@@ -118,6 +120,7 @@ module.exports = (o => {
         fn(err, nextpath, fileobj);
       });
     } else {
+      // eslint-disable-next-line max-len
       o.getnextprevarticlepath(opts, filepath, nextprev, (err, nextpath, fileobj) => {
         if (err) return fn(err);
         
@@ -134,7 +137,8 @@ module.exports = (o => {
   o.getprevarticlepathcache = (opts, filepath, fn) => 
     o.getnextprevarticlepathcache(opts, filepath, -1, fn);
 
-  o.applyuniversearticleisoobj = (opts, articledir, [isopath, isoobj], fn) => {
+  // eslint-disable-next-line max-len
+  o.applyuniversearticleisoobj = (opts, articledir, [ isopath, isoobj ], fn) => {
     let articlepath = path.join(articledir, path.basename(isopath));
 
     objobjwalk.async(JSON.parse(JSON.stringify(isoobj)), (objobj, exitfn) => {
@@ -142,9 +146,11 @@ module.exports = (o => {
         if (o.nsre.test(objobj)) {
           objobj = o.nsrm(objobj);
 
-          const ns = String(objobj).split('.')[0];
+          const [ ns ] = String(objobj).split('.');
 
           if (ns === 'next') {
+
+            // eslint-disable-next-line max-len
             return o.getnextarticlepathcache(opts, articlepath, (err, nextpath, nextobj) => {
               if (err) return exitfn(err);
 
@@ -155,6 +161,7 @@ module.exports = (o => {
           }
 
           if (ns === 'prev') {
+            // eslint-disable-next-line max-len
             return o.getprevarticlepathcache(opts, articlepath, (err, prevpath, prevobj) => {
               if (err) return exitfn(err);
 
@@ -173,8 +180,6 @@ module.exports = (o => {
       deploy_file.writeassign(articlepath, obj, (err, resobj) => {
         if (err) return fn(err);
 
-        //console.log('resobj', resobj);
-        
         fn(null, resobj);
       });
     });
@@ -182,9 +187,11 @@ module.exports = (o => {
 
   o.applyuniversearticleisoobjarr = (opts, articledir, isoobjarr, fn) => {
     if (isoobjarr.length) {
+      // eslint-disable-next-line max-len
       o.applyuniversearticleisoobj(opts, articledir, isoobjarr[0], (err, res) => {
         if (err) return fn(err);
 
+        // eslint-disable-next-line max-len
         o.applyuniversearticleisoobjarr(opts, articledir, isoobjarr.slice(1), fn);
       });
     } else {
@@ -193,18 +200,19 @@ module.exports = (o => {
   };
 
   o.applyuniverseisoobjarr = (opts, outputdir, isoobjarr, fn) => {
-    o.readdirarticlesfullpath(opts, outputdir, (err, articledirarr) => {
+    o.readdirarticlesfullpath(opts, outputdir, (err, articlearr) => {
       if (err) return fn(err);
 
-      (function next (x, articledirarr) {
-        if (!x--) return fn(null, articledirarr);
+      (function next (x, articlearr) {
+        if (!x--) return fn(null, articlearr);
 
-        o.applyuniversearticleisoobjarr(opts, articledirarr[x], isoobjarr, (err, res) => {
+        // eslint-disable-next-line max-len
+        o.applyuniversearticleisoobjarr(opts, articlearr[x], isoobjarr, (err, res) => {
           if (err) return fn(err);
 
-          next(x, articledirarr);
+          next(x, articlearr);
         });
-      }(articledirarr.length, articledirarr));
+      }(articlearr.length, articlearr));
     });
   };
 

@@ -56,7 +56,7 @@ module.exports = (o => {
   // long-term solution would develop ISO-specific chunks
   //
   o.writeISOchunks = (opts, filename, outputpath, filobj, chunkobjarr, fn) => {
-    const ISOnamearr = deploy_pattern.getAssocISOFilenameArr(opts, filename),
+    const ISOnamearr = deploy_pattern.getisooutputfilenamearr(opts, filename),
           extname = path.extname(outputpath),
           dirname = path.dirname(outputpath);
 
@@ -95,6 +95,7 @@ module.exports = (o => {
     const outputpath = o.getchunkoutfilename(opts, filename, fileobj, chunknum),
           urlrefpath = pathpublic.get(outputpath, opts.publicPath);
 
+    // eslint-disable-next-line max-len
     o.writeISOchunks(opts, filename, outputpath, fileobj, chunkobjarr, (err, res) => {
       deploy_file.writeRecursive(outputpath, chunkobjarr, (err, res) => {
         fn(err, {
@@ -106,7 +107,8 @@ module.exports = (o => {
       });
     });
   };
-  
+
+  // eslint-disable-next-line max-len
   o.writechunks = (opts, filename, fileobj, childobjarr, fn, chunknum = 0, chunkmetaarr = []) => {
     const chunksize = fileobj.itemsperpage,
           nextchunks = childobjarr.slice(chunksize),
@@ -119,10 +121,10 @@ module.exports = (o => {
 
       chunkmetaarr.push(chunkmeta);
       
-      nextchunks.length
+      nextchunks.length // eslint-disable-next-line max-len
         ? o.writechunks(opts, filename, fileobj, nextchunks, fn, ++chunknum, chunkmetaarr)
         : fn(null, chunkmetaarr);
-      });
+    });
   };
 
 
@@ -130,6 +132,7 @@ module.exports = (o => {
     const outputpath = o.getchunkoutfilename(opts, filename, fileobj, chunknum),
           urlrefpath = pathpublic.get(outputpath, opts.publicPath);
 
+    // eslint-disable-next-line max-len
     o.writeISOchunks(opts, filename, outputpath, fileobj, chunkobjarr, (err, res) => {
       deploy_file.writeRecursive(outputpath, chunkobjarr, (err, res) => {
         fn(err, {
@@ -156,6 +159,7 @@ module.exports = (o => {
       if (err) return fn(err);
 
       // write all chunk...
+      // eslint-disable-next-line max-len
       o.writechunk(opts, filename, fileobj, childobjarr, 'all', (err, chunkmeta) => {
         //chunkmetaarr.push(chunkmeta);
 
