@@ -2,21 +2,10 @@
 // Timestamp: 2017.09.03-12:55:49 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
-const path = require('path');
+const path = require('path'),
+      deploy_paths = require('./deploy_paths');
 
 module.exports = (o => {
-  o.removedir = (filepath, dir, sep = path.sep) => filepath
-    .replace(dir + (dir.substr(-1) === sep ? '' : sep), '');
-
-  o.removeinputdir = (opts, filepath) => o.removedir(filepath, opts.inputDir);
-
-  o.removeoutputdir = (opts, filepath) => o.removedir(filepath, opts.outputDir);
-  
-  o.narrowdir = (opts, filepath) =>
-    o.removeoutputdir(opts, o.removeinputdir(opts, filepath))
-      .replace(process.cwd(), '.')
-      .replace(process.env.HOME, '~');
-
   o.start = () => console.log('[...] page-deploy: begin.');
 
   o.finish = () => console.log('[...] page-deploy: done.');  
@@ -33,14 +22,22 @@ module.exports = (o => {
 ex, spec-baseLang.md, lang-baseLangLocale.json, spec-spa-ES_ES.json
 `);
 
+  o.throw_parseerror = (filename, e) => o.throw(
+    `[!!!] page-deploy: parser error, ${filename} ${e}`
+  );
+
+  o.throw_parsefiletypeerror = (opts, filename) => o.throw(
+    `[!!!] page-deploy: parser error file type not supported, ${filename}`
+  );  
+
   o.convertedfilename = (opts, filename) => console.log(
     '[mmm] wrote: :filepath'
-      .replace(/:filepath/, o.narrowdir(opts, filename))
+      .replace(/:filepath/, deploy_paths.narrowdir(opts, filename))
   );
 
   o.convertedfilenamesupport = (opts, filename) => console.log(
-    '[mmm] wrote: :directory (support)'
-      .replace(/:directory/, o.narrowdir(path.dirname(filename))));
+    '[mmm] wrote: :directory'
+      .replace(/:directory/, deploy_paths.narrowdir(opts, filename)));
 
   o.isnotpublishedfilename = (opts, filename) => console.log(
     '[...] unpublished: :filename'
@@ -48,7 +45,7 @@ ex, spec-baseLang.md, lang-baseLangLocale.json, spec-spa-ES_ES.json
 
   o.applyuniverse = (opts, filename) => console.log(
     '[...] universe: :filename'
-      .replace(/:filename/g, o.narrowdir(opts, filename)));
+      .replace(/:filename/g, deploy_paths.narrowdir(opts, filename)));
 
   return o;
   

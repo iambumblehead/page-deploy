@@ -17,19 +17,7 @@ const fs = require('fs'),
 
       { UNIVERSAL } = deploy_tokens;
 
-module.exports = (o => {
-  o.foreachfile = (opts, filearr, fn, endfn) => {
-    if (!filearr.length)
-      return endfn(null);
-    
-    fn(opts, filearr[0], (err, res) => {
-      if (err) return endfn(err);
-
-      o.foreachfile(opts, filearr.slice(1), fn, endfn);
-    });
-  };
-
-  
+module.exports = (o => {  
   o.bfsconvertdir = (opts, input, fn) => {
     if (deploy_file.isdir(!input)) {
       throw new Error(`input must be a file: ${input}`);
@@ -38,20 +26,22 @@ module.exports = (o => {
     fs.readdir(input, { withFileTypes : true }, (err, direntarr) => {
       if (err) return fn(err);
 
-      o.foreachfile(opts, direntarr, (opts, dirent, donefn) => {
+      deploy_fileconvert.foreachasync(opts, direntarr, (opts, dirent, fn) => {
         const filepath = path.join(input, dirent.name);
         
         if (dirent.isFile() &&
             deploy_pattern.patternisvalidinputfilename(dirent.name)) {
-          return deploy_fileconvert.convertbase(opts, filepath, donefn);
+          return deploy_fileconvert.convertbase(opts, filepath, fn);
         }
 
         if (dirent.isDirectory()) {
-          return o.bfsconvertdir(opts, filepath, donefn);
+          return o.bfsconvertdir(opts, filepath, fn);
         }
 
-        return donefn(null, null);
+        return fn(null, null);
       }, (err, res) => {
+        if (err) return fn(err);
+        
         if (deploy_file.isdir(path.join(input, UNIVERSAL))) {
           deploy_msg.applyuniverse(opts, path.join(input, UNIVERSAL));
           deploy_fileconvert.applyuniverse(opts, input, (err, res) => {

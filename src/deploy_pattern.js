@@ -7,6 +7,7 @@
 // parentdirpath: /path/to/spec/
 
 const path = require('path'),
+      objobjwalk = require('objobjwalk'),
       simpletime = require('simpletime').default,
       
       deploy_iso = require('./deploy_iso'),
@@ -159,9 +160,36 @@ module.exports = (o => {
         p !== basename
           && basenameRe.test(p)
           && o.patternisvalidinputfilename(p))));
-    });      
+    });
   };
-  
+
+  o.updatelangdefs = (contentObj, langObj, fn) => {
+    const langkeyre = /^pd\.langkey\./,
+          langobjre = /^pd\.langobj/;
+
+    fn(null, objobjwalk.type('string', contentObj, str => {
+      if (langobjre.test(str)) {
+        str = langObj;
+      } else if (langkeyre.test(str)) {
+        str = o.objlookup(str.replace(langkeyre, ''), langObj) || str;
+      }
+
+      return str;
+    }));
+  };
+
+  // takes a keys object and replaces `langkey` properties
+  // with corresponding value from keys obj
+  o.updatelangkeys = (contentObj, langObj, fn) => 
+    objobjwalk.async(contentObj, (objobj, exitFn) => {
+      if (objobj.langkey) {
+        exitFn(null, langObj[objobj.langkey]);
+      } else if (objobj.langobj) {
+        exitFn(null, langObj);
+      } else {
+        exitFn(null, objobj);
+      }
+    }, fn);
+
   return o;
-  
 })({});

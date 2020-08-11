@@ -9,6 +9,9 @@ const fs = require('fs'), // read/write files
       deploy_msg = require('./deploy_msg');
 
 module.exports = (o => {
+  o.relpath = (filepath, refpath) =>
+    path.join(path.dirname(filepath), refpath);
+  
   o.exists = filepath =>
     fs.existsSync(filepath);
 
@@ -54,9 +57,7 @@ module.exports = (o => {
     o.readobj(filename, (err, obj) => {
       if (err) return fn(err);
 
-      obj = Object.assign(obj, content);
-
-      o.write(filename, obj, (err, res) => {
+      o.write(filename, Object.assign(obj, content), (err, res) => {
         if (err) return fn(err);
 
         fn(null, obj);

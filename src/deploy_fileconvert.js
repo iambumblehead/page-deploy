@@ -11,10 +11,10 @@ const fs = require('fs'),
 
       deploy_iso = require('./deploy_iso'),
       deploy_msg = require('./deploy_msg'),
-      deploy_html = require('./deploy_html'),
       deploy_file = require('./deploy_file'),
       deploy_sort = require('./deploy_sort'),
       deploy_paths = require('./deploy_paths'),
+      deploy_parse = require('./deploy_parse'),
       deploy_tokens = require('./deploy_tokens'),
       deploy_pattern = require('./deploy_pattern'),
       deploy_article = require('./deploy_article'),
@@ -34,6 +34,16 @@ module.exports = (o => {
   o = (opts, filename, fn) =>
     o.convertbase(opts, filename, fn);
 
+  o.foreachasync =  (opts, arr, fn, endfn = () => {}) => {
+    if (!arr.length)
+      return endfn(null);
+    
+    fn(opts, arr[0], (err, res) => {
+      if (err) return endfn(err);
+
+      o.foreachasync(opts, arr.slice(1), fn, endfn);
+    });
+  };
 
   // replace support paths found in contentObj strings.
   // 
@@ -55,13 +65,11 @@ module.exports = (o => {
     //   return fn(null, contentobj);
     // }
 
-    o.getfromfilesimilar(opts, langpath, (err, langfileobj) => {
-      if (!langfileobj) return fn(null, contentobj);
+    o.getfromfilesimilar(opts, langpath, (err, langobj) => {
+      if (!langobj) return fn(null, contentobj);
 
-      langcontent = langfileobj;
-
-      o.updateLangKeys(contentobj, langcontent, (err, contentobj) => {
-        o.updateLangDefs(contentobj, langcontent, fn);
+      deploy_pattern.updatelangkeys(contentobj, langobj, (err, contentobj) => {
+        deploy_pattern.updatelangdefs(contentobj, langobj, fn);
       });        
     });
   };
@@ -118,35 +126,6 @@ module.exports = (o => {
   o.getRefPathFilename = (filepath, refPath) =>
     path.join(o.getRefPath(filepath, refPath), path.basename(filepath));
   
-  // takes a keys object and replaces `langkey` properties
-  // with corresponding value from keys obj
-  o.updateLangKeys = (contentObj, langObj, fn) => 
-    objobjwalk.async(contentObj, (objobj, exitFn) => {
-      if (objobj.langkey) {
-        exitFn(null, langObj[objobj.langkey]);
-      } else if (objobj.langobj) {
-        exitFn(null, langObj);
-      } else {
-        exitFn(null, objobj);
-      }
-    }, fn);
-
-  o.updateLangDefs = (contentObj, langObj, fn) => {
-    const langkeyre = /^pd\.langkey\./,
-          langobjre = /pd\.langobj/;
-
-    fn(null, objobjwalk.type('string', contentObj, str => {
-      if (langobjre.test(str)) {
-        str = langObj;
-      } else if (langkeyre.test(str)) {
-        // eslint-disable-next-line max-len
-        str = deploy_pattern.objlookup(str.replace(langkeyre, ''), langObj) || str;
-      }
-
-      return str;
-    }));
-  };
-
   // convert like this to an object defined in another file
   // in: { 
   //   inputsArr: [{
@@ -231,7 +210,6 @@ module.exports = (o => {
   };
 
   o.convertForISO = (opts, filename, fileobj, fn) => {
-
     // needs to write files not found in isofilenamearr.
     o.getAssocISOFileObjArr(opts, filename, fileobj, (err, fileObjArr) => {
       if (err) return fn(err);
@@ -241,8 +219,7 @@ module.exports = (o => {
 
         let [ filename, fileobj ] = fileObjArr[x];
 
-        // eslint-disable-next-line max-len
-        deploy_pattern.writeAtFilename(filename, fileobj, opts, (err, res, filename) => {
+        deploy_pattern.writeAtFilename(filename, fileobj, opts, err => {
           if (err) return fn(err);
 
           next(x);
@@ -264,36 +241,35 @@ module.exports = (o => {
       if (err) return fn(err);
 
       objobjwalk.async(universeobj, (objobj, exitfn) => {
-        if (typeof objobj === 'string') {
-          if (o.nsre.test(objobj)) {
-            objobj = o.nsrm(objobj);
-
-            const [ ns ] = String(objobj).split('.');
-
-            if (ns === 'next') {
-              // eslint-disable-next-line max-len
-              return deploy_article.getnextarticlepathcache(opts, filename, (err, nextpath, nextobj) => {
-                if (err) return exitfn(err);
-
-                exitfn(null, o.objlookup(objobj, {
-                  next : nextobj
-                }));
-              });
-            }
-
-            if (ns === 'prev') {
-              // eslint-disable-next-line max-len
-              return deploy_article.getprevarticlepathcache(opts, filename, (err, prevpath, prevobj) => {
-                if (err) return exitfn(err);
-
-                exitfn(null, o.objlookup(objobj, {
-                  prev : prevobj
-                }));
-              });
-            }
-          }
+        if (typeof objobj !== 'string' || !o.nsre.test(objobj)) {
+          return exitfn(null, objobj);
         }
-        exitfn(null, objobj);
+
+        objobj = o.nsrm(objobj);
+
+        const [ ns ] = String(objobj).split('.');
+
+        if (ns === 'next') {
+          // eslint-disable-next-line max-len
+          return deploy_article.getnextarticlepathcache(opts, filename, (err, nextpath, nextobj) => {
+            if (err) return exitfn(err);
+
+            exitfn(null, o.objlookup(objobj, {
+              next : nextobj
+            }));
+          });
+        }
+
+        if (ns === 'prev') {
+          // eslint-disable-next-line max-len
+          return deploy_article.getprevarticlepathcache(opts, filename, (err, prevpath, prevobj) => {
+            if (err) return exitfn(err);
+
+            exitfn(null, o.objlookup(objobj, {
+              prev : prevobj
+            }));
+          });
+        }
       }, (err, finfileobj) => {
         if (err) throw new Error(err);
 
@@ -390,53 +366,6 @@ module.exports = (o => {
     });
   };
 
-  o.parse = (JSONStr, filename) => {
-    try {
-      return JSON.parse(JSONStr);        
-    } catch (x) {
-      console.log('[!!!] locale-deploy, parse error: ' + filename);
-      throw new Error('[!!!] locale-deploy, parse error: ' + JSONStr);
-    }
-  };
-  
-  o.parseJSON = (opts, filestr, filename) =>
-    o.parse(filestr, filename);
-
-  o.parseMD = (opts, filestr, filename) => {
-    let metadata = {},
-        content,
-        excerpt;
-    
-    [ filestr, metadata ] = deploy_marked.extractsymbols(filestr, metadata);
-    [ filestr, metadata ] = deploy_marked.extractmetadata(filestr, metadata);
-
-    content = deploy_marked(filestr);
-    
-    [ content, excerpt ] = deploy_html.extractexcerpt(content);
-    
-    metadata.content = content;
-
-    if (excerpt) {
-      metadata.excerpthtml = excerpt;
-      metadata.excerptnohtml = htmldecoder.decode(striphtmltags(excerpt));
-    }
-
-    return metadata;
-  };
-
-  o.parsefile = (filename, filestr) => {
-    let extname = path.extname(filename);
-
-    if (extname === '.json') {
-      return o.parseJSON(filename, filestr);
-    } else if (extname === '.md') {
-      return o.parseMD(filename, filestr);
-    } else {
-      throw new Error(
-        '[!!!] convert-locale, file type not supported: ' + filename);
-    }
-  };
-
   o.getfromfile = (opts, filename, fn) => {
     if (opts.patterncache[filename]) {
       return fn(null, opts.patterncache[filename]);
@@ -450,7 +379,7 @@ module.exports = (o => {
       if (err) return fn(new Error(err));
 
       // eslint-disable-next-line max-len
-      o.getConverted(opts, filename, o.parsefile(filename, res), (err, fileobj) => {
+      o.getConverted(opts, filename, deploy_parse.parsefile(opts, res, filename), (err, fileobj) => {
         if (err) return fn(err);
 
         opts.patterncache[filename] = fileobj;
@@ -464,7 +393,7 @@ module.exports = (o => {
     deploy_pattern.getsimilarfilename(filename, opts, (err, simfilename) => {
       if (err) return fn(err);
 
-      [ simfilename ] = simfilename.map( sim => (
+      [ simfilename ] = simfilename.map(sim => (
         path.join(path.dirname(filename), sim)));
       
       // simfilename = path.join(path.dirname(filename), simfilename);
@@ -485,9 +414,6 @@ module.exports = (o => {
       fn(null, fileobj);
     });
   };
-
-  o.relpath = (filepath, refpath) =>
-    path.join(path.dirname(filepath), refpath);
 
   // consider reading and saving files in chunks
   o.createRefSpecPages = (opts, filename, fileobj, exitfn) => {
@@ -529,7 +455,7 @@ module.exports = (o => {
   // return array of reference objects using properties
   // defined on fileobj
   o.createRefSpecArr = (opts, filename, fileobj, fn) => {
-    const fullpath = o.relpath(filename, fileobj.path);
+    const fullpath = deploy_file.relpath(filename, fileobj.path);
 
     glob(fullpath, {}, (err, filearr) => {
       if (err) return fn(new Error(err));

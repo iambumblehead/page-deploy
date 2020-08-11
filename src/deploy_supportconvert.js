@@ -12,23 +12,18 @@ const rcp = require('recursive-copy'),
       deploy_paths = require('./deploy_paths');
 
 module.exports = (o => {
-  
   o.writeSupportDir = (opts, rootfilename, outfilename, fn) => {
-    // take output and inputdir...
-    const inputSupportPath = deploy_paths.pathsupportdir(rootfilename),
-          outputSupportPath = deploy_paths.pathsupportdir(outfilename),
-          relativeSupportPath = deploy_paths.pathout(opts, outfilename),
-          overwrite = true;
+    const supportInput = deploy_paths.pathsupportdir(rootfilename),
+          supportOutput = deploy_paths.pathsupportdir(outfilename);
 
-    // read dir... if dir, copy
-    if (deploy_file.isdir(inputSupportPath)) {
-      deploy_file.createPath(outputSupportPath, (err, res) => {
+    if (deploy_file.isdir(supportInput)) {
+      deploy_file.createPath(supportOutput, (err, res) => {
         if (err) return fn(err);
 
-        rcp(inputSupportPath, outputSupportPath, {overwrite}, (err, res) => {
+        rcp(supportInput, supportOutput, { overwrite : true }, (err, res) => {
           if (err) return fn(err);
 
-          deploy_msg.convertedfilenamesupport(opts, relativeSupportPath);
+          deploy_msg.convertedfilenamesupport(opts, supportOutput);
 
           fn(null, 'success');
         });          
@@ -36,7 +31,6 @@ module.exports = (o => {
     } else {
       fn(null, null);
     }
-
   };
 
   return o;

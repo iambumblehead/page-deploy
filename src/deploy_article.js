@@ -40,6 +40,7 @@ module.exports = (o => {
     o.readdirarticles(opts, dirpath, (err, filearr) => {
       if (err) return fn(err);
 
+      // TODO remove silly map
       fn(null, filearr.map(file => path.join(dirpath, file)));
     });  
 
@@ -110,6 +111,7 @@ module.exports = (o => {
     });
   };
 
+  
   o.getnextprevarticlepathcache = (opts, filepath, nextprev, fn, indexnum) => {
     const nextpath = opts.articlescache[filepath + nextprev];
 
@@ -147,6 +149,7 @@ module.exports = (o => {
           const [ ns ] = String(objobj).split('.');
 
           if (ns === 'next') {
+
             // eslint-disable-next-line max-len
             return o.getnextarticlepathcache(opts, articlepath, (err, nextpath, nextobj) => {
               if (err) return exitfn(err);
@@ -197,19 +200,19 @@ module.exports = (o => {
   };
 
   o.applyuniverseisoobjarr = (opts, outputdir, isoobjarr, fn) => {
-    o.readdirarticlesfullpath(opts, outputdir, (err, articledirarr) => {
+    o.readdirarticlesfullpath(opts, outputdir, (err, articlearr) => {
       if (err) return fn(err);
 
-      (function next (x, articledirarr) {
-        if (!x--) return fn(null, articledirarr);
+      (function next (x, articlearr) {
+        if (!x--) return fn(null, articlearr);
 
         // eslint-disable-next-line max-len
-        o.applyuniversearticleisoobjarr(opts, articledirarr[x], isoobjarr, (err, res) => {
+        o.applyuniversearticleisoobjarr(opts, articlearr[x], isoobjarr, (err, res) => {
           if (err) return fn(err);
 
-          next(x, articledirarr);
+          next(x, articlearr);
         });
-      }(articledirarr.length, articledirarr));
+      }(articlearr.length, articlearr));
     });
   };
 

@@ -14,6 +14,18 @@ module.exports = (o => {
 
   o.supportSubDirName = '/support';
 
+  o.removedir = (filepath, dir, sep = path.sep) => filepath
+    .replace(dir + (dir.substr(-1) === sep ? '' : sep), '');
+
+  o.removeinputdir = (opts, filepath) => o.removedir(filepath, opts.inputDir);
+
+  o.removeoutputdir = (opts, filepath) => o.removedir(filepath, opts.outputDir);
+
+  o.narrowdir = (opts, filepath) =>
+    o.removeoutputdir(opts, o.removeinputdir(opts, filepath))
+      .replace(process.cwd(), '.')
+      .replace(process.env.HOME, '~');  
+
   o.pathsupportdir = filename =>
     path.join(path.dirname(filename), o.supportSubDirName);
 
@@ -37,9 +49,9 @@ module.exports = (o => {
     let inputDir = path.normalize(opts.inputDir),
         outputDir = path.normalize(opts.outputDir),
         inputPath = o.pathsupportdir(filename),
-        inputPathRel = inputPath.replace(inputDir, ''),
+        inputPathRel = o.narrowdir(opts, inputPath),
         outputPath = path.join(outputDir, inputPathRel);
-
+    
     return outputPath;
   };
 
