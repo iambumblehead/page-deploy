@@ -1,6 +1,9 @@
 page-deploy
 ===========
 
+[![npm version](https://badge.fury.io/js/page-deploy.svg)](https://badge.fury.io/js/page-deploy) [![Build Status](https://travis-ci.org/iambumblehead/page-deploy.svg?branch=master)](https://travis-ci.org/iambumblehead/page-deploy)
+
+
 **NOT FOR PRODUCTION USE -ALPHA QUALITY**
 
 Deploys page-object data and pattern files and is useful for web applications using locale and language specific data.

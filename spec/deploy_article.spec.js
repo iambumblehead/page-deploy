@@ -3,6 +3,7 @@ const test = require('ava'),
 
       deploy_parse = require('../src/deploy_parse');
 
+// eslint-disable-next-line one-var
 const MDStringMakingWaves = `
 [meta:type]: <> (blog)
 [meta:tagsArr]: <> (video,misc,professional,software,2d,art)
@@ -18,6 +19,7 @@ _⌚ 2010.06.04-20:06:00_
 I finished a sinewave animation.
 `;
 
+// eslint-disable-next-line one-var
 const MDStringPyramid = `
 [meta:type]: <> (blog)
 [meta:tagsArr]: <> (misc)

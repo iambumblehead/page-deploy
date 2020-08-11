@@ -21,14 +21,9 @@ const fs = require('fs'),
       deploy_marked = require('./deploy_marked'),
       deploy_paginate = require('./deploy_paginate'),
       deploy_supportconvert = require('./deploy_supportconvert'),
-      deploy_fileconvert = require('./deploy_fileconvert');
+      deploy_fileconvert = require('./deploy_fileconvert'),
 
-const {
-  UNIVERSAL,
-  LOCALREF,
-  LOCALREFARR,
-  LOCALREFPAGEARR
-} = deploy_tokens;  
+      { UNIVERSAL, LOCALREF, LOCALREFARR, LOCALREFPAGEARR } = deploy_tokens;
 
 module.exports = (o => {
   o = (opts, filename, fn) =>

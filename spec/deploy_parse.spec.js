@@ -1,6 +1,7 @@
 const test = require('ava'),
       deploy_parse = require('../src/deploy_parse');
 
+// eslint-disable-next-line one-var
 const fileMD = `
 [meta:type]: <> (blog)
 [meta:tagsArr]: <> (software,art)
@@ -23,6 +24,7 @@ function(src) {
 }
 \`\`\``;
 
+// eslint-disable-next-line one-var
 const fileJSON = `{
   "sort" : {
     "prop" : "timeDate",
