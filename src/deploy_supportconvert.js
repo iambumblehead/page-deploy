@@ -34,5 +34,4 @@ module.exports = (o => {
   };
 
   return o;
-  
 })({});

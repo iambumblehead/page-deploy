@@ -76,3 +76,49 @@ test.cb("updatelangkeys should update keys of lang properties", t => {
     t.end();
   });
 });
+
+test("getdatetitlestampoutputpath should return outputdir", t => {
+  const deploy_pattern = require('../src/deploy_pattern.js');
+
+  t.is(
+    deploy_pattern.getdatetitlestampoutputpath('/path/to/base-lang.json', {
+      title : 'articletitle',
+      timeDate : 1222580700000
+    }, {}),
+    '/path/2008.09.27-articletitle/base-lang.json'
+  );
+});
+
+test("getdatetitlestamp should return outputdir", t => {
+  const deploy_pattern = require('../src/deploy_pattern.js');
+
+  t.is(
+    deploy_pattern.getdatetitlestamp(1222580700000, 'articletitle'),
+    '2008.09.27-articletitle'
+  );
+});
+
+test("getuniversefilepath should return universe filepath", t => {
+  const deploy_pattern = require('../src/deploy_pattern.js');
+
+  t.is(
+    deploy_pattern.getuniversefilepath('/path/to/spec-ES.md'),
+    '/path/universal/spec-ES.json'
+  );
+});
+
+test("getasoutputpath should return datetitle outputdir", t => {
+  const deploy_pattern = require('../src/deploy_pattern.js');
+
+  t.is(
+    deploy_pattern.getasoutputpath({
+      outputDir : '/path/to/outputDir',
+      inputDir : '/path/to/inputDir',
+      datetitlesubdirs : [ '/data/' ]
+    }, '/path/to/inputDir/data/spec-ES.md', {
+      title : 'articletitle',
+      timeDate : 1222580700000
+    }),
+    '/path/to/outputDir/2008.09.27-articletitle/ES.json'
+  );
+});

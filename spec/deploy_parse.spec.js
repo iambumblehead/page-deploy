@@ -105,3 +105,10 @@ test("extractexcerpt should extract excerpt text before ellipsis", t => {
       '<p>this summer I did</p>' ]);
 });
 
+test("extractexcerpt should extract no excerpt text when no ellipsis", t => {
+  t.deepEqual(
+    deploy_parse.extractexcerpt('<p>this summer I did nothing</p>'), [
+      '<p>this summer I did nothing</p>',
+      null ]);
+});
+

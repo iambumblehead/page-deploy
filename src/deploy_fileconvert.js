@@ -20,6 +20,7 @@ const fs = require('fs'),
       deploy_article = require('./deploy_article'),
       deploy_marked = require('./deploy_marked'),
       deploy_paginate = require('./deploy_paginate'),
+      deploy_imgprocess = require('./deploy_imgprocess'),
       deploy_supportconvert = require('./deploy_supportconvert'),
       deploy_fileconvert = require('./deploy_fileconvert'),
 
@@ -74,7 +75,7 @@ module.exports = (o => {
 
     if (deploy_pattern.isdatetitlecontent(opts, contentobj, filename)) {
       outfilename = deploy_pattern
-        .getasdatetitlesubdir(filename, contentobj, opts);
+        .getdatetitlestampoutputpath(filename, contentobj, opts);
     }    
 
     objobjwalk.async(contentobj, (objobj, exitfn) => {
@@ -82,14 +83,13 @@ module.exports = (o => {
         objobj = deploy_paths.withpublicpath(opts, objobj, outfilename);
       }
 
-      if (objobj) {
+      if (objobj) { // inplace update of this file
         let { type } = objobj;
       
         if (type === LOCALREF) {
           return o.getObjAtLocalRef(filename, objobj, opts, exitfn);
         }
 
-        // inplace update of this file
         if (type === LOCALREFARR) {
           return o.createRefSpecArr(opts, filename, objobj, exitfn);
         }
@@ -228,7 +228,7 @@ module.exports = (o => {
     const universalfilepath = deploy_pattern.getuniversefilepath(filename);
 
     if (!deploy_file.isfile(universalfilepath) ||
-        !deploy_article.isarticledir(path.dirname(filename))) {
+        !deploy_article.isarticlefilepath(filename)) {
       return fn(null, fileobj);
     }
 
@@ -335,7 +335,6 @@ module.exports = (o => {
         return fn(null);
       }
 
-      
       // eslint-disable-next-line max-len
       deploy_pattern.writeAtFilename(filename, fileobj, opts, (err, res, outfilename) => {
         if (err) return fn(err);
@@ -344,11 +343,7 @@ module.exports = (o => {
         deploy_supportconvert.writeSupportDir(opts, filename, outfilename, (err, res) => {
           if (err) return fn(err);
 
-          '## messy refactor note: why deeply recursing convertISO calls?';
-          // if (!deploy_iso.isPatternBaseISORe.test(filename)) {
-          //   return fn(err, 'success');
-          // }
-
+          // ## messy refactor note: why deeply recursing convertISO calls?
           o.convertForISO(opts, filename, fileobj, (err, res) => {
             if (err) return fn(err);
 
@@ -373,14 +368,8 @@ module.exports = (o => {
     deploy_file.read(filename, (err, res) => {
       if (err) return fn(new Error(err));
 
-      // eslint-disable-next-line max-len
-      o.getConverted(opts, filename, deploy_parse.parsefile(opts, res, filename), (err, fileobj) => {
-        if (err) return fn(err);
-
-        opts.patterncache[filename] = fileobj;
-        
-        fn(null, fileobj);
-      });
+      o.getConverted(
+        opts, filename, deploy_parse.parsefile(opts, res, filename), fn);
     });        
   };
 
@@ -397,6 +386,14 @@ module.exports = (o => {
         : fn(new Error('[...] similar file not found, ' + filename));
     });
 
+  o.postprocess = (opts, filename, fileobj, fn) => {
+    if (deploy_article.isarticlefilepath(filename)) {
+      deploy_imgprocess.process(opts, filename, fileobj, fn);
+    } else {
+      fn(null, fileobj);
+    }
+  };
+
   o.getConverted = (opts, filename, fileobj, fn) => {
     if (opts.patterncache[filename])
       return fn(null, fileobj);
@@ -404,9 +401,13 @@ module.exports = (o => {
     o.convert(opts, fileobj, filename, (err, fileobj) => {
       if (err) return fn(err);
 
-      opts.patterncache[filename] = true;
-      
-      fn(null, fileobj);
+      o.postprocess(opts, filename, fileobj, (err, res) => {
+        if (err) return fn(err);
+
+        opts.patterncache[filename] = fileobj;
+
+        fn(null, fileobj);
+      });
     });
   };
 
