@@ -23,7 +23,7 @@ module.exports = (o => {
         rcp(supportInput, supportOutput, { overwrite : true }, (err, res) => {
           if (err) return fn(err);
 
-          deploy_msg.convertedfilenamesupport(opts, supportOutput);
+          deploy_msg.convertedfilename(opts, supportOutput);
 
           fn(null, 'success');
         });          

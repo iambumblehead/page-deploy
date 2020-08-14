@@ -26,6 +26,7 @@
     "babel-eslint": "^10.0.1",
     "timezone-mock": "^1.1.1",
     "eslint": "^7.6.0",
+    "jimp": "0.16.0",
     "ava": "^3.11.1"
   },
   "scripts": {
