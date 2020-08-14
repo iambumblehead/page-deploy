@@ -1,6 +1,8 @@
-
 const test = require('ava'),
-      rewiremock = require('rewiremock').default;
+      rewiremock = require('rewiremock').default,
+      timezone_mock = require('timezone-mock');
+
+timezone_mock.register('US/Pacific');
 
 test.cb("getsimilarfilename should return similar file", t => {
   const deploy_pattern = rewiremock.proxy('../src/deploy_pattern.js', {
