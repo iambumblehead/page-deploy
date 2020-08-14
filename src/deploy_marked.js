@@ -78,12 +78,12 @@ module.exports = (o => {
         if (/date$/i.test(m1)) {
           metadata[m1] = o.parsedatestrtime(m2);
         } else if (/arr$/i.test(m1)) {
-          metadata[m1] = m2.split(/,/);        
+          metadata[m1] = m2.split(/,/);
         } else if (/^is/.test(m1) &&
                    /true|false/g.test(m2)) {
           metadata[m1] = castas.bool(m2);
         } else {
-          metadata[m1] = m2;        
+          metadata[m1] = m2;
         }
       });
     }

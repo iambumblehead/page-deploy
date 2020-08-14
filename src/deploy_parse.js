@@ -14,10 +14,10 @@ module.exports = (o => {
       content = content.replace(match[0], excerpt);
     }
 
-    return [ content, `${excerpt}</p>` ];
+    return [ content, excerpt && `${excerpt}</p>` ];
   };
   
-  o.parseJSON = (opts, filestr, filename) => {
+  o.parseJSON = (filename, filestr) => {
     try {
       return JSON.parse(filestr);
     } catch (e) {
@@ -25,18 +25,18 @@ module.exports = (o => {
     }    
   };
 
-  o.parseMD = (opts, filestr, filename) => {
+  o.parseMD = (filename, filestr) => {
     let metadata = {},
         content,
         excerpt;
-    
+
     [ filestr, metadata ] = deploy_marked.extractsymbols(filestr, metadata);
     [ filestr, metadata ] = deploy_marked.extractmetadata(filestr, metadata);
 
     content = deploy_marked(filestr);
-    
+
     [ content, excerpt ] = o.extractexcerpt(content);
-    
+
     metadata.content = content;
 
     if (excerpt) {

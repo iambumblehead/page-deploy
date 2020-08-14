@@ -28,6 +28,10 @@ module.exports = (o => {
   o.isarticledir = specfilepath =>
     deploy_file.isdir(specfilepath) && o.isarticlepath(specfilepath);
 
+  o.isarticlefilepath = specfilepath =>
+    deploy_file.isfile(specfilepath)
+      && o.isarticlepath(path.dirname(specfilepath));
+
   //o.getdirarticlepaths = (opts, dirpath, fn) =>
   o.readdirarticles = (opts, dirpath, fn) =>
     deploy_file.readdir(dirpath, (err, filearr) => {

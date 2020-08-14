@@ -8,7 +8,15 @@ const path = require('path'),
 module.exports = (o => {
   o.start = () => console.log('[...] page-deploy: begin.');
 
-  o.finish = () => console.log('[...] page-deploy: done.');  
+  o.finish = () => console.log('[...] page-deploy: done.');
+
+  o.getbytesasmb = byteLength => byteLength / Math.pow(1024,2);
+
+  o.rounded = num => (Math.round(num * 100)/100).toFixed(2);
+
+  o.getbytesasmbrounded = byteLength => o.rounded(o.getbytesasmb(byteLength));
+
+  o.getbyteslabel = byteLength => `~${(o.getbytesasmbrounded(byteLength))}mb`;
 
   o.throw = err => { throw new Error(err); };
 
@@ -22,22 +30,28 @@ module.exports = (o => {
 ex, spec-baseLang.md, lang-baseLangLocale.json, spec-spa-ES_ES.json
 `);
 
+  o.throw_imgnotfound = filename => o.throw(
+    `[!!!] page-deploy: image not found, ${filename}`
+  );
+
   o.throw_parseerror = (filename, e) => o.throw(
     `[!!!] page-deploy: parser error, ${filename} ${e}`
   );
 
   o.throw_parsefiletypeerror = (opts, filename) => o.throw(
     `[!!!] page-deploy: parser error file type not supported, ${filename}`
-  );  
+  );
+
+  o.scaledimage = (opts, filename, oldbytelen, newbytelen) => console.log(
+    '[mmm] wrote: :filename :oldsize -> :newsize'
+      .replace(/:filename/, deploy_paths.narrowdir(opts, filename))
+      .replace(/:oldsize/, o.getbyteslabel(oldbytelen))
+      .replace(/:newsize/, o.getbyteslabel(newbytelen)));
 
   o.convertedfilename = (opts, filename) => console.log(
     '[mmm] wrote: :filepath'
       .replace(/:filepath/, deploy_paths.narrowdir(opts, filename))
   );
-
-  o.convertedfilenamesupport = (opts, filename) => console.log(
-    '[mmm] wrote: :directory'
-      .replace(/:directory/, deploy_paths.narrowdir(opts, filename)));
 
   o.isnotpublishedfilename = (opts, filename) => console.log(
     '[...] unpublished: :filename'
@@ -46,7 +60,6 @@ ex, spec-baseLang.md, lang-baseLangLocale.json, spec-spa-ES_ES.json
   o.applyuniverse = (opts, filename) => console.log(
     '[...] universe: :filename'
       .replace(/:filename/g, deploy_paths.narrowdir(opts, filename)));
-
-  return o;
   
+  return o;
 })({});

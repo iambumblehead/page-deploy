@@ -13,33 +13,32 @@ const path = require('path'),
       deploy_iso = require('./deploy_iso'),
       deploy_msg = require('./deploy_msg'),
       deploy_file = require('./deploy_file'),
+      deploy_paths = require('./deploy_paths'),
       deploy_tokens = require('./deploy_tokens'),
 
       { UNIVERSAL } = deploy_tokens;
 
 module.exports = (o => {
+  // input: 1222580700000, 'articletitle'
+  // return: '2008.09.27-articletitle'
+  o.getdatetitlestamp = (date, title, datefmt = 'yyyy.MM.dd') => ':date-:title'
+    .replace(/:date/, simpletime.applyFormatDate(new Date(date), datefmt))
+    .replace(/:title/, String(title).toLowerCase())
+    .replace(/ /g, '-');
 
-  //o.getparentdirpath = (filepath) => 
-  //  path.dirname(path.dirname(filepath));
+  o.getdatetitlestampdir = (dirpath, content) => path.join(
+    path.dirname(dirpath),
+    o.getdatetitlestamp(content.timeDate, content.title));
 
-  o.getasdatetitlesubdir = (outputpath, content, opts) => {
-    const datefmt='yyyy.MM.dd',
-          basename = path.basename(outputpath),
-          dirname = path.dirname(path.dirname(outputpath)),
-          titlesubdir = ':date-:title'
-            .replace(/:date/, simpletime.applyFormatDate(
-              new Date(content.timeDate), datefmt))
-            .replace(/:title/, content.title.toLowerCase())
-            .replace(/ /g, '-');
-    
-    return path.join(dirname, titlesubdir, basename);
-  };
+  o.getdatetitlestampoutputpath = (filepath, content) => path.join(
+    o.getdatetitlestampdir(path.dirname(filepath), content),
+    path.basename(filepath));
 
   //
   // unversedirpath relatative to filepath
   //
-  o.getuniversaldirpath = filepath =>
-    path.join(path.dirname(path.dirname(filepath)), UNIVERSAL);
+  o.getuniversaldirpath = filepath => path.join(
+    path.dirname(filepath), UNIVERSAL);
 
   //
   // unversefilepath relatative to filepath
@@ -47,34 +46,29 @@ module.exports = (o => {
   // should be elaborated to locate lang/local or default paths
   //
   o.getuniversefilepath = filepath => {
-    const specname = path.basename(filepath),
-          universaldirpath = o.getuniversaldirpath(filepath);
-          
-    return path.join(universaldirpath, specname.replace(/\.([^.]*)$/, '.json'));
+    const extn = path.extname(filepath),
+          name = path.basename(filepath, extn);
+
+    return path.join(
+      o.getuniversaldirpath(path.dirname(filepath)), `${name}.json`);
   };
 
   o.isdatetitlecontent = (opts, contentobj, filename) => (
     opts.datetitlesubdirs
       .some(subdir => filename.indexOf(subdir) !== -1 && contentobj.timeDate)
   );
-  
-  // filepath : inputpath/spec/data/actions/lang-baseLang.json
-  //
-  // return 'outputpath/spec/data/actions/baseLang.json'
-  o.getasoutputdir = (opts, filepath, content) => {
-    let outputdir = filepath.replace(path.normalize(opts.inputDir), '');
 
-    if (o.isdatetitlecontent(opts, content, filepath)) {
-      outputdir = o.getasdatetitlesubdir(outputdir, content, opts);
-    }
+  o.getasoutputpath = (opts, filepath, content) => {
+    const outputdirname = deploy_paths.dirout(opts, path.dirname(filepath)),
+          outputdirnamestamped = o.isdatetitlecontent(opts, content, filepath)
+            ? o.getdatetitlestampdir(outputdirname, content)
+            : outputdirname,
+          extname = path.extname(filepath),
+          basename = path.basename(filepath, extname)
+            .replace(/^(spec-|lang-)/, '');
 
-    return outputdir;
+    return path.join(outputdirnamestamped, `${basename}.json`);
   };
-  
-  o.getasoutputpath = (opts, filepath, content) => (
-    path.join(opts.outputDir, o.getasoutputdir(opts, filepath, content))
-      .replace(/\.([^.]*)$/, '.json')
-      .replace(/spec-|lang-/, ''));
   
   o.writeAtFilename = (filename, content, opts, fn) => {
     const outputpath = o.getasoutputpath(opts, filename, content),
