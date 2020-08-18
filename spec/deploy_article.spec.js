@@ -167,10 +167,10 @@ test.cb("applyuniversearticleisoobj should update ns namespace", t => {
         '2011.05.21-hello-javascript'
       ]),
       readobj : (filepath, fn) => {
-        if (filepath === 'output/2010.06.04-making-waves/spec-eng-US.json') {
+        if (filepath === 'output/2010.06.04-making-waves/eng-US.json') {
           fn(null, deploy_parse.parseMD({}, MDStringMakingWaves, filepath));
         }
-        if (filepath === 'output/2008.09.27-pyramid/spec-eng-US.json') {
+        if (filepath === 'output/2008.09.27-pyramid/eng-US.json') {
           fn(null, deploy_parse.parseMD({}, MDStringPyramid, filepath));
         }        
       }

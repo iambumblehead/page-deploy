@@ -5,7 +5,8 @@
 const fs = require('fs'),
       path = require('path'),
       objobjwalk = require('objobjwalk'),
-      
+
+      deploy_iso = require('./deploy_iso'),
       deploy_file = require('./deploy_file'),
       deploy_paths = require('./deploy_paths');
 
@@ -143,7 +144,8 @@ module.exports = (o => {
 
   // eslint-disable-next-line max-len
   o.applyuniversearticleisoobj = (opts, articledir, [ isopath, isoobj ], fn) => {
-    let articlepath = path.join(articledir, path.basename(isopath));
+    let articlepath = path.join(
+      articledir, deploy_iso.getRmPrefix(path.basename(isopath)));
 
     objobjwalk.async(JSON.parse(JSON.stringify(isoobj)), (objobj, exitfn) => {
       if (typeof objobj === 'string') {
@@ -180,7 +182,6 @@ module.exports = (o => {
     }, (err, obj) => {
       if (err) return fn(err);
 
-      // write the new file...
       deploy_file.writeassign(articlepath, obj, (err, resobj) => {
         if (err) return fn(err);
 
