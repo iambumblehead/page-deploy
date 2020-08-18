@@ -14,17 +14,23 @@ module.exports = (o => {
 
   o.supportSubDirName = '/support';
 
-  o.removedir = (filepath, dir, sep = path.sep) => filepath
-    .replace(dir + (dir.substr(-1) === sep ? '' : sep), '');
+  o.removedir = (filepath, dir, sep = path.sep) => {
+    dir =  dir.replace(/^\.\//, '');
+
+    return filepath
+      .replace(dir + (dir.substr(-1) === sep ? '' : sep), '');
+  };
 
   o.removeinputdir = (opts, filepath) => o.removedir(filepath, opts.inputDir);
 
   o.removeoutputdir = (opts, filepath) => o.removedir(filepath, opts.outputDir);
 
-  o.narrowdir = (opts, filepath) =>
-    o.removeoutputdir(opts, o.removeinputdir(opts, filepath))
-      .replace(process.cwd(), '.')
-      .replace(process.env.HOME, '~');  
+  o.narrowcwdhome = filepath => String(filepath)
+    .replace(process.cwd(), '.')
+    .replace(process.env.HOME, '~');
+
+  o.narrowdir = (opts, filepath) => o.narrowcwdhome(
+    o.removeoutputdir(opts, o.removeinputdir(opts, filepath)));
 
   o.pathsupportdir = filename =>
     path.join(path.dirname(filename), o.supportSubDirName);
@@ -45,7 +51,7 @@ module.exports = (o => {
   // filename filename build/bumblehead-0.3/spec/data/gallery/baseLocale.json
   // return
   // build/bumblehead-0.3/spec/build/bumblehead-0.3/spec/data/gallery/support
-  o.pathout = (opts, filename) => {
+  o.outputsupportpath = (opts, filename) => {
     let inputDir = path.normalize(opts.inputDir),
         outputDir = path.normalize(opts.outputDir),
         inputPath = o.pathsupportdir(filename),
@@ -55,14 +61,14 @@ module.exports = (o => {
     return outputPath;
   };
 
-  o.pathpublic = (opts, filename) =>
-    pathpublic.get(o.pathout(opts, filename), opts.publicPath);
+  o.publicsupportpath = (opts, filename) =>
+    pathpublic.get(o.outputsupportpath(opts, filename), opts.publicPath);
 
   // update the support paths to public support paths.
   o.withpublicpath = (opts, str, filename) => {
-    const publicPath = o.pathpublic(opts, filename),
-          // eslint-disable-next-line max-len
-          supportPathRe = /(["']support\/[^'"]*['"]|^(?:\.\/)?support\/[^\b]*)/gi;
+    const publicPath = o.publicsupportpath(opts, filename),
+          supportPathRe =
+            /(["']support\/[^'"]*['"]|^(?:\.\/)?support\/[^\b]*)/gi;
 
     return str.replace(supportPathRe, (match, m1, m2) => (
       match.replace(/support/, publicPath)));

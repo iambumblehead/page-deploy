@@ -33,6 +33,6 @@
     "test": "ava",
     "start": "node getStarted/go.js",
     "lint": "eslint src/*.js spec/*js",
-    "prepare": "npm start && npm run lint && npm test"    
+    "prepare": "npm start && npm run lint && npm test"
   }
 }

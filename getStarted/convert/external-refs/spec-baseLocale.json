@@ -1,0 +1,9 @@
+{
+  "name" : "/",
+  "node" : "uiroot",
+
+  "child" : [{
+    "type" : "local-ref",
+    "path" : "../defaults/error/"
+  }]
+}

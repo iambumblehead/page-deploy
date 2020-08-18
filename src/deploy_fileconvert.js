@@ -54,7 +54,7 @@ module.exports = (o => {
       deploy_paths.withpublicpath(opts, str, filename))));
 
   o.getWithUpdatedLangKeys = (opts, contentobj, filename, fn) => {
-    let langpath = filename.replace(/spec-.*/, 'lang-baseLang.json'),
+    let langpath = filename.replace(/spec-.*/, 'lang-baseLang.notjsonmd'),
         langcontent;
 
     // if (!filename.match(/spec-/)) {
@@ -142,8 +142,17 @@ module.exports = (o => {
     var refpath = refObj.fullpath ||
           o.getRefPathFilename(filename, refObj.path);
 
+    // kludge, getsimilar not return exact filename match
+    refpath = path.join(
+      path.dirname(refpath),
+      path.basename(refpath, path.extname(refpath)) + '.notjsonmd');
+
     o.getfromfilesimilar(opts, refpath, (err, fileobj) => {
       if (err) return fn(err);
+
+      if (!fileobj) {
+        deploy_msg.throw_localrefnotfound(opts, filename, refpath, refObj);
+      }
       
       fn(null, fileobj);
     });
@@ -379,11 +388,10 @@ module.exports = (o => {
 
       [ simfilename ] = simfilename.map(sim => (
         path.join(path.dirname(filename), sim)));
-      
-      // simfilename = path.join(path.dirname(filename), simfilename);
+
       simfilename
         ? o.getfromfile(opts, simfilename, fn)
-        : fn(new Error('[...] similar file not found, ' + filename));
+        : fn(null, null);
     });
 
   o.postprocess = (opts, filename, fileobj, fn) => {
@@ -440,7 +448,7 @@ module.exports = (o => {
       o.createRefObj(opts, filename, filepatharr[x], (err, reffileobj) => {
         if (err) return fn(err);
         
-        if (reffileobj.ispublished !== false)
+        if (reffileobj && reffileobj.ispublished !== false)
           refobjarr.push(reffileobj);
 
         next(x, refobjarr);

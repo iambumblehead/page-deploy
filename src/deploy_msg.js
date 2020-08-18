@@ -30,6 +30,10 @@ module.exports = (o => {
 ex, spec-baseLang.md, lang-baseLangLocale.json, spec-spa-ES_ES.json
 `);
 
+  o.throw_similarfilenotfound = filename => o.throw(
+    `[!!!] page-deploy: similar file not found, ${filename}`
+  );
+
   o.throw_imgnotfound = filename => o.throw(
     `[!!!] page-deploy: image not found, ${filename}`
   );
@@ -41,6 +45,13 @@ ex, spec-baseLang.md, lang-baseLangLocale.json, spec-spa-ES_ES.json
   o.throw_parsefiletypeerror = (opts, filename) => o.throw(
     `[!!!] page-deploy: parser error file type not supported, ${filename}`
   );
+
+  o.throw_localrefnotfound = (opts, filename, refpath, refopts) => o.throw(
+    `[!!!] page-deploy: local-ref not found, \n${[
+      deploy_paths.narrowcwdhome(filename),
+      deploy_paths.narrowcwdhome(refpath)
+    ].join('\n')}\n${refopts
+       && JSON.stringify(refopts, null, '  ')}`);
 
   o.scaledimage = (opts, filename, oldbytelen, newbytelen) => console.log(
     '[mmm] wrote: :filename :oldsize -> :newsize'
@@ -60,6 +71,6 @@ ex, spec-baseLang.md, lang-baseLangLocale.json, spec-spa-ES_ES.json
   o.applyuniverse = (opts, filename) => console.log(
     '[...] universe: :filename'
       .replace(/:filename/g, deploy_paths.narrowdir(opts, filename)));
-  
+
   return o;
 })({});
