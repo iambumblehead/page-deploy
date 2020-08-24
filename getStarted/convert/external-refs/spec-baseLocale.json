@@ -4,6 +4,6 @@
 
   "child" : [{
     "type" : "local-ref",
-    "path" : "../defaults/error/"
+    "path" : "../local-ref/"
   }]
 }
