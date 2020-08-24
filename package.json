@@ -19,6 +19,7 @@
     "pathpublic": "0.0.8",
     "recursive-copy": "^2.0.6",
     "simpletime": "^0.2.0",
+    "jimp": "0.16.0",
     "strip-html-tags": "0.0.3"
   },
   "devDependencies": {
@@ -26,7 +27,6 @@
     "babel-eslint": "^10.0.1",
     "timezone-mock": "^1.1.1",
     "eslint": "^7.6.0",
-    "jimp": "0.16.0",
     "ava": "^3.11.1"
   },
   "scripts": {
