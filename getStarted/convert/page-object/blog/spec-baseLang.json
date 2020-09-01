@@ -1,0 +1,8 @@
+{
+  "sort" : {
+    "prop" : "timeDate",
+    "sorttype" : "gtfirst"
+  },
+  "type" : "local-ref-arr",
+  "path" : "./*"
+}

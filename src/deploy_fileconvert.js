@@ -447,7 +447,7 @@ module.exports = (o => {
       
       o.createRefObj(opts, filename, filepatharr[x], (err, reffileobj) => {
         if (err) return fn(err);
-        
+
         if (reffileobj && reffileobj.ispublished !== false)
           refobjarr.push(reffileobj);
 
@@ -466,7 +466,8 @@ module.exports = (o => {
 
       filearr = filearr
         .filter(deploy_article.isarticledir)
-        .map(file =>  path.join(file, path.basename(filename)));
+        .map(file => path.join(
+          file, path.basename(filename, path.extname(filename))));
 
       o.createRefSpecFileArr(opts, filename, filearr, (err, objarr) => {
         if (err) return fn(err);
