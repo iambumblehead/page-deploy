@@ -1,7 +1,7 @@
 {
   "name": "page-deploy",
   "main": "src/deploy",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "license": "MIT",
   "readmeFilename": "README.md",
   "description": "deploy page-object data and pattern files",
