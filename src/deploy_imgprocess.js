@@ -43,6 +43,7 @@ const processembeddedimgref = (opts, filename, str, content, fn) => {
     localimgpathsans, extn, [ 'fit', wstr, hstr ])
   console.log({ getasoutputpath: '', opts, filename, content })
   const outfilename = deploy_pattern.getasoutputpath(opts, filename, content)
+  console.log({ outfilename, filename })  
   const supportInput = path.join(path.dirname(filename), localimgpathsans)
   const supportOutput = path.join(path.dirname(outfilename), localimgpathnew)
   const updatedstr = str.split(localimgpath).join(localimgpathnew)
@@ -81,7 +82,10 @@ const processembeddedimgref = (opts, filename, str, content, fn) => {
       }
     }
 
-    file.write(supportOutput, (err, savedfile) => {
+    fn(null, true)
+    console.log('support output', supportOutput)
+    /*
+    file.write(supportOutput, (err, savedfile) => {a
       if (err) return fn(err)
 
       if (bytelength === savedfile.bitmap.data.byteLength) {
@@ -93,6 +97,7 @@ const processembeddedimgref = (opts, filename, str, content, fn) => {
 
       fn(null, updatedstr)
     })
+    */
   })
 }
 
