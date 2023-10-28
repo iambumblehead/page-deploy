@@ -1,4 +1,5 @@
-const test = require('ava'),
+const test = require('node:test'),
+      assert = require('node:assert/strict'),
       timezone_mock = require('timezone-mock'),
       deploy_parse = require('../src/deploy_parse');
 
@@ -38,8 +39,8 @@ const fileJSON = `{
   "itemsperpage" : 8
 }`;
 
-test("parseMD should parse an MD file", t => {
-  t.deepEqual(deploy_parse.parseMD({}, fileMD, 'filename.md'), {
+test("parseMD should parse an MD file", () => {
+  assert.deepEqual(deploy_parse.parseMD({}, fileMD, 'filename.md'), {
     author : 'bumblehead',
     content : [
       /* eslint-disable max-len */
@@ -67,8 +68,8 @@ test("parseMD should parse an MD file", t => {
   });
 });
 
-test("parseJSON should parse a JSON file", t => {
-  t.deepEqual(deploy_parse.parseJSON({}, fileJSON, 'filename.json'), {
+test("parseJSON should parse a JSON file", () => {
+  assert.deepEqual(deploy_parse.parseJSON({}, fileJSON, 'filename.json'), {
     sort : {
       prop : "timeDate",
       sorttype : "gtfirst"
@@ -79,8 +80,8 @@ test("parseJSON should parse a JSON file", t => {
   });
 });
 
-test("parsefile should parse a JSON file", t => {
-  t.deepEqual(deploy_parse.parsefile({}, fileJSON, 'filename.json'), {
+test("parsefile should parse a JSON file", () => {
+  assert.deepEqual(deploy_parse.parsefile({}, fileJSON, 'filename.json'), {
     sort : {
       prop : "timeDate",
       sorttype : "gtfirst"
@@ -91,22 +92,24 @@ test("parsefile should parse a JSON file", t => {
   });  
 });
 
-test("parsefile should throw an error for wrong file extension", t => {
-  t.throws(() => deploy_parse.parsefile({}, fileJSON, 'filename.txt'), {
+test("parsefile should throw an error for wrong file extension", async () => {
+  await assert.rejects(async () => (
+    deploy_parse.parsefile({}, fileJSON, 'filename.txt')
+  ), {
     // eslint-disable-next-line max-len
     message : '[!!!] page-deploy: parser error file type not supported, filename.txt'
   });
 });
 
-test("extractexcerpt should extract excerpt text before ellipsis", t => {
-  t.deepEqual(
+test("extractexcerpt should extract excerpt text before ellipsis", () => {
+  assert.deepEqual(
     deploy_parse.extractexcerpt('<p>this summer I did… nothing</p>'), [
       '<p>this summer I did nothing</p>',
       '<p>this summer I did</p>' ]);
 });
 
-test("extractexcerpt should extract no excerpt text when no ellipsis", t => {
-  t.deepEqual(
+test("extractexcerpt should extract no excerpt text when no ellipsis", () => {
+  assert.deepEqual(
     deploy_parse.extractexcerpt('<p>this summer I did nothing</p>'), [
       '<p>this summer I did nothing</p>',
       null ]);

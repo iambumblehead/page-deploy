@@ -7,7 +7,7 @@
   "description": "deploy page-object data and pattern files",
   "repository": {
     "type": "git",
-    "url": "https://github.com/iambumblehead/page-deploy.git"
+    "url": "git+https://github.com/iambumblehead/page-deploy.git"
   },
   "dependencies": {
     "castas": "^0.1.3",
@@ -23,16 +23,17 @@
     "strip-html-tags": "0.0.3"
   },
   "devDependencies": {
+    "c8": "^7.12.0",
+    "eslint": "^8.23.1",
+    "eslint-plugin-markdown": "^3.0.0",
     "rewiremock": "^3.14.3",
-    "babel-eslint": "^10.0.1",
     "timezone-mock": "^1.1.1",
-    "eslint": "^7.6.0",
-    "ava": "^3.11.1"
+    "eslint": "^7.6.0"
   },
   "scripts": {
-    "test": "ava",
+    "test": "node --test",
     "start": "node getStarted/go.js",
-    "lint": "eslint src/*.js spec/*js",
+    "lint": "eslint test/deploy_pattern.test.js",
     "prepare": "npm start && npm run lint && npm test"
   }
 }
