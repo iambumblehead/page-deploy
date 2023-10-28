@@ -17,17 +17,22 @@ test("default should return marked content, w/ highlighted code blocks", () => {
 a code block
 \`\`\`javascript
 function log () { console.log('yes!') }
-\`\`\``,
-        /* eslint-disable max-len */
-        HTMLStringCode = `<p>a code block</p>
-<pre><code class="language-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">log</span> (<span class="hljs-params"></span>) </span>{ <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&#x27;yes!&#x27;</span>) }</code></pre>
-`;
+\`\`\``
+
+  /* eslint-disable max-len */
+  const HTMLStringCode = (`
+<p>a code block</p>
+<pre><code class="hljs language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">log</span> () { <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&#x27;yes!&#x27;</span>) }
+</code></pre>
+`).slice(1, -1)
   /* eslint-enable max-len */
 
-  assert.strictEqual(deploy_marked(MDStringCode), HTMLStringCode);
+  assert.strictEqual(
+    HTMLStringCode,
+    deploy_marked(MDStringCode))
 });
 
-test("extractsymbols should return symbol mapping", t => {
+test("extractsymbols should return symbol mapping", () => {
   const MDStringSymbols = `
 [meta:type]: <> (blog)
 [meta:tagsArr]: <> (misc)

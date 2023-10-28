@@ -19,9 +19,10 @@
   "dependencies": {
     "castas": "^1.2.1",
     "glob": "7.1.6",
-    "highlight.js": "^10.1.2",
+    "highlight.js": "^11.9.0",
     "html-decoder": "^1.0.2",
-    "marked": "1.1.1",
+    "marked": "^9.1.2",
+    "marked-highlight": "^2.0.6",
     "objobjwalk": "^0.0.7",
     "pathpublic": "0.0.8",
     "recursive-copy": "^2.0.6",

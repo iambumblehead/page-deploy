@@ -28,6 +28,18 @@ function(src) {
 }
 \`\`\``;
 
+/* eslint-disable max-len */
+const fileMDparsed = (`
+<p>Text behind ellipsis is an excerpt.</p>
+<pre><code class="hljs language-javascript"><span class="hljs-keyword">function</span>(<span class="hljs-params">src</span>) {
+   <span class="hljs-keyword">var</span> i = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Image</span>();
+   i.<span class="hljs-property">onload</span> = <span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) { <span class="hljs-title function_">alert</span>(<span class="hljs-string">&quot;hi&quot;</span>); }
+   i.<span class="hljs-property">src</span> = src;
+}
+</code></pre>
+`).slice(1, -1)
+/* eslint-enable max-len */
+
 // eslint-disable-next-line one-var
 const fileJSON = `{
   "sort" : {
@@ -42,17 +54,7 @@ const fileJSON = `{
 test("parseMD should parse an MD file", () => {
   assert.deepEqual(deploy_parse.parseMD({}, fileMD, 'filename.md'), {
     author : 'bumblehead',
-    content : [
-      /* eslint-disable max-len */
-      '<p>Text behind ellipsis is an excerpt.</p>',
-      '<pre><code class="language-javascript"><span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">src</span>) </span>{',
-      '   <span class="hljs-keyword">var</span> i = <span class="hljs-keyword">new</span> Image();',
-      '   i.onload = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{ alert(<span class="hljs-string">&quot;hi&quot;</span>); }',
-      '   i.src = src;',
-      '}</code></pre>',
-      ''
-      /* eslint-enable max-len */
-    ].join('\n'),
+    content : fileMDparsed,
     excerpthtml : '<p>Text behind ellipsis is an excerpt.</p>',
     excerptnohtml : 'Text behind ellipsis is an excerpt.',
     isComments : false,
