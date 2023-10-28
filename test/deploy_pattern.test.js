@@ -1,39 +1,42 @@
-const test = require('ava'),
+const util = require('node:util'),
+      test = require('node:test'),
+      assert = require('node:assert/strict'),
       rewiremock = require('rewiremock').default,
       timezone_mock = require('timezone-mock');
 
 timezone_mock.register('US/Pacific');
 
-test.cb("getsimilarfilename should return similar file", t => {
+test("getsimilarfilename should return similar file", async () => {
   const deploy_pattern = rewiremock.proxy('../src/deploy_pattern.js', {
     './deploy_file' : {
       readdir : (dir, fn) => fn(null, [ 'spec-ES.md' ])
     }
   });
 
-  deploy_pattern.getsimilarfilename('/input/spec-ES.json', {}, (err, path) => {
-    t.deepEqual([ 'spec-ES.md' ], path);
-    t.end();
-  });
+  let path = await util.promisify(
+    deploy_pattern.getsimilarfilename)('/input/spec-ES.json', {});
+
+  assert.deepEqual([ 'spec-ES.md' ], path);
 });
 
-test.cb("getsimilarfilename should not return the same file", t => {
+test("getsimilarfilename should not return the same file", async () => {
   const deploy_pattern = rewiremock.proxy('../src/deploy_pattern.js', {
     './deploy_file' : {
       readdir : (dir, fn) => fn(null, [ 'spec-ES.json' ])
     }
   });
 
-  deploy_pattern.getsimilarfilename('/input/spec-ES.json', {}, (err, path) => {
-    t.deepEqual([], path);
-    t.end();
-  });
+  let path = await util.promisify(
+    deploy_pattern.getsimilarfilename)('/input/spec-ES.json', {})
+
+  assert.deepEqual([], path);
 });
 
-test.cb("updatelangdefs should update definitions of lang properties", t => {
+// eslint-disable-next-line max-len
+test("updatelangdefs should update definitions of lang properties", async () => {
   const deploy_pattern = rewiremock.proxy('../src/deploy_pattern.js');
 
-  deploy_pattern.updatelangdefs({
+  let updatedobj = await util.promisify(deploy_pattern.updatelangdefs)({
     node : "nodetype",
     name : "nodename",
     child : [ {
@@ -53,36 +56,32 @@ test.cb("updatelangdefs should update definitions of lang properties", t => {
     } ]
   }, {
     labelanchor : 'labelanchor'
-  }, (err, updatedobj) => {
+  })
 
-    t.is(updatedobj.child[0].subj[0].labelanchor, 'labelanchor');
-    t.is(updatedobj.child[1].subj[0].labelanchor, 'labelanchor');
-
-    t.end();
-  });
+  assert.strictEqual(updatedobj.child[0].subj[0].labelanchor, 'labelanchor');
+  assert.strictEqual(updatedobj.child[1].subj[0].labelanchor, 'labelanchor');
 });
 
-test.cb("updatelangkeys should update keys of lang properties", t => {
+test("updatelangkeys should update keys of lang properties", async () => {
   const deploy_pattern = rewiremock.proxy('../src/deploy_pattern.js');
 
-  deploy_pattern.updatelangkeys({
+  let updatedobj = await util.promisify(deploy_pattern.updatelangkeys)({
     label : { langkey : 'langkeya' },
     obj : { langobj : true }
   }, {
     langkeya : 'langkey-value'
-  }, (err, updatedobj) => {
-    t.deepEqual(updatedobj, {
-      label : 'langkey-value',
-      obj : { langkeya : 'langkey-value' }
-    });
-    t.end();
+  })
+
+  assert.deepEqual(updatedobj, {
+    label : 'langkey-value',
+    obj : { langkeya : 'langkey-value' }
   });
 });
 
-test("getdatetitlestampoutputpath should return outputdir", t => {
+test("getdatetitlestampoutputpath should return outputdir", () => {
   const deploy_pattern = require('../src/deploy_pattern.js');
 
-  t.is(
+  assert.strictEqual(
     deploy_pattern.getdatetitlestampoutputpath('/path/to/base-lang.json', {
       title : 'articletitle',
       timeDate : 1222580700000
@@ -91,28 +90,28 @@ test("getdatetitlestampoutputpath should return outputdir", t => {
   );
 });
 
-test("getdatetitlestamp should return outputdir", t => {
+test("getdatetitlestamp should return outputdir", () => {
   const deploy_pattern = require('../src/deploy_pattern.js');
 
-  t.is(
+  assert.strictEqual(
     deploy_pattern.getdatetitlestamp(1222580700000, 'articletitle'),
     '2008.09.27-articletitle'
   );
 });
 
-test("getuniversefilepath should return universe filepath", t => {
+test("getuniversefilepath should return universe filepath", () => {
   const deploy_pattern = require('../src/deploy_pattern.js');
 
-  t.is(
+  assert.strictEqual(
     deploy_pattern.getuniversefilepath('/path/to/spec-ES.md'),
     '/path/universal/spec-ES.json'
   );
 });
 
-test("getasoutputpath should return datetitle outputdir", t => {
+test("getasoutputpath should return datetitle outputdir", () => {
   const deploy_pattern = require('../src/deploy_pattern.js');
 
-  t.is(
+  assert.strictEqual(
     deploy_pattern.getasoutputpath({
       outputDir : '/path/to/outputDir',
       inputDir : '/path/to/inputDir',

@@ -1,10 +1,20 @@
 {
+  "extends": [
+    "eslint:recommended",
+    "plugin:markdown/recommended"
+  ],
   "plugins": [],
+  "globals": {
+    "require": true
+  },
   "env": {
     "browser": false
   },
-  "parser": "babel-eslint",
-  "parserOptions": {},
+  "parserOptions": {
+    "sourceType": "script",
+    "ecmaVersion": "latest",
+    "allowImportExportEverywhere": true
+  },
   "rules": {
     "global-require": 0,
     "no-sequences": 0,

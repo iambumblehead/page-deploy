@@ -1,8 +1,9 @@
-const test = require('ava'),
+const test = require('node:test'),
+      assert = require('node:assert/strict'),
       deploy_iso = require('../src/deploy_iso');
 
-test("getisofilenamearr should return iso filenames", t => {
-  t.deepEqual(
+test("getisofilenamearr should return iso filenames", () => {
+  assert.deepEqual(
     deploy_iso.getisofilenamearr(
       'LangLocale',
       [ 'eng-US', 'spa-ES' ],

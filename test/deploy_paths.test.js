@@ -1,22 +1,23 @@
-const test = require('ava'),
+const test = require('node:test'),
+      assert = require('node:assert/strict'),
       deploy_paths = require('../src/deploy_paths');
 
-test("removedir should remove directory from a path", t => {
-  t.is(
+test("removedir should remove directory from a path", () => {
+  assert.strictEqual(
     deploy_paths.removedir(
       'src/spec/page/about/lang-baseLang.md',
       './src/spec'
     ), 'page/about/lang-baseLang.md'
   );
 
-  t.is(
+  assert.strictEqual(
     deploy_paths.removedir(
       'src/spec/page/about/lang-baseLang.md',
       'src/spec'
     ), 'page/about/lang-baseLang.md'
   );
 
-  t.is(
+  assert.strictEqual(
     deploy_paths.removedir(
       './src/spec/page/about/lang-baseLang.md',
       'src/spec'
@@ -24,8 +25,8 @@ test("removedir should remove directory from a path", t => {
   );
 });
 
-test("outputsupportpath should return an output support path", t => {
-  t.is(
+test("outputsupportpath should return an output support path", () => {
+  assert.strictEqual(
     deploy_paths.outputsupportpath({
       publicPath : '/spec',
       inputDir : './src/spec',
@@ -35,8 +36,8 @@ test("outputsupportpath should return an output support path", t => {
   );
 });
 
-test("pathpublic should return string with updated public path", t => {
-  t.is(
+test("pathpublic should return string with updated public path", () => {
+  assert.strictEqual(
     deploy_paths.publicsupportpath({
       publicPath : '/spec',
       inputDir : './src/spec',
@@ -46,8 +47,8 @@ test("pathpublic should return string with updated public path", t => {
   );
 });
 
-test("with public should string with updated public path", t => {
-  t.deepEqual(
+test("with public should string with updated public path", () => {
+  assert.deepEqual(
     deploy_paths.withpublicpath({
       inputDir : './src/spec',
       outputDir : './public/spec',

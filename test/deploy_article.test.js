@@ -1,4 +1,6 @@
-const test = require('ava'),
+const util = require('node:util'),
+      test = require('node:test'),
+      assert = require('node:assert/strict'),
       rewiremock = require('rewiremock').default,
       timezone_mock = require('timezone-mock'),
 
@@ -39,7 +41,7 @@ _⌚ 2008.09.27-22:45:00_
 ![pyramid](support/img/pyramid.jpg#fit-WxH)
 `;
 
-test.cb("getadjacentarticlepaths should return adjacent article paths", t => {
+test("getadjacentarticlepaths should return adjacent article paths", async () => {
   const deploy_article = rewiremock.proxy('../src/deploy_article.js', {
     './deploy_file' : {
       readdir : (dir, fn) => fn(null, [
@@ -52,19 +54,18 @@ test.cb("getadjacentarticlepaths should return adjacent article paths", t => {
   });
 
   // eslint-disable-next-line max-len
-  deploy_article.getadjacentarticlepaths({}, '/path/to/filename.json', (err, res) => {
-    t.deepEqual(res, [
-      '/path/2008.09.27-pyramid/filename.json',
-      '/path/2009.05.05-big-update/filename.json',
-      '/path/2010.06.04-making-waves/filename.json',
-      '/path/2011.05.21-hello-javascript/filename.json'
-    ]);
+  const res = await util.promisify(
+    deploy_article.getadjacentarticlepaths)({}, '/path/to/filename.json')
 
-    t.end();
-  });
+  assert.deepEqual(res, [
+    '/path/2008.09.27-pyramid/filename.json',
+    '/path/2009.05.05-big-update/filename.json',
+    '/path/2010.06.04-making-waves/filename.json',
+    '/path/2011.05.21-hello-javascript/filename.json'
+  ]);
 });
 
-test.cb("applyuniverseisoobjarr should return adjacent article paths", t => {
+test("applyuniverseisoobjarr should return adjacent article paths", async () => {
   const deploy_article = rewiremock.proxy('../src/deploy_article.js', {
     './deploy_file' : {
       writeassign : (filename, content, fn) => {
@@ -79,22 +80,20 @@ test.cb("applyuniverseisoobjarr should return adjacent article paths", t => {
     }
   });
 
-  deploy_article.applyuniverseisoobjarr({}, 'output/path', [
+  const res = await util.promisify(deploy_article.applyuniverseisoobjarr)({}, 'output/path', [
     [ 'input/path/spec-spa-ES.json', { title : 'spanish title' } ],
     [ 'input/path/spec-eng-US.json', { title : 'english title' } ]
-  ], (err, res) => {
-    t.deepEqual(res, [
-      'output/path/2008.09.27-pyramid',
-      'output/path/2009.05.05-big-update',
-      'output/path/2010.06.04-making-waves',
-      'output/path/2011.05.21-hello-javascript'
-    ]);
+  ])
 
-    t.end();
-  });
+  assert.deepEqual(res, [
+    'output/path/2008.09.27-pyramid',
+    'output/path/2009.05.05-big-update',
+    'output/path/2010.06.04-making-waves',
+    'output/path/2011.05.21-hello-javascript'
+  ]);
 });
 
-test.cb("getnextprevarticlepath should return prev article path", t => {
+test("getnextprevarticlepath should return prev article path", async () => {
   const deploy_article = rewiremock.proxy('../src/deploy_article.js', {
     './deploy_file' : {
       writeassign : (filename, content, fn) => {
@@ -114,17 +113,19 @@ test.cb("getnextprevarticlepath should return prev article path", t => {
     }
   });
 
-  deploy_article.getnextprevarticlepath({
-    articlescache : [] // eslint-disable-next-line max-len
-  }, 'output/2011.05.21-hello-javascript/spec-spa-ES.json', -1, (err, nextpath, fileobj) => {
+  const [ nextpath, fileobj ] = await new Promise(resolve => {
+    deploy_article.getnextprevarticlepath({
+      articlescache : [] // eslint-disable-next-line max-len
+    }, 'output/2011.05.21-hello-javascript/spec-spa-ES.json', -1, (err, nextpath, fileobj) => {
+      resolve([ nextpath, fileobj ])
+    })
+  })
 
-    t.is(nextpath, 'output/2010.06.04-making-waves/spec-spa-ES.json');
-    t.is(fileobj, MDStringMakingWaves);
-    t.end();
-  });
+  assert.strictEqual(nextpath, 'output/2010.06.04-making-waves/spec-spa-ES.json');
+  assert.strictEqual(fileobj, MDStringMakingWaves);    
 });
 
-test.cb("getnextprevarticlepath should return next article path", t => {
+test("getnextprevarticlepath should return next article path", async () => {
   const deploy_article = rewiremock.proxy('../src/deploy_article.js', {
     './deploy_file' : {
       writeassign : (filename, content, fn) => {
@@ -144,17 +145,19 @@ test.cb("getnextprevarticlepath should return next article path", t => {
     }
   });
 
-  deploy_article.getnextprevarticlepath({
-    articlescache : [] // eslint-disable-next-line max-len
-  }, 'output/2009.05.05-big-update/spec-spa-ES.json', 1, (err, nextpath, fileobj) => {
+  const [ nextpath, fileobj ] = await new Promise(resolve => {
+    deploy_article.getnextprevarticlepath({
+      articlescache : [] // eslint-disable-next-line max-len
+    }, 'output/2009.05.05-big-update/spec-spa-ES.json', 1, (err, nextpath, fileobj) => {
+      resolve([ nextpath, fileobj ])
+    })
+  })
 
-    t.is(nextpath, 'output/2010.06.04-making-waves/spec-spa-ES.json');
-    t.is(fileobj, MDStringMakingWaves);
-    t.end();
-  });
+  assert.strictEqual(nextpath, 'output/2010.06.04-making-waves/spec-spa-ES.json');
+  assert.strictEqual(fileobj, MDStringMakingWaves);
 });
 
-test.cb("applyuniversearticleisoobj should update ns namespace", t => {
+test("applyuniversearticleisoobj should update ns namespace", async () => {
   const deploy_article = rewiremock.proxy('../src/deploy_article.js', {
     './deploy_file' : {
       writeassign : (filename, content, fn) => {
@@ -177,7 +180,7 @@ test.cb("applyuniversearticleisoobj should update ns namespace", t => {
     }
   });
 
-  deploy_article.applyuniversearticleisoobj({
+  const res = await util.promisify(deploy_article.applyuniversearticleisoobj)({
     articlescache : []
   }, 'output/2009.05.05-big-update', [
     'input/universal/spec-eng-US.json', {
@@ -194,21 +197,19 @@ test.cb("applyuniversearticleisoobj should update ns namespace", t => {
         timeDate : 'ns.prev.timeDate'
       }
     }
-  ], (err, res) => {
-    t.deepEqual(res, {
-      next : {
-        type : 'newer',
-        title : 'making waves',
-        tagsArr : [ 'video', 'misc', 'professional', 'software', '2d', 'art' ],
-        timeDate : 1275707160000
-      },
-      prev : {
-        type : 'older',
-        title : 'pyramid',
-        tagsArr : [ 'misc' ],
-        timeDate : 1222580700000
-      }
-    });
-    t.end();
+  ])
+  assert.deepEqual(res, {
+    next : {
+      type : 'newer',
+      title : 'making waves',
+      tagsArr : [ 'video', 'misc', 'professional', 'software', '2d', 'art' ],
+      timeDate : 1275707160000
+    },
+    prev : {
+      type : 'older',
+      title : 'pyramid',
+      tagsArr : [ 'misc' ],
+      timeDate : 1222580700000
+    }
   });
 });
