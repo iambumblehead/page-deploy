@@ -2,25 +2,27 @@
 // Timestamp: 2017.08.24-03:00:04 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-import simpletime from 'simpletime';
-import marked from 'marked';
-import castas from 'castas';
+import {Marked} from "marked";
+import {markedHighlight} from "marked-highlight";
 import hljs from 'highlight.js';
 
-marked.setOptions({
-  gfm : true,
-  breaks : true,
-  highlight : (code, lang) => {
-    return lang
-      ? hljs.highlight(lang, code).value
-      : hljs.highlightAuto(code);
-  }
-});
+import simpletime from 'simpletime';
+import castas from 'castas';
+
+const marked = new Marked(
+  markedHighlight({
+    langPrefix : 'hljs language-',
+    highlight (code, lang) {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, { language }).value;
+    }
+  })
+);
 
 export default (o => {
 
   o = filestr =>
-    marked(filestr);
+    marked.parse(filestr);
   
   o.parsedatestr = (datestr, fmt='yyyy.MM.dd-HH:mm:ss') =>
     simpletime.extractDateFormatted(datestr, fmt);
