@@ -1,16 +1,16 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import timezone_mock from 'timezone-mock';
-import deploy_marked from '../src/deploy_marked.js';
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import timezone_mock from 'timezone-mock'
+import deploy_marked from '../src/deploy_marked.js'
 
-timezone_mock.register('US/Pacific');
+timezone_mock.register('US/Pacific')
 
 test("default should return marked content", () => {
   assert.strictEqual(
     deploy_marked('**hey now**'),
     '<p><strong>hey now</strong></p>\n'
-  );
-});
+  )
+})
 
 test("default should return marked content, w/ highlighted code blocks", () => {
   const MDStringCode = `
@@ -30,7 +30,7 @@ function log () { console.log('yes!') }
   assert.strictEqual(
     HTMLStringCode,
     deploy_marked(MDStringCode))
-});
+})
 
 test("extractsymbols should return symbol mapping", () => {
   const MDStringSymbols = `
@@ -43,11 +43,11 @@ test("extractsymbols should return symbol mapping", () => {
 ★ pyramid
 ==========
 \`✑ bumblehead\`
-_⌚ 2008.09.27-22:45:00_`;
+_⌚ 2008.09.27-22:45:00_`
 
   assert.deepEqual(deploy_marked.extractsymbols(MDStringSymbols)[1], {
-    author : 'bumblehead',
-    timeDate : 1222580700000,
-    title : 'pyramid'
-  });
-});
+    author: 'bumblehead',
+    timeDate: 1222580700000,
+    title: 'pyramid'
+  })
+})
