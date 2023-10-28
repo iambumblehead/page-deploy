@@ -1,9 +1,9 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import timezone_mock from 'timezone-mock';
-import deploy_parse from '../src/deploy_parse.js';
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import timezone_mock from 'timezone-mock'
+import deploy_parse from '../src/deploy_parse.js'
 
-timezone_mock.register('US/Pacific');
+timezone_mock.register('US/Pacific')
 
 // eslint-disable-next-line one-var
 const fileMD = `
@@ -26,7 +26,7 @@ function(src) {
    i.onload = function() { alert("hi"); }
    i.src = src;
 }
-\`\`\``;
+\`\`\``
 
 /* eslint-disable max-len */
 const fileMDparsed = (`
@@ -42,78 +42,78 @@ const fileMDparsed = (`
 
 // eslint-disable-next-line one-var
 const fileJSON = `{
-  "sort" : {
-    "prop" : "timeDate",
-    "sorttype" : "gtfirst"
+  "sort": {
+    "prop": "timeDate",
+    "sorttype": "gtfirst"
   },
-  "type" : "local-ref-pagearr",
-  "path" : "../*",
-  "itemsperpage" : 8
-}`;
+  "type": "local-ref-pagearr",
+  "path": "../*",
+  "itemsperpage": 8
+}`
 
 test("parseMD should parse an MD file", () => {
   assert.deepEqual(deploy_parse.parseMD({}, fileMD, 'filename.md'), {
-    author : 'bumblehead',
-    content : fileMDparsed,
-    excerpthtml : '<p>Text behind ellipsis is an excerpt.</p>',
-    excerptnohtml : 'Text behind ellipsis is an excerpt.',
-    isComments : false,
-    ispublished : true,
-    posterimg : 'support/neonbrand-269297.jpg',
-    tagsArr : [
+    author: 'bumblehead',
+    content: fileMDparsed,
+    excerpthtml: '<p>Text behind ellipsis is an excerpt.</p>',
+    excerptnohtml: 'Text behind ellipsis is an excerpt.',
+    isComments: false,
+    ispublished: true,
+    posterimg: 'support/neonbrand-269297.jpg',
+    tagsArr: [
       'software',
       'art'
     ],
-    timeDate : 1306032360000,
-    title : 'hello javascript',
-    type : 'blog'
-  });
-});
+    timeDate: 1306032360000,
+    title: 'hello javascript',
+    type: 'blog'
+  })
+})
 
 test("parseJSON should parse a JSON file", () => {
   assert.deepEqual(deploy_parse.parseJSON({}, fileJSON, 'filename.json'), {
-    sort : {
-      prop : "timeDate",
-      sorttype : "gtfirst"
+    sort: {
+      prop: "timeDate",
+      sorttype: "gtfirst"
     },
-    type : "local-ref-pagearr",
-    path : "../*",
-    itemsperpage : 8
-  });
-});
+    type: "local-ref-pagearr",
+    path: "../*",
+    itemsperpage: 8
+  })
+})
 
 test("parsefile should parse a JSON file", () => {
   assert.deepEqual(deploy_parse.parsefile({}, fileJSON, 'filename.json'), {
-    sort : {
-      prop : "timeDate",
-      sorttype : "gtfirst"
+    sort: {
+      prop: "timeDate",
+      sorttype: "gtfirst"
     },
-    type : "local-ref-pagearr",
-    path : "../*",
-    itemsperpage : 8
-  });  
-});
+    type: "local-ref-pagearr",
+    path: "../*",
+    itemsperpage: 8
+  })  
+})
 
 test("parsefile should throw an error for wrong file extension", async () => {
   await assert.rejects(async () => (
     deploy_parse.parsefile({}, fileJSON, 'filename.txt')
   ), {
     // eslint-disable-next-line max-len
-    message : '[!!!] page-deploy: parser error file type not supported, filename.txt'
-  });
-});
+    message: '[!!!] page-deploy: parser error file type not supported, filename.txt'
+  })
+})
 
 test("extractexcerpt should extract excerpt text before ellipsis", () => {
   assert.deepEqual(
     deploy_parse.extractexcerpt('<p>this summer I did… nothing</p>'), [
       '<p>this summer I did nothing</p>',
-      '<p>this summer I did</p>' ]);
-});
+      '<p>this summer I did</p>' ])
+})
 
 test("extractexcerpt should extract no excerpt text when no ellipsis", () => {
   assert.deepEqual(
     deploy_parse.extractexcerpt('<p>this summer I did nothing</p>'), [
       '<p>this summer I did nothing</p>',
-      null ]);
-});
+      null ])
+})
 
