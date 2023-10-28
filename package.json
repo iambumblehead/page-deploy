@@ -18,14 +18,13 @@
   ],
   "dependencies": {
     "castas": "^1.2.1",
-    "glob": "7.1.6",
+    "glob": "10.3.10",
     "highlight.js": "^11.9.0",
     "html-decoder": "^1.0.2",
     "marked": "^9.1.2",
     "marked-highlight": "^2.0.6",
     "objobjwalk": "^0.0.7",
     "pathpublic": "0.0.8",
-    "recursive-copy": "^2.0.6",
     "simpletime": "^0.3.1",
     "jimp": "0.16.0",
     "strip-html-tags": "0.0.3"

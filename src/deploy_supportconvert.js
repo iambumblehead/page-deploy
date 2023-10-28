@@ -5,8 +5,7 @@
 // pickup and use 'support' directory and contents
 // for given pattern
 
-import rcp from 'recursive-copy';
-      
+import fs from 'node:fs/promises'
 import deploy_msg from './deploy_msg.js';
 import deploy_file from './deploy_file.js';
 import deploy_paths from './deploy_paths.js';
@@ -17,16 +16,17 @@ export default (o => {
           supportOutput = deploy_paths.pathsupportdir(outfilename);
 
     if (deploy_file.isdir(supportInput)) {
-      deploy_file.createPath(supportOutput, (err, res) => {
+      deploy_file.createPath(supportOutput, async (err, res) => {
         if (err) return fn(err);
 
-        rcp(supportInput, supportOutput, { overwrite : true }, (err, res) => {
-          if (err) return fn(err);
+        await fs.cp(supportInput, supportOutput, {
+          recursive : true,
+          force : true
+        })
 
-          deploy_msg.convertedfilename(opts, supportOutput);
+        deploy_msg.convertedfilename(opts, supportOutput);
 
-          fn(null, 'success');
-        });          
+        fn(null, 'success');
       });
     } else {
       fn(null, null);
