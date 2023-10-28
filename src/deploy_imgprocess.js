@@ -1,101 +1,126 @@
-import path from 'path';
+import path from 'path'
 import jimp from 'jimp';
-import castas from 'castas';
-import deploy_msg from './deploy_msg.js';
-import deploy_file from './deploy_file.js';
-import deploy_pattern from './deploy_pattern.js';
+import castas from 'castas'
+import deploy_msg from './deploy_msg.js'
+import deploy_file from './deploy_file.js'
+import deploy_pattern from './deploy_pattern.js'
 
-export default (o => {
-  o.imgFitRe = /support.*(\.jpg|\.jpeg|\.png).*pd\.fit\:(\d*)x?(\d*)?/i;
+// import {
+//   initializeImageMagick,
+//   ImageMagick,
+//   Magick,
+//   MagickFormat,
+//   Quantum
+// } from '@imagemagick/magick-wasm'
 
-  o.isembeddedimgkey = key => key === 'content' || /img$/i.test(key);
+const imgFitRe = /support.*(\.jpg|\.jpeg|\.png).*pd\.fit\:(\d*)x?(\d*)?/i
 
-  // input 'support/img/pyramid.jpg#pd.fit:1000' 'jpg' [ 'fit', 100 ]
-  // return 'support/img/pyramid.fit.1000.jpg'
-  o.getprocessedimgpath = (filepath, extn, filterids) => {
-    const extname = path.extname(filepath),
-          dirname = path.dirname(filepath),
-          basename = path.basename(filepath, extn),
-          filterstr = filterids.filter(e => e).join('.');
+const isembeddedimgkey = key => (
+  key === 'content' || /img$/i.test(key))
 
-    return path.join(dirname, `${basename}.${filterstr}${extname}`);
-  };
+// input 'support/img/pyramid.jpg#pd.fit:1000' 'jpg' [ 'fit', 100 ]
+// return 'support/img/pyramid.fit.1000.jpg'
+const getprocessedimgpath = (filepath, extn, filterids) => {
+  const extname = path.extname(filepath)
+  const dirname = path.dirname(filepath)
+  const basename = path.basename(filepath, extn)
+  const filterstr = filterids.filter(e => e).join('.')
 
-  // img is processed per-article, why? so that markdown can be used to preview
-  // image locally using the single existing image
-  // 
-  o.processembeddedimgref = (opts, filename, str, content, fn) => {
-    const match = String(str).match(o.imgFitRe),
-          [ localimgpath, extn, wstr, hstr ] = match || [],
-          width = castas.num(wstr),
-          height = castas.num(hstr, width),
-          localimgpathsans = localimgpath.replace(/#.*/, ''),
-          localimgpathnew = o.getprocessedimgpath(
-            localimgpathsans, extn, [ 'fit', wstr, hstr ]),
-          outfilename = deploy_pattern.getasoutputpath(opts, filename, content),
-          supportInput = path.join(path.dirname(filename), localimgpathsans),
-          supportOutput = path.join(path.dirname(outfilename), localimgpathnew),
-          updatedstr = str.split(localimgpath).join(localimgpathnew);
+  return path.join(dirname, `${basename}.${filterstr}${extname}`)
+}
 
-    if (!deploy_file.exists(supportInput))
-      deploy_msg.throw_imgnotfound(supportInput);
+// img is processed per-article, why? so that markdown can be used to preview
+// image locally using the single existing image
+// 
+const processembeddedimgref = (opts, filename, str, content, fn) => {
+  const match = String(str).match(imgFitRe)
+  const [ localimgpath, extn, wstr, hstr ] = match || []
+  const width = castas.num(wstr)
+  const height = castas.num(hstr, width)
+  console.log({ localimgpath, width, height, extn })
+  const localimgpathsans = localimgpath.replace(/#.*/, '')
+  const localimgpathnew = getprocessedimgpath(
+    localimgpathsans, extn, [ 'fit', wstr, hstr ])
+  console.log({ getasoutputpath: '', opts, filename, content })
+  const outfilename = deploy_pattern.getasoutputpath(opts, filename, content)
+  const supportInput = path.join(path.dirname(filename), localimgpathsans)
+  const supportOutput = path.join(path.dirname(outfilename), localimgpathnew)
+  const updatedstr = str.split(localimgpath).join(localimgpathnew)
 
-    if (deploy_file.exists(supportOutput)) {
-      return fn(null, updatedstr);
+  if (!deploy_file.exists(supportInput))
+    deploy_msg.throw_imgnotfound(supportInput)
+
+  if (deploy_file.exists(supportOutput)) {
+    return fn(null, updatedstr)
+  }
+
+  // initializeImageMagick('@imagemagick/magick-wasm').then(() => {
+  //   ImageMagick.read(supportInput, image => {
+  //     console.log('what do we have here', image)
+  //     image.resize(100, 100);
+  //     image.blur(1, 5);
+  //     console.log(image.toString());
+  //     image.write(MagickFormat.Jpeg, data => {
+  //       console.log(data.length);
+  //     });
+  //   })
+  // })
+
+  jimp.read(supportInput, (err, file) => {
+    if (err) return fn(err)
+
+    const { bitmap } = file
+    const bytelength = +bitmap.data.byteLength
+    const isscalable = bitmap.width > width || bitmap.height > height
+
+    if (isscalable) {
+      file.scaleToFit(width, height)
+
+      if (width < 1000 || height < 1000) {
+        file.quality(80)
+      }
     }
 
-    jimp.read(supportInput, (err, file) => {
-      if (err) return fn(err);
+    file.write(supportOutput, (err, savedfile) => {
+      if (err) return fn(err)
 
-      const { bitmap } = file,
-            bytelength = +bitmap.data.byteLength,
-            isscalable = bitmap.width > width || bitmap.height > height;
-
-      if (isscalable) {
-        file.scaleToFit(width, height);
-
-        if (width < 1000 || height < 1000) {
-          file.quality(80);
-        }
+      if (bytelength === savedfile.bitmap.data.byteLength) {
+        deploy_msg.convertedfilename(opts, supportOutput)
+      } else {
+        deploy_msg.scaledimage(
+          opts, supportOutput, bytelength, savedfile.bitmap.data.byteLength)
       }
 
-      file.write(supportOutput, (err, savedfile) => {
-        if (err) return fn(err);
+      fn(null, updatedstr)
+    })
+  })
+}
 
-        if (bytelength === savedfile.bitmap.data.byteLength) {
-          deploy_msg.convertedfilename(opts, supportOutput);
-        } else {
-          deploy_msg.scaledimage(
-            opts, supportOutput, bytelength, savedfile.bitmap.data.byteLength);
-        }
+const process = (opts, filename, articleobj, fn = () => {}) => {
+  const articlekeys = Object.keys(articleobj)
 
-        fn(null, updatedstr);
-      });
-    });
-  };
+  ;(function next (x, keys, key) {
+    if (!x--) return fn(null, articleobj)
 
-  o.process = (opts, filename, articleobj, fn = () => {}) => {
-    const articlekeys = Object.keys(articleobj);
+    key = keys[x]
 
-    (function next (x, keys, key) {
-      if (!x--) return fn(null, articleobj);
+    if (isembeddedimgkey(key) && imgFitRe.test(articleobj[key])) {
+      return processembeddedimgref(
+        opts, filename, articleobj[key], articleobj, (err, updatedstr) => {
+          if (err) return fn(err)
 
-      key = keys[x];
+          articleobj[key] = updatedstr
 
-      if (o.isembeddedimgkey(key) && o.imgFitRe.test(articleobj[key])) {
-        return o.processembeddedimgref(
-          opts, filename, articleobj[key], articleobj, (err, updatedstr) => {
-            if (err) return fn(err);
+          next(x, keys)
+        })
+    }
 
-            articleobj[key] = updatedstr;
+    next(x, keys)
+  }(articlekeys.length, articlekeys))
+}
 
-            next(x, keys);
-          });
-      }
-
-      next(x, keys);
-    }(articlekeys.length, articlekeys));
-  };
-
-  return o;
-})({});
+export default {
+  getprocessedimgpath,
+  processembeddedimgref,
+  process
+}

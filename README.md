@@ -1,8 +1,7 @@
 page-deploy
 ===========
 
-[![npm version](https://badge.fury.io/js/page-deploy.svg)](https://badge.fury.io/js/page-deploy) [![Build Status](https://travis-ci.org/iambumblehead/page-deploy.svg?branch=master)](https://travis-ci.org/iambumblehead/page-deploy)
-
+[![npm version](https://badge.fury.io/js/page-deploy.svg)](https://badge.fury.io/js/page-deploy) [Build Status](https://github.com/iambumblehead/page-deploy/workflows/nodejs-ci/badge.svg)
 
 **NOT FOR PRODUCTION USE -ALPHA QUALITY**
 

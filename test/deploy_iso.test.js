@@ -1,6 +1,6 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import deploy_iso from '../src/deploy_iso.js';
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import deploy_iso from '../src/deploy_iso.js'
 
 test("getisofilenamearr should return iso filenames", () => {
   assert.deepEqual(
@@ -9,5 +9,5 @@ test("getisofilenamearr should return iso filenames", () => {
       [ 'eng-US', 'spa-ES' ],
       [ 'ES', 'US' ]),
     [ 'eng-US_ES', 'eng-US_US', 'spa-ES_ES', 'spa-ES_US' ]
-  );
-});
+  )
+})
