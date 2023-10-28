@@ -3,7 +3,7 @@
 // Author(s): bumblehead <chris@bumblehead.com>
 
 import path from 'path';
-import glob from 'glob';
+import {glob} from 'glob';
 import objobjwalk from 'objobjwalk';
 
 import deploy_msg from './deploy_msg.js';
@@ -452,24 +452,22 @@ export default (o => {
 
   // return array of reference objects using properties
   // defined on fileobj
-  o.createRefSpecArr = (opts, filename, fileobj, fn) => {
+  o.createRefSpecArr = async (opts, filename, fileobj, fn) => {
     const fullpath = deploy_file.relpath(filename, fileobj.path);
 
-    glob(fullpath, {}, (err, filearr) => {
-      if (err) return fn(new Error(err));
+    let filearr = await glob(fullpath)
 
-      filearr = filearr
-        .filter(deploy_article.isarticledir)
-        .map(file => path.join(
-          file, path.basename(filename, path.extname(filename))));
+    filearr = filearr
+      .filter(deploy_article.isarticledir)
+      .map(file => path.join(
+        file, path.basename(filename, path.extname(filename))));
 
-      o.createRefSpecFileArr(opts, filename, filearr, (err, objarr) => {
-        if (err) return fn(err);
+    o.createRefSpecFileArr(opts, filename, filearr, (err, objarr) => {
+      if (err) return fn(err);
         
-        objarr = deploy_sort(objarr, fileobj.sort);
+      objarr = deploy_sort(objarr, fileobj.sort);
 
-        fn(null, objarr);
-      });
+      fn(null, objarr);
     });
   };  
 
