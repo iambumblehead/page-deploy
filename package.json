@@ -1,7 +1,7 @@
 {
   "name": "page-deploy",
   "type": "module",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "license": "MIT",
   "readmeFilename": "README.md",
   "description": "deploy page-object data and pattern files",
@@ -11,7 +11,7 @@
   },
   "main": "src/deploy.js",
   "exports": {
-    "import": "./src/deploly.js"
+    "import": "./src/deploy.js"
   },
   "files": [
     "src"
