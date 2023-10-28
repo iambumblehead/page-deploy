@@ -6,19 +6,19 @@
 //   specdirpath: /path/to/spec/name/
 // parentdirpath: /path/to/spec/
 
-const path = require('path'),
-      objobjwalk = require('objobjwalk'),
-      simpletime = require('simpletime').default,
+import path from 'path';
+import objobjwalk from 'objobjwalk';
+import simpletime from 'simpletime';
       
-      deploy_iso = require('./deploy_iso'),
-      deploy_msg = require('./deploy_msg'),
-      deploy_file = require('./deploy_file'),
-      deploy_paths = require('./deploy_paths'),
-      deploy_tokens = require('./deploy_tokens'),
+import deploy_iso from './deploy_iso.js';
+import deploy_msg from './deploy_msg.js';
+import deploy_file from './deploy_file.js';
+import deploy_paths from './deploy_paths.js';
+import deploy_tokens from './deploy_tokens.js';
 
-      { UNIVERSAL } = deploy_tokens;
+const { UNIVERSAL } = deploy_tokens;
 
-module.exports = (o => {
+export default (o => {
   // input: 1222580700000, 'articletitle'
   // return: '2008.09.27-articletitle'
   o.getdatetitlestamp = (date, title, datefmt = 'yyyy.MM.dd') => ':date-:title'

@@ -5,13 +5,13 @@
 // pickup and use 'support' directory and contents
 // for given pattern
 
-const rcp = require('recursive-copy'),
+import rcp from 'recursive-copy';
       
-      deploy_msg = require('./deploy_msg'),
-      deploy_file = require('./deploy_file'),
-      deploy_paths = require('./deploy_paths');
+import deploy_msg from './deploy_msg.js';
+import deploy_file from './deploy_file.js';
+import deploy_paths from './deploy_paths.js';
 
-module.exports = (o => {
+export default (o => {
   o.writeSupportDir = (opts, rootfilename, outfilename, fn) => {
     const supportInput = deploy_paths.pathsupportdir(rootfilename),
           supportOutput = deploy_paths.pathsupportdir(outfilename);

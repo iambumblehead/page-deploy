@@ -4,11 +4,10 @@
 //
 // useful for mocking with tests
 
-const fs = require('fs'), // read/write files
-      path = require('path'),
-      deploy_msg = require('./deploy_msg');
+import fs from 'fs';
+import path from 'path';
 
-module.exports = (o => {
+export default (o => {
   o.relpath = (filepath, refpath) =>
     path.join(path.dirname(filepath), refpath);
   

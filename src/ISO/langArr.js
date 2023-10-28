@@ -1,6 +1,7 @@
 // http://www.loc.gov/standards/iso639-2/ISO-639-2_8859-1.txt
 
-var languageArr = module.exports = [{
+/* eslint-disable max-len */
+export default [ {
   code : "aar",
   language : "||aa|Afar|afar"
 },{
@@ -1458,4 +1459,5 @@ var languageArr = module.exports = [{
 },{
   code : "zza",
   language : "|||Zaza; Dimili; Dimli; Kirdki; Kirmanjki; Zazaki|zaza; dimili; dimli; kirdki; kirmanjki; zazaki"
-}];
+} ];
+/* eslint-enable max-len */

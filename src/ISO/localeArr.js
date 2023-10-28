@@ -1,7 +1,7 @@
 // http://www.iso.org/iso/country_names_and_code_elements_txt
 // Country Name;ISO 3166-1-alpha-2 code
 
-var countryArr = module.exports = [{
+export default [ {
   code : "AF",
   country : "AFGHANISTAN"
 },{
@@ -748,4 +748,4 @@ country : "KOREA, REPUBLIC OF"
 },{
   code : "ZW",
   country : "ZIMBABWE"
-}];
+} ];

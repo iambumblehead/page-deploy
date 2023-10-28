@@ -2,10 +2,9 @@
 // Timestamp: 2017.09.03-12:55:49 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
-const path = require('path'),
-      deploy_paths = require('./deploy_paths');
+import deploy_paths from './deploy_paths.js';
 
-module.exports = (o => {
+export default (o => {
   o.start = () => console.log('[...] page-deploy: begin.');
 
   o.finish = () => console.log('[...] page-deploy: done.');

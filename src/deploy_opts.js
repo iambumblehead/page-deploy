@@ -2,11 +2,9 @@
 // Timestamp: 2017.09.02-22:17:28 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
-const path = require('path'),
-      util = require('util'),
-      castas = require('castas').default;
+import castas from 'castas';
 
-module.exports = (o => {
+export default (o => {
 
   const defaultopts = {
     inputDir : './convert/',

@@ -2,9 +2,9 @@
 // Timestamp: 2017.08.13-14:17:53 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
-const path = require('path');
+import path from 'path';
 
-module.exports = (o => {
+export default (o => {
 
   o.type = {
     Lang : 'Lang',

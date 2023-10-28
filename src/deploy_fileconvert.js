@@ -2,31 +2,25 @@
 // Timestamp: 2017.09.03-22:40:33 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-const fs = require('fs'),
-      path = require('path'),
-      glob = require('glob'),
-      objobjwalk = require('objobjwalk'),
-      htmldecoder = require('html-decoder'),
-      striphtmltags = require('strip-html-tags'),
+import path from 'path';
+import glob from 'glob';
+import objobjwalk from 'objobjwalk';
 
-      deploy_iso = require('./deploy_iso'),
-      deploy_msg = require('./deploy_msg'),
-      deploy_file = require('./deploy_file'),
-      deploy_sort = require('./deploy_sort'),
-      deploy_paths = require('./deploy_paths'),
-      deploy_parse = require('./deploy_parse'),
-      deploy_tokens = require('./deploy_tokens'),
-      deploy_pattern = require('./deploy_pattern'),
-      deploy_article = require('./deploy_article'),
-      deploy_marked = require('./deploy_marked'),
-      deploy_paginate = require('./deploy_paginate'),
-      deploy_imgprocess = require('./deploy_imgprocess'),
-      deploy_supportconvert = require('./deploy_supportconvert'),
-      deploy_fileconvert = require('./deploy_fileconvert'),
+import deploy_msg from './deploy_msg.js';
+import deploy_file from './deploy_file.js';
+import deploy_sort from './deploy_sort.js';
+import deploy_paths from './deploy_paths.js';
+import deploy_parse from './deploy_parse.js';
+import deploy_tokens from './deploy_tokens.js';
+import deploy_pattern from './deploy_pattern.js';
+import deploy_article from './deploy_article.js';
+import deploy_paginate from './deploy_paginate.js';
+import deploy_imgprocess from './deploy_imgprocess.js';
+import deploy_supportconvert from './deploy_supportconvert.js';
 
-      { UNIVERSAL, LOCALREF, LOCALREFARR, LOCALREFPAGEARR } = deploy_tokens;
+const { UNIVERSAL, LOCALREF, LOCALREFARR, LOCALREFPAGEARR } = deploy_tokens;
 
-module.exports = (o => {
+export default (o => {
   o = (opts, filename, fn) =>
     o.convertbase(opts, filename, fn);
 

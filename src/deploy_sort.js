@@ -2,7 +2,7 @@
 // Timestamp: 2017.08.13-14:31:48 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
-module.exports = (o => {
+export default (o => {
 
   o = (objarr, sortopts) =>
     o.sort(objarr, sortopts);

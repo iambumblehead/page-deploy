@@ -1,6 +1,6 @@
-const test = require('node:test'),
-      assert = require('node:assert/strict'),
-      deploy_iso = require('../src/deploy_iso');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import deploy_iso from '../src/deploy_iso.js';
 
 test("getisofilenamearr should return iso filenames", () => {
   assert.deepEqual(

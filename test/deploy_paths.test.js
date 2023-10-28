@@ -1,6 +1,6 @@
-const test = require('node:test'),
-      assert = require('node:assert/strict'),
-      deploy_paths = require('../src/deploy_paths');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import deploy_paths from '../src/deploy_paths.js';
 
 test("removedir should remove directory from a path", () => {
   assert.strictEqual(

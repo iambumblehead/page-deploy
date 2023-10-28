@@ -2,15 +2,15 @@
 // Timestamp: 2017.09.03-22:31:15 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-const fs = require('fs'),
-      path = require('path'),
-      objobjwalk = require('objobjwalk'),
+import fs from 'fs';
+import path from 'path';
+import objobjwalk from 'objobjwalk';
 
-      deploy_iso = require('./deploy_iso'),
-      deploy_file = require('./deploy_file'),
-      deploy_paths = require('./deploy_paths');
+import deploy_iso from './deploy_iso.js';
+import deploy_file from './deploy_file.js';
+import deploy_paths from './deploy_paths.js';
 
-module.exports = (o => {
+export default (o => {
 
   o.nsre = /^ns\./;
 
