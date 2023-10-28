@@ -5,13 +5,12 @@
   ],
   "plugins": [],
   "globals": {
-    "require": true
   },
   "env": {
     "browser": false
   },
   "parserOptions": {
-    "sourceType": "script",
+    "sourceType": "module",
     "ecmaVersion": "latest",
     "allowImportExportEverywhere": true
   },

@@ -1,11 +1,10 @@
-const fs = require('fs'),
-      path = require('path'),
-      htmldecoder = require('html-decoder'),
-      striphtmltags = require('strip-html-tags'),
-      deploy_msg = require('./deploy_msg'),
-      deploy_marked = require('./deploy_marked');
+import path from 'path';
+import htmldecoder from 'html-decoder';
+import striphtmltags from 'strip-html-tags';
+import deploy_msg from './deploy_msg.js';
+import deploy_marked from './deploy_marked.js';
 
-module.exports = (o => {
+export default (o => {
   o.extractexcerpt = content => {
     const match = String(content).match(/<p>(.*)…/gi),
           excerpt = match && match[0].slice(0, -1);

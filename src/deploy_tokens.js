@@ -3,7 +3,7 @@
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 // TODO needs documentation
-module.exports = {
+export default {
   UNIVERSAL : 'universal',
   
   LOCALREF : 'local-ref',

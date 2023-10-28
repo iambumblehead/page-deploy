@@ -1,10 +1,10 @@
-const util = require('node:util'),
-      test = require('node:test'),
-      assert = require('node:assert/strict'),
-      rewiremock = require('rewiremock').default,
-      timezone_mock = require('timezone-mock'),
+import util from 'node:util';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import esmock from 'esmock';
+import timezone_mock from 'timezone-mock';
 
-      deploy_parse = require('../src/deploy_parse');
+import deploy_parse from '../src/deploy_parse.js';
 
 timezone_mock.register('US/Pacific');
 
@@ -42,8 +42,8 @@ _⌚ 2008.09.27-22:45:00_
 `;
 
 test("getadjacentarticlepaths should return adjacent article paths", async () => {
-  const deploy_article = rewiremock.proxy('../src/deploy_article.js', {
-    './deploy_file' : {
+  const deploy_article = await esmock('../src/deploy_article.js', {
+    '../src/deploy_file.js' : {
       readdir : (dir, fn) => fn(null, [
         '2008.09.27-pyramid',
         '2009.05.05-big-update',
@@ -66,8 +66,8 @@ test("getadjacentarticlepaths should return adjacent article paths", async () =>
 });
 
 test("applyuniverseisoobjarr should return adjacent article paths", async () => {
-  const deploy_article = rewiremock.proxy('../src/deploy_article.js', {
-    './deploy_file' : {
+  const deploy_article = await esmock('../src/deploy_article.js', {
+    '../src/deploy_file.js' : {
       writeassign : (filename, content, fn) => {
         fn(null, content);
       },
@@ -94,8 +94,8 @@ test("applyuniverseisoobjarr should return adjacent article paths", async () => 
 });
 
 test("getnextprevarticlepath should return prev article path", async () => {
-  const deploy_article = rewiremock.proxy('../src/deploy_article.js', {
-    './deploy_file' : {
+  const deploy_article = await esmock('../src/deploy_article.js', {
+    '../src/deploy_file.js' : {
       writeassign : (filename, content, fn) => {
         fn(null, content);
       },
@@ -126,8 +126,8 @@ test("getnextprevarticlepath should return prev article path", async () => {
 });
 
 test("getnextprevarticlepath should return next article path", async () => {
-  const deploy_article = rewiremock.proxy('../src/deploy_article.js', {
-    './deploy_file' : {
+  const deploy_article = await esmock('../src/deploy_article.js', {
+    '../src/deploy_file.js' : {
       writeassign : (filename, content, fn) => {
         fn(null, content);
       },
@@ -158,8 +158,8 @@ test("getnextprevarticlepath should return next article path", async () => {
 });
 
 test("applyuniversearticleisoobj should update ns namespace", async () => {
-  const deploy_article = rewiremock.proxy('../src/deploy_article.js', {
-    './deploy_file' : {
+  const deploy_article = await esmock('../src/deploy_article.js', {
+    '../src/deploy_file.js' : {
       writeassign : (filename, content, fn) => {
         fn(null, content);
       },

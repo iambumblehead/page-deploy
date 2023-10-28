@@ -1,14 +1,14 @@
-const util = require('node:util'),
-      test = require('node:test'),
-      assert = require('node:assert/strict'),
-      rewiremock = require('rewiremock').default,
-      timezone_mock = require('timezone-mock');
+import util from 'node:util';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import esmock from 'esmock';
+import timezone_mock from 'timezone-mock';
 
 timezone_mock.register('US/Pacific');
 
 test("getsimilarfilename should return similar file", async () => {
-  const deploy_pattern = rewiremock.proxy('../src/deploy_pattern.js', {
-    './deploy_file' : {
+  const deploy_pattern = await esmock('../src/deploy_pattern.js', {
+    '../src/deploy_file.js' : {
       readdir : (dir, fn) => fn(null, [ 'spec-ES.md' ])
     }
   });
@@ -20,8 +20,8 @@ test("getsimilarfilename should return similar file", async () => {
 });
 
 test("getsimilarfilename should not return the same file", async () => {
-  const deploy_pattern = rewiremock.proxy('../src/deploy_pattern.js', {
-    './deploy_file' : {
+  const deploy_pattern = await esmock('../src/deploy_pattern.js', {
+    '../src/deploy_file.js' : {
       readdir : (dir, fn) => fn(null, [ 'spec-ES.json' ])
     }
   });
@@ -34,7 +34,7 @@ test("getsimilarfilename should not return the same file", async () => {
 
 // eslint-disable-next-line max-len
 test("updatelangdefs should update definitions of lang properties", async () => {
-  const deploy_pattern = rewiremock.proxy('../src/deploy_pattern.js');
+  const deploy_pattern = await esmock('../src/deploy_pattern.js');
 
   let updatedobj = await util.promisify(deploy_pattern.updatelangdefs)({
     node : "nodetype",
@@ -63,7 +63,7 @@ test("updatelangdefs should update definitions of lang properties", async () => 
 });
 
 test("updatelangkeys should update keys of lang properties", async () => {
-  const deploy_pattern = rewiremock.proxy('../src/deploy_pattern.js');
+  const deploy_pattern = await esmock('../src/deploy_pattern.js');
 
   let updatedobj = await util.promisify(deploy_pattern.updatelangkeys)({
     label : { langkey : 'langkeya' },
@@ -78,8 +78,8 @@ test("updatelangkeys should update keys of lang properties", async () => {
   });
 });
 
-test("getdatetitlestampoutputpath should return outputdir", () => {
-  const deploy_pattern = require('../src/deploy_pattern.js');
+test("getdatetitlestampoutputpath should return outputdir", async () => {
+  const deploy_pattern = await esmock('../src/deploy_pattern.js');
 
   assert.strictEqual(
     deploy_pattern.getdatetitlestampoutputpath('/path/to/base-lang.json', {
@@ -90,8 +90,8 @@ test("getdatetitlestampoutputpath should return outputdir", () => {
   );
 });
 
-test("getdatetitlestamp should return outputdir", () => {
-  const deploy_pattern = require('../src/deploy_pattern.js');
+test("getdatetitlestamp should return outputdir", async () => {
+  const deploy_pattern = await esmock('../src/deploy_pattern.js');
 
   assert.strictEqual(
     deploy_pattern.getdatetitlestamp(1222580700000, 'articletitle'),
@@ -99,8 +99,8 @@ test("getdatetitlestamp should return outputdir", () => {
   );
 });
 
-test("getuniversefilepath should return universe filepath", () => {
-  const deploy_pattern = require('../src/deploy_pattern.js');
+test("getuniversefilepath should return universe filepath", async () => {
+  const deploy_pattern = await esmock('../src/deploy_pattern.js');
 
   assert.strictEqual(
     deploy_pattern.getuniversefilepath('/path/to/spec-ES.md'),
@@ -108,8 +108,8 @@ test("getuniversefilepath should return universe filepath", () => {
   );
 });
 
-test("getasoutputpath should return datetitle outputdir", () => {
-  const deploy_pattern = require('../src/deploy_pattern.js');
+test("getasoutputpath should return datetitle outputdir", async () => {
+  const deploy_pattern = await esmock('../src/deploy_pattern.js');
 
   assert.strictEqual(
     deploy_pattern.getasoutputpath({

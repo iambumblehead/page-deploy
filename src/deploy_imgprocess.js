@@ -1,12 +1,11 @@
-const path = require('path'),
-      jimp = require('jimp'),
-      castas = require('castas').default,
-      deploy_msg = require('./deploy_msg'),
-      deploy_file = require('./deploy_file'),
-      deploy_paths = require('./deploy_paths'),
-      deploy_pattern = require('./deploy_pattern');
+import path from 'path';
+import jimp from 'jimp';
+import castas from 'castas';
+import deploy_msg from './deploy_msg.js';
+import deploy_file from './deploy_file.js';
+import deploy_pattern from './deploy_pattern.js';
 
-module.exports = (o => {
+export default (o => {
   o.imgFitRe = /support.*(\.jpg|\.jpeg|\.png).*pd\.fit\:(\d*)x?(\d*)?/i;
 
   o.isembeddedimgkey = key => key === 'content' || /img$/i.test(key);

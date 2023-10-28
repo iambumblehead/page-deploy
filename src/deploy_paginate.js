@@ -2,13 +2,13 @@
 // Timestamp: 2017.09.05-03:34:49 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>  
 
-const path = require('path'),
-      pathpublic = require('pathpublic'),
+import path from 'path';
+import pathpublic from 'pathpublic';
 
-      deploy_file = require('./deploy_file'),
-      deploy_pattern = require('./deploy_pattern');
+import deploy_file from './deploy_file.js';
+import deploy_pattern from './deploy_pattern.js';
 
-module.exports = (o => {
+export default (o => {
 
   // filename (parent file where obj is found)
   //   src/spec/page/blog/spec-baseLang.json

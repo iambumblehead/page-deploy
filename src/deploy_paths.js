@@ -7,10 +7,10 @@
 // parentdirpath: /path/to/spec/
 //
 
-const path = require('path');
-const pathpublic = require('pathpublic');
+import path from 'path';
+import pathpublic from 'pathpublic';
 
-module.exports = (o => {
+export default (o => {
 
   o.supportSubDirName = '/support';
 

@@ -1,7 +1,7 @@
-const test = require('node:test'),
-      assert = require('node:assert/strict'),
-      timezone_mock = require('timezone-mock'),
-      deploy_parse = require('../src/deploy_parse');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import timezone_mock from 'timezone-mock';
+import deploy_parse from '../src/deploy_parse.js';
 
 timezone_mock.register('US/Pacific');
 

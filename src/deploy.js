@@ -5,19 +5,19 @@
 // uses gfm (github-flavored-markdown): https://github.com/chjj/marked
 
 
-const fs = require('fs'),
-      path = require('path'),
+import fs from 'fs';
+import path from 'path';
 
-      deploy_msg = require('./deploy_msg'),
-      deploy_opts = require('./deploy_opts'),    
-      deploy_file = require('./deploy_file'),
-      deploy_tokens = require('./deploy_tokens'),
-      deploy_pattern = require('./deploy_pattern'),    
-      deploy_fileconvert = require('./deploy_fileconvert'),
+import deploy_msg from './deploy_msg.js';
+import deploy_opts from './deploy_opts.js';
+import deploy_file from './deploy_file.js';
+import deploy_tokens from './deploy_tokens.js';
+import deploy_pattern from './deploy_pattern.js';
+import deploy_fileconvert from './deploy_fileconvert.js';
 
-      { UNIVERSAL } = deploy_tokens;
+const { UNIVERSAL } = deploy_tokens;
 
-module.exports = (o => {  
+export default (o => {  
   o.bfsconvertdir = (opts, input, fn) => {
     if (deploy_file.isdir(!input)) {
       throw new Error(`input must be a file: ${input}`);

@@ -1,4 +1,7 @@
-const localeDeploy = require('../');
+import url from 'node:url'
+import localeDeploy from '../src/deploy.js';
+
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 // should be relative paths
 localeDeploy.convert({

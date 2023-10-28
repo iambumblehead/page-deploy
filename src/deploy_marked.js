@@ -2,10 +2,10 @@
 // Timestamp: 2017.08.24-03:00:04 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-const simpletime = require('simpletime').default,
-      marked = require('marked'),
-      castas = require('castas').default,
-      hljs = require('highlight.js');
+import simpletime from 'simpletime';
+import marked from 'marked';
+import castas from 'castas';
+import hljs from 'highlight.js';
 
 marked.setOptions({
   gfm : true,
@@ -17,7 +17,7 @@ marked.setOptions({
   }
 });
 
-module.exports = (o => {
+export default (o => {
 
   o = filestr =>
     marked(filestr);

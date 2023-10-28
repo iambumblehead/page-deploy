@@ -2,13 +2,13 @@
 // Timestamp: 2017.04.09-01:37:56 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-const test = require('node:test'),
-      assert = require('node:assert/strict'),
-      os = require('os'),
-      path = require('path'),
-      deploy_fileconvert = require('../src/deploy_fileconvert'),
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import os from 'os';
+import path from 'path';
+import deploy_fileconvert from '../src/deploy_fileconvert.js';
 
-      homedir = os.homedir();
+const homedir = os.homedir();
 
 // in ./inputs/name
 // out $HOME/software/pocket-markdown-converter/ \
