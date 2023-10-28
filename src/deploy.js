@@ -5,9 +5,9 @@
 // uses gfm (github-flavored-markdown): https://github.com/chjj/marked
 
 
-import fs from 'fs';
-import path from 'path';
-
+import fs from 'node:fs';
+import path from 'node:path';
+import util from 'node:util'
 import deploy_msg from './deploy_msg.js';
 import deploy_opts from './deploy_opts.js';
 import deploy_file from './deploy_file.js';
@@ -17,60 +17,57 @@ import deploy_fileconvert from './deploy_fileconvert.js';
 
 const { UNIVERSAL } = deploy_tokens;
 
-export default (o => {  
-  o.bfsconvertdir = (opts, input, fn) => {
-    if (deploy_file.isdir(!input)) {
-      throw new Error(`input must be a file: ${input}`);
-    }
 
-    fs.readdir(input, { withFileTypes : true }, (err, direntarr) => {
+const bfsconvertdir = (opts, input, fn) => {
+  if (deploy_file.isdir(!input)) {
+    throw new Error(`input must be a file: ${input}`);
+  }
+
+  fs.readdir(input, { withFileTypes : true }, (err, direntarr) => {
+    if (err) return fn(err);
+
+    deploy_fileconvert.foreachasync(opts, direntarr, (opts, dirent, fn) => {
+      const filepath = path.join(input, dirent.name);
+      
+      if (dirent.isFile() &&
+          deploy_pattern.patternisvalidinputfilename(dirent.name)) {
+        return deploy_fileconvert.convertbase(opts, filepath, fn);
+      }
+
+      if (dirent.isDirectory()) {
+        return bfsconvertdir(opts, filepath, fn);
+      }
+
+      return fn(null, null);
+    }, (err, res) => {
       if (err) return fn(err);
-
-      deploy_fileconvert.foreachasync(opts, direntarr, (opts, dirent, fn) => {
-        const filepath = path.join(input, dirent.name);
-        
-        if (dirent.isFile() &&
-            deploy_pattern.patternisvalidinputfilename(dirent.name)) {
-          return deploy_fileconvert.convertbase(opts, filepath, fn);
-        }
-
-        if (dirent.isDirectory()) {
-          return o.bfsconvertdir(opts, filepath, fn);
-        }
-
-        return fn(null, null);
-      }, (err, res) => {
-        if (err) return fn(err);
-        
-        if (deploy_file.isdir(path.join(input, UNIVERSAL))) {
-          deploy_msg.applyuniverse(opts, path.join(input, UNIVERSAL));
-          deploy_fileconvert.applyuniverse(opts, input, (err, res) => {
-            if (err) return fn(err);
-            
-            fn(err, res);
-          });
-        } else {
+      
+      if (deploy_file.isdir(path.join(input, UNIVERSAL))) {
+        deploy_msg.applyuniverse(opts, path.join(input, UNIVERSAL));
+        deploy_fileconvert.applyuniverse(opts, input, (err, res) => {
+          if (err) return fn(err);
+          
           fn(err, res);
-        }
-      });
-    });
-  };
-
-  o.convert = (opts, fn) => {
-    deploy_msg.start();
-
-    opts = deploy_opts(opts);
-    
-    o.bfsconvertdir(opts, opts.inputDir, (err, res) => {
-      if (err) return deploy_msg.throw(err, err.stack || '');
-
-      deploy_msg.finish();
-      if (typeof fn === 'function') {
-        fn(null, 'success');
+        });
+      } else {
+        fn(err, res);
       }
     });
-  };
+  });
+};
 
-  return o;
+const convert = async opts => {
+  deploy_msg.start();
 
-})({});
+  opts = deploy_opts(opts);
+  
+  await util.promisify(bfsconvertdir)(opts, opts.inputDir)
+
+  deploy_msg.finish();
+};
+
+export {
+  convert as default,
+  bfsconvertdir,
+  convert
+}
