@@ -22,7 +22,7 @@ function log () { console.log('yes!') }
   /* eslint-disable max-len */
   const HTMLStringCode = (`
 <p>a code block</p>
-<pre><code class="hljs language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">log</span> () { <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&#x27yes!&#x27</span>) }
+<pre><code class="hljs language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">log</span> () { <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&#x27;yes!&#x27;</span>) }
 </code></pre>
 `).slice(1, -1)
   /* eslint-enable max-len */
