@@ -1,7 +1,7 @@
 page-deploy
 ===========
 
-[![npm version](https://badge.fury.io/js/page-deploy.svg)](https://badge.fury.io/js/page-deploy) [Build Status](https://github.com/iambumblehead/page-deploy/workflows/test/badge.svg)
+[![npm version](https://badge.fury.io/js/page-deploy.svg)](https://badge.fury.io/js/page-deploy) ![Build Status](https://github.com/iambumblehead/page-deploy/workflows/test/badge.svg)
 
 **NOT FOR PRODUCTION USE -ALPHA QUALITY**
 
