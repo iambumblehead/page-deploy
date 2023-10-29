@@ -4,78 +4,90 @@
 //
 // useful for mocking with tests
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'fs'
+import path from 'path'
 
-export default (o => {
-  o.relpath = (filepath, refpath) =>
-    path.join(path.dirname(filepath), refpath);
+const relpath = (filepath, refpath) => (
+  path.join(path.dirname(filepath), refpath))
   
-  o.exists = filepath =>
-    fs.existsSync(filepath);
+const exists = filepath => (
+  fs.existsSync(filepath))
 
-  o.isdir = filepath =>
-    o.exists(filepath) && fs.statSync(filepath).isDirectory();
+const isdir = filepath => (
+  exists(filepath) && fs.statSync(filepath).isDirectory())
 
-  o.isfile = filepath =>
-    o.exists(filepath) && fs.statSync(filepath).isFile();
+const isfile = filepath => (
+  exists(filepath) && fs.statSync(filepath).isFile())
 
-  o.readdir = (filepath, fn) => fs.readdir(filepath, fn);
+const readdir = (filepath, fn) => fs.readdir(filepath, fn)
 
-  o.read = (filepath, fn) => fs.readFile(filepath, 'utf8', fn);
+const read = (filepath, fn) => fs.readFile(filepath, 'utf8', fn)
 
-  o.stringify = obj => /string|boolean|number/.test(typeof obj)
+const stringify = obj => (
+  /string|boolean|number/.test(typeof obj)
     ? obj
-    : JSON.stringify(obj, null, '  ');
+    : JSON.stringify(obj, null, '  '))
 
-  o.write = (filename, content, fn) =>
-    fs.writeFile(filename, o.stringify(content), fn);
+const write = (filename, content, fn) => (
+  fs.writeFile(filename, stringify(content), fn))
 
-  o.readobj = (filepath, fn, defaultobj) => {
-    if (typeof defaultobj === 'object' && !o.isfile(filepath)) {
-      return fn(null, defaultobj);
-    }
+const readobj = (filepath, fn, defaultobj) => {
+  if (typeof defaultobj === 'object' && !isfile(filepath)) {
+    return fn(null, defaultobj)
+  }
     
-    o.read(filepath, (err, file) => {
-      if (err) return fn(err);
+  read(filepath, (err, file) => {
+    if (err) return fn(err)
       
-      if (!/json$/.test(filepath))
-        return fn(null, file);
+    if (!/json$/.test(filepath))
+      return fn(null, file)
 
-      try {
-        file = JSON.parse(file);
-      } catch (e) {
-        err = e;
-      }
+    try {
+      file = JSON.parse(file)
+    } catch (e) {
+      err = e
+    }
       
-      fn(err, file);
-    });
-  };
+    fn(err, file)
+  })
+}
 
-  o.writeassign = (filename, content, fn) => {
-    o.readobj(filename, (err, obj) => {
-      if (err) return fn(err);
+const writeassign = (filename, content, fn) => {
+  readobj(filename, (err, obj) => {
+    if (err) return fn(err)
 
-      o.write(filename, Object.assign(obj, content), (err, res) => {
-        if (err) return fn(err);
+    write(filename, Object.assign(obj, content), (err, res) => {
+      if (err) return fn(err)
 
-        fn(null, obj);
-      });
-    }, {});
-  };
+      fn(null, obj)
+    })
+  }, {})
+}
 
-  // only creates the path if it does not exist
-  o.createPath = (directory, fn) => o.isdir(directory)
+// only creates the path if it does not exist
+const createPath = (directory, fn) => (
+  isdir(directory)
     ? fn(null, directory)
-    : fs.mkdir(directory, {recursive : true}, fn);
+    : fs.mkdir(directory, {recursive: true}, fn))
 
-  o.writeRecursive = (filename, content, fn) =>
-    o.createPath(path.dirname(filename), (err, res) => {
-      if (err) return fn(err);
+const writeRecursive = (filename, content, fn) => (
+  createPath(path.dirname(filename), (err, res) => {
+    if (err) return fn(err)
       
-      o.write(filename, content, fn);
-    });
- 
-  return o;
+    write(filename, content, fn)
+  }))
 
-})({});
+export default {
+  relpath,
+  exists,
+  isdir,
+  isfile,
+  readdir,
+  read,
+  stringify,
+  write,
+  readobj,
+  writeassign,
+  createPath,
+  writeRecursive
+}

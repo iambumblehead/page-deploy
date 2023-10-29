@@ -2,225 +2,238 @@
 // Timestamp: 2017.09.03-22:31:15 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-import fs from 'fs';
-import path from 'path';
-import objobjwalk from 'objobjwalk';
+import fs from 'fs'
+import path from 'path'
+import objobjwalk from 'objobjwalk'
 
-import deploy_iso from './deploy_iso.js';
-import deploy_file from './deploy_file.js';
-import deploy_paths from './deploy_paths.js';
+import deploy_iso from './deploy_iso.js'
+import deploy_file from './deploy_file.js'
+import deploy_paths from './deploy_paths.js'
 
-export default (o => {
+const nsre = /^ns\./
 
-  o.nsre = /^ns\./;
+const nsrm = str => str.replace(nsre, '')
 
-  o.nsrm = str => str.replace(o.nsre, '');
+const objlookup = (namespacestr, obj) => (
+  String(namespacestr).split('.').reduce(
+    (a, b) => a ? (b in a ? a[b] : a[Number(b)]) : null, obj))
 
-  o.objlookup = (namespacestr, obj) => 
-    String(namespacestr).split('.').reduce(
-      (a, b) => a ? (b in a ? a[b] : a[Number(b)]) : null, obj);
+// 2017.08.31-my-article
+// true 2017.08.31-my-article
+const isarticlepath = specfilepath => (
+  /^\d\d\d\d.\d\d.\d\d-.*$/.test(path.basename(specfilepath)))
 
-  // 2017.08.31-my-article
-  // true 2017.08.31-my-article
-  o.isarticlepath = specfilepath =>
-    /^\d\d\d\d.\d\d.\d\d-.*$/.test(path.basename(specfilepath));
+// 2017.08.31-my-article
+const isarticledir = specfilepath => (
+  deploy_file.isdir(specfilepath) && isarticlepath(specfilepath))
 
-  // 2017.08.31-my-article
-  o.isarticledir = specfilepath =>
-    deploy_file.isdir(specfilepath) && o.isarticlepath(specfilepath);
+const isarticlefilepath = specfilepath => (
+  deploy_file.isfile(specfilepath)
+    && isarticlepath(path.dirname(specfilepath)))
 
-  o.isarticlefilepath = specfilepath =>
-    deploy_file.isfile(specfilepath)
-      && o.isarticlepath(path.dirname(specfilepath));
+//o.getdirarticlepaths = (opts, dirpath, fn) =>
+const readdirarticles = (opts, dirpath, fn) => (
+  deploy_file.readdir(dirpath, (err, filearr) => {
+    if (err) return fn(err)
 
-  //o.getdirarticlepaths = (opts, dirpath, fn) =>
-  o.readdirarticles = (opts, dirpath, fn) =>
-    deploy_file.readdir(dirpath, (err, filearr) => {
-      if (err) return fn(err);
+    fn(null, filearr.filter(isarticlepath))
+  }))
 
-      fn(null, filearr.filter(o.isarticlepath));
-    });
+const readdirarticlesfullpath = (opts, dirpath, fn) => (
+  readdirarticles(opts, dirpath, (err, filearr) => {
+    if (err) return fn(err)
 
-  o.readdirarticlesfullpath = (opts, dirpath, fn) =>
-    o.readdirarticles(opts, dirpath, (err, filearr) => {
-      if (err) return fn(err);
+    // TODO remove silly map
+    fn(null, filearr.map(file => path.join(dirpath, file)))
+  }))
 
-      // TODO remove silly map
-      fn(null, filearr.map(file => path.join(dirpath, file)));
-    });  
+const getadjacentarticlepaths = (opts, filepath, fn) => {
+  const parentdir = deploy_paths.getparentdirpath(filepath)
 
+  readdirarticlesfullpath(opts, parentdir, (err, filearr) => {
+    if (err) return fn(err)
 
-  o.getadjacentarticlepaths = (opts, filepath, fn) => {
-    const parentdir = deploy_paths.getparentdirpath(filepath);
+    fn(null, filearr.map(file => path.join(file, path.basename(filepath))))
+  })
+}
 
-    o.readdirarticlesfullpath(opts, parentdir, (err, filearr) => {
-      if (err) return fn(err);
+const getadjacentarticlepathscached = (opts, filepath, fn) => {
+  const parentdir = deploy_paths.getparentdirpath(filepath)
 
-      fn(null, filearr.map(file => path.join(file, path.basename(filepath))));
-    });
-  };
+  if (opts.articlescache[parentdir]) {
+    return fn(null, opts.articlescache[parentdir])
+  }
 
-  o.getadjacentarticlepathscached = (opts, filepath, fn) => {
-    const parentdir = deploy_paths.getparentdirpath(filepath);
+  getadjacentarticlepaths(opts, filepath, (err, filearr) => {
+    if (err) return fn(err)
 
-    if (opts.articlescache[parentdir]) {
-      return fn(null, opts.articlescache[parentdir]);
+    opts.articlescache[parentdir] = filearr
+
+    fn(null, filearr)
+  })
+}
+
+const getnextprevarticlepath = (opts, filepath, nextprev=1, fn, indexnum) => {
+  getadjacentarticlepathscached(opts, filepath, (err, filepaths) => {
+    if (err) return fn(err)
+    
+    //
+    // filepath:
+    //   src/spec/page/blog/2008.09.27-pyramid/spec-baseLang.md
+    //
+    // filepaths: [
+    //   '2008.09.25-actionscript-development/spec-baseLang.md',
+    //   '2008.09.27-pyramid/spec-baseLang.md',
+    //   '2008.11.11-creation/spec-baseLang.md'
+    // ]
+    //
+    indexnum = typeof indexnum === 'number'
+      ? indexnum
+      : filepaths.findIndex(nextfilepath => (
+        filepath.includes(nextfilepath)))
+
+    indexnum += nextprev === -1 ? -1 : 1
+
+    if (!(-1 < indexnum && indexnum < filepaths.length)) {
+      return fn(null, null, null)
     }
 
-    o.getadjacentarticlepaths(opts, filepath, (err, filearr) => {
-      if (err) return fn(err);
+    const fullpath = filepaths[indexnum]
 
-      opts.articlescache[parentdir] = filearr;
+    deploy_file.readobj(fullpath, (err, fileobj) => {
+      if (err) return fn(err)
 
-      fn(null, filearr);
-    });
-  };
-
-  o.getnextprevarticlepath = (opts, filepath, nextprev=1, fn, indexnum) => {
-    o.getadjacentarticlepathscached(opts, filepath, (err, filepaths) => {
-      if (err) return fn(err);
-      
-      //
-      // filepath:
-      //   src/spec/page/blog/2008.09.27-pyramid/spec-baseLang.md
-      //
-      // filepaths: [
-      //   '2008.09.25-actionscript-development/spec-baseLang.md',
-      //   '2008.09.27-pyramid/spec-baseLang.md',
-      //   '2008.11.11-creation/spec-baseLang.md'
-      // ]
-      //
-      indexnum = typeof indexnum === 'number'
-        ? indexnum
-        : filepaths.findIndex(nextfilepath => (
-          filepath.includes(nextfilepath)));
-
-      indexnum += nextprev === -1 ? -1 : 1;
-
-      if (!(-1 < indexnum && indexnum < filepaths.length)) {
-        return fn(null, null, null);
+      // if not published, skip
+      if (fileobj.ispublished === false) {
+        getnextprevarticlepath(opts, fullpath, nextprev, fn, indexnum)
+      } else {
+        fn(null, fullpath, fileobj)
       }
+    })
+  })
+}
 
-      const fullpath = filepaths[indexnum];
+// eslint-disable-next-line max-len
+const getnextprevarticlepathcache = (opts, filepath, nextprev, fn, indexnum) => {
+  const nextpath = opts.articlescache[filepath + nextprev]
 
-      deploy_file.readobj(fullpath, (err, fileobj) => {
-        if (err) return fn(err);
-
-        // if not published, skip
-        if (fileobj.ispublished === false) {
-          o.getnextprevarticlepath(opts, fullpath, nextprev, fn, indexnum);
-        } else {
-          fn(null, fullpath, fileobj);
-        }
-      });
-    });
-  };
-
-  
-  o.getnextprevarticlepathcache = (opts, filepath, nextprev, fn, indexnum) => {
-    const nextpath = opts.articlescache[filepath + nextprev];
-
-    if (nextpath) {
-      deploy_file.readobj(nextpath, (err, fileobj) => {
-        fn(err, nextpath, fileobj);
-      });
-    } else {
-      // eslint-disable-next-line max-len
-      o.getnextprevarticlepath(opts, filepath, nextprev, (err, nextpath, fileobj) => {
-        if (err) return fn(err);
+  if (nextpath) {
+    deploy_file.readobj(nextpath, (err, fileobj) => {
+      fn(err, nextpath, fileobj)
+    })
+  } else {
+    // eslint-disable-next-line max-len
+    getnextprevarticlepath(opts, filepath, nextprev, (err, nextpath, fileobj) => {
+      if (err) return fn(err)
         
-        opts.articlescache[filepath + nextprev] = nextpath;
+      opts.articlescache[filepath + nextprev] = nextpath
 
-        fn(null, nextpath, fileobj);
-      });
-    }
-  };
+      fn(null, nextpath, fileobj)
+    })
+  }
+}
 
-  o.getnextarticlepathcache = (opts, filepath, fn) =>
-    o.getnextprevarticlepathcache(opts, filepath, 1, fn);
+const getnextarticlepathcache = (opts, filepath, fn) => (
+  getnextprevarticlepathcache(opts, filepath, 1, fn))
 
-  o.getprevarticlepathcache = (opts, filepath, fn) => 
-    o.getnextprevarticlepathcache(opts, filepath, -1, fn);
+const getprevarticlepathcache = (opts, filepath, fn) => (
+  getnextprevarticlepathcache(opts, filepath, -1, fn))
 
-  // eslint-disable-next-line max-len
-  o.applyuniversearticleisoobj = (opts, articledir, [ isopath, isoobj ], fn) => {
-    let articlepath = path.join(
-      articledir, deploy_iso.getRmPrefix(path.basename(isopath)));
+// eslint-disable-next-line max-len
+const applyuniversearticleisoobj = (opts, articledir, [ isopath, isoobj ], fn) => {
+  let articlepath = path.join(
+    articledir, deploy_iso.getRmPrefix(path.basename(isopath)))
 
-    objobjwalk.async(JSON.parse(JSON.stringify(isoobj)), (objobj, exitfn) => {
-      if (typeof objobj === 'string') {
-        if (o.nsre.test(objobj)) {
-          objobj = o.nsrm(objobj);
+  objobjwalk.async(JSON.parse(JSON.stringify(isoobj)), (objobj, exitfn) => {
+    if (typeof objobj === 'string') {
+      if (nsre.test(objobj)) {
+        objobj = nsrm(objobj)
 
-          const [ ns ] = String(objobj).split('.');
+        const [ ns ] = String(objobj).split('.')
 
-          if (ns === 'next') {
+        if (ns === 'next') {
 
-            // eslint-disable-next-line max-len
-            return o.getnextarticlepathcache(opts, articlepath, (err, nextpath, nextobj) => {
-              if (err) return exitfn(err);
+          // eslint-disable-next-line max-len
+          return getnextarticlepathcache(opts, articlepath, (err, nextpath, nextobj) => {
+            if (err) return exitfn(err)
 
-              exitfn(null, o.objlookup(objobj, {
-                next : nextobj
-              }));
-            });
-          }
+            exitfn(null, objlookup(objobj, {
+              next: nextobj
+            }))
+          })
+        }
 
-          if (ns === 'prev') {
-            // eslint-disable-next-line max-len
-            return o.getprevarticlepathcache(opts, articlepath, (err, prevpath, prevobj) => {
-              if (err) return exitfn(err);
+        if (ns === 'prev') {
+          // eslint-disable-next-line max-len
+          return getprevarticlepathcache(opts, articlepath, (err, prevpath, prevobj) => {
+            if (err) return exitfn(err)
 
-              exitfn(null, o.objlookup(objobj, {
-                prev : prevobj
-              }));
-            });
-          }
+            exitfn(null, objlookup(objobj, {
+              prev: prevobj
+            }))
+          })
         }
       }
-      exitfn(null, objobj);
-    }, (err, obj) => {
-      if (err) return fn(err);
-
-      deploy_file.writeassign(articlepath, obj, (err, resobj) => {
-        if (err) return fn(err);
-
-        fn(null, resobj);
-      });
-    });
-  };
-
-  o.applyuniversearticleisoobjarr = (opts, articledir, isoobjarr, fn) => {
-    if (isoobjarr.length) {
-      // eslint-disable-next-line max-len
-      o.applyuniversearticleisoobj(opts, articledir, isoobjarr[0], (err, res) => {
-        if (err) return fn(err);
-
-        // eslint-disable-next-line max-len
-        o.applyuniversearticleisoobjarr(opts, articledir, isoobjarr.slice(1), fn);
-      });
-    } else {
-      fn(null);
     }
-  };
+    exitfn(null, objobj)
+  }, (err, obj) => {
+    if (err) return fn(err)
 
-  o.applyuniverseisoobjarr = (opts, outputdir, isoobjarr, fn) => {
-    o.readdirarticlesfullpath(opts, outputdir, (err, articlearr) => {
-      if (err) return fn(err);
+    deploy_file.writeassign(articlepath, obj, (err, resobj) => {
+      if (err) return fn(err)
 
-      (function next (x, articlearr) {
-        if (!x--) return fn(null, articlearr);
+      fn(null, resobj)
+    })
+  })
+}
 
-        // eslint-disable-next-line max-len
-        o.applyuniversearticleisoobjarr(opts, articlearr[x], isoobjarr, (err, res) => {
-          if (err) return fn(err);
+const applyuniversearticleisoobjarr = (opts, articledir, isoobjarr, fn) => {
+  if (isoobjarr.length) {
+    // eslint-disable-next-line max-len
+    applyuniversearticleisoobj(opts, articledir, isoobjarr[0], (err, res) => {
+      if (err) return fn(err)
 
-          next(x, articlearr);
-        });
-      }(articlearr.length, articlearr));
-    });
-  };
+      // eslint-disable-next-line max-len
+      applyuniversearticleisoobjarr(opts, articledir, isoobjarr.slice(1), fn)
+    })
+  } else {
+    fn(null)
+  }
+}
 
-  return o;
-  
-})({});
+const applyuniverseisoobjarr = (opts, outputdir, isoobjarr, fn) => {
+  readdirarticlesfullpath(opts, outputdir, (err, articlearr) => {
+    if (err) return fn(err)
+
+    ;(function next (x, articlearr) {
+      if (!x--) return fn(null, articlearr)
+
+      // eslint-disable-next-line max-len
+      applyuniversearticleisoobjarr(opts, articlearr[x], isoobjarr, (err, res) => {
+        if (err) return fn(err)
+
+        next(x, articlearr)
+      })
+    }(articlearr.length, articlearr))
+  })
+}
+
+export default {
+  nsre,
+  nsrm,
+  objlookup,
+  isarticlepath,
+  isarticledir,
+  isarticlefilepath,
+  readdirarticles,
+  readdirarticlesfullpath,
+  getadjacentarticlepaths,
+  getadjacentarticlepathscached,
+  getnextprevarticlepath,
+  getnextprevarticlepathcache,
+  getnextarticlepathcache,
+  getprevarticlepathcache,
+  applyuniversearticleisoobj,
+  applyuniversearticleisoobjarr,
+  applyuniverseisoobjarr
+}
