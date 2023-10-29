@@ -2,7 +2,6 @@
 // Timestamp: 2017.09.03-22:31:15 (last modified)
 // Author(s): bumblehead <chris@bumblehead.com>
 
-import fs from 'fs'
 import path from 'path'
 import objobjwalk from 'objobjwalk'
 
@@ -114,7 +113,7 @@ const getnextprevarticlepath = (opts, filepath, nextprev=1, fn, indexnum) => {
 }
 
 // eslint-disable-next-line max-len
-const getnextprevarticlepathcache = (opts, filepath, nextprev, fn, indexnum) => {
+const getnextprevarticlepathcache = (opts, filepath, nextprev, fn) => {
   const nextpath = opts.articlescache[filepath + nextprev]
 
   if (nextpath) {
@@ -190,7 +189,7 @@ const applyuniversearticleisoobj = (opts, articledir, [ isopath, isoobj ], fn) =
 const applyuniversearticleisoobjarr = (opts, articledir, isoobjarr, fn) => {
   if (isoobjarr.length) {
     // eslint-disable-next-line max-len
-    applyuniversearticleisoobj(opts, articledir, isoobjarr[0], (err, res) => {
+    applyuniversearticleisoobj(opts, articledir, isoobjarr[0], err => {
       if (err) return fn(err)
 
       // eslint-disable-next-line max-len
@@ -209,7 +208,7 @@ const applyuniverseisoobjarr = (opts, outputdir, isoobjarr, fn) => {
       if (!x--) return fn(null, articlearr)
 
       // eslint-disable-next-line max-len
-      applyuniversearticleisoobjarr(opts, articlearr[x], isoobjarr, (err, res) => {
+      applyuniversearticleisoobjarr(opts, articlearr[x], isoobjarr, err => {
         if (err) return fn(err)
 
         next(x, articlearr)

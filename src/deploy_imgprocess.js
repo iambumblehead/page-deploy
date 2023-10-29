@@ -1,5 +1,5 @@
 import path from 'path'
-import jimp from 'jimp';
+import jimp from 'jimp'
 import castas from 'castas'
 import deploy_msg from './deploy_msg.js'
 import deploy_file from './deploy_file.js'
@@ -13,7 +13,7 @@ import deploy_pattern from './deploy_pattern.js'
 //   Quantum
 // } from '@imagemagick/magick-wasm'
 
-const imgFitRe = /support.*(\.jpg|\.jpeg|\.png).*pd\.fit\:(\d*)x?(\d*)?/i
+const imgFitRe = /support.*(\.jpg|\.jpeg|\.png).*pd\.fit:(\d*)x?(\d*)?/i
 
 const isembeddedimgkey = key => (
   key === 'content' || /img$/i.test(key))

@@ -19,13 +19,13 @@ const supportedfileextensions = [ 'json', 'md' ]
 const isPatternISORe = /^\w\w\w?[-_]?\w?\w?\w?_?\w?\w?\w?/
 const isPatternNameRe = /^base(LangLocale|Lang|Locale)/
 
-const isPatternPrefixRe         = /^(spec|lang)-/
-const isPatternBaseISORe        = /^(spec|lang)-\w\w\w?[-_]?\w?\w?\w?_?\w?\w?\w?/
-const isPatternBaseNameRe       = /^(spec|lang)-base(LangLocale|Lang|Locale)/
+const isPatternPrefixRe = /^(spec|lang)-/
+const isPatternBaseISORe = /^(spec|lang)-\w\w\w?[-_]?\w?\w?\w?_?\w?\w?\w?/
+const isPatternBaseNameRe = /^(spec|lang)-base(LangLocale|Lang|Locale)/
 const isPatternBaseLangLocaleRe = /^(spec|lang)-baseLangLocale/
-const isPatternBaseLocaleRe     = /^(spec|lang)-baseLocale/
-const isPatternBaseLangRe       = /^(spec|lang)-baseLang/
-const isPatternExtnRe           = /\.(json|md)/
+const isPatternBaseLocaleRe = /^(spec|lang)-baseLocale/
+const isPatternBaseLangRe = /^(spec|lang)-baseLang/
+const isPatternExtnRe = /\.(json|md)/
 
 // determine if filename string is 'base'.
 // files must be hyphen-prefixed with one meta-data item, for example,

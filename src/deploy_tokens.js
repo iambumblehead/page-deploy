@@ -4,13 +4,13 @@
 
 // TODO needs documentation
 export default {
-  UNIVERSAL : 'universal',
+  UNIVERSAL: 'universal',
   
-  LOCALREF : 'local-ref',
-  LOCALREFARR : 'local-ref-arr',
-  LOCALREFPAGEARR : 'local-ref-pagearr',
+  LOCALREF: 'local-ref',
+  LOCALREFARR: 'local-ref-arr',
+  LOCALREFPAGEARR: 'local-ref-pagearr',
 
-  LANG : 'Lang',
-  LOCALE : 'Locale',
-  LANGLOCALE : 'LangLocale'
-};
+  LANG: 'Lang',
+  LOCALE: 'Locale',
+  LANGLOCALE: 'LangLocale'
+}
