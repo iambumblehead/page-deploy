@@ -6,9 +6,12 @@
   "plugins": [],
   "globals": {
     "URL": true,
-    "Promise": true
+    "Promise": true,
+    "console": true,
+    "process": true
   },
   "env": {
+    "node": true,
     "browser": false
   },
   "parserOptions": {

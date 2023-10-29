@@ -1,9 +1,9 @@
-page-deploy
-===========
+# page-deploy
+
+> [!WARNING]
+> This application is an old proof of concept only, not for actual use.
 
 [![npm version](https://badge.fury.io/js/page-deploy.svg)](https://badge.fury.io/js/page-deploy) ![Build Status](https://github.com/iambumblehead/page-deploy/workflows/test/badge.svg)
-
-**NOT FOR PRODUCTION USE -ALPHA QUALITY**
 
 Deploys page-object data and pattern files and is useful for web applications using locale and language specific data.
 

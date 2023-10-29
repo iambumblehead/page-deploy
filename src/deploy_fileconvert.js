@@ -24,7 +24,7 @@ const foreachasync =  (opts, arr, fn, endfn = () => {}) => {
   if (!arr.length)
     return endfn(null)
   
-  fn(opts, arr[0], (err, res) => {
+  fn(opts, arr[0], err => {
     if (err) return endfn(err)
 
     foreachasync(opts, arr.slice(1), fn, endfn)
@@ -175,11 +175,11 @@ const getisofileobj = (opts, ISOfilepath, fn) => {
 // if an iso file is found, return deploy_fileconvert objects from file
 // if no iso file is found, return cloned `this` (a deploy_fileconvert object)
 const getAssocISOFileObjArr = (opts, filename, fileobj, fn) => {
-  const ISOnamearr = deploy_pattern.getisooutputfilenamearr(opts, filename),
-        isofileobjarr = [],
-        dirname = path.dirname(filename)
+  const ISOnamearr = deploy_pattern.getisooutputfilenamearr(opts, filename)
+  const isofileobjarr = []
+  const dirname = path.dirname(filename)
 
-  ;(function next (x, ISOname) {
+  ;(function next (x) {
     if (!x--) return fn(null, isofileobjarr)
 
     const specISOfilepath = path.join(dirname, `spec-${ISOnamearr[x]}.json`)
@@ -207,7 +207,7 @@ const convertForISO = (opts, filename, fileobj, fn) => {
   getAssocISOFileObjArr(opts, filename, fileobj, (err, fileObjArr) => {
     if (err) return fn(err)
 
-    ;(function next (x, fileObj) {
+    ;(function next (x) {
       if (!x--) return fn(null, fileObjArr)
 
       let [ filename, fileobj ] = fileObjArr[x]
@@ -245,7 +245,8 @@ const convertuniverse = (opts, filename, fileobj, fn) => {
 
       if (ns === 'next') {
         // eslint-disable-next-line max-len
-        return deploy_article.getnextarticlepathcache(opts, filename, (err, nextpath, nextobj) => {
+        return deploy_article.getnextarticlepathcache(
+        opts, filename, (err, nextpath, nextobj) => {
           if (err) return exitfn(err)
 
           exitfn(null, objlookup(objobj, {
@@ -256,7 +257,8 @@ const convertuniverse = (opts, filename, fileobj, fn) => {
 
       if (ns === 'prev') {
         // eslint-disable-next-line max-len
-        return deploy_article.getprevarticlepathcache(opts, filename, (err, prevpath, prevobj) => {
+        return deploy_article.getprevarticlepathcache(
+        opts, filename, (err, prevpath, prevobj) => {
           if (err) return exitfn(err)
 
           exitfn(null, o.objlookup(objobj, {
@@ -298,7 +300,7 @@ const applyuniversefile = (opts, outputdir, universefile, fn) => {
 
 const applyuniversefilearr = (opts, outputdir, universefilearr, fn) => {
   if (universefilearr.length) {
-    applyuniversefile(opts, outputdir, universefilearr[0], (err, res) => {
+    applyuniversefile(opts, outputdir, universefilearr[0], err => {
       if (err) return fn(err)
 
       applyuniversefilearr(opts, outputdir, universefilearr.slice(1), fn)
@@ -339,11 +341,11 @@ const convertbase = (opts, filename, fn) => {
       if (err) return fn(err)
 
       // eslint-disable-next-line max-len
-      deploy_supportconvert.writeSupportDir(opts, filename, outfilename, (err, res) => {
+      deploy_supportconvert.writeSupportDir(opts, filename, outfilename, err => {
         if (err) return fn(err)
 
         // ## messy refactor note: why deeply recursing convertISO calls?
-        convertForISO(opts, filename, fileobj, (err, res) => {
+        convertForISO(opts, filename, fileobj, err => {
           if (err) return fn(err)
 
           deploy_msg.convertedfilename(opts, outfilename)
@@ -376,7 +378,7 @@ const getfromfilesimilar = (opts, filename, fn) => (
   deploy_pattern.getsimilarfilename(filename, opts, (err, simfilename) => {
     if (err) return fn(err)
 
-    [ simfilename ] = simfilename.map(sim => (
+    ;[ simfilename ] = simfilename.map(sim => (
       path.join(path.dirname(filename), sim)))
 
     simfilename
@@ -399,7 +401,7 @@ const getConverted = (opts, filename, fileobj, fn) => {
   convert(opts, fileobj, filename, (err, fileobj) => {
     if (err) return fn(err)
 
-    postprocess(opts, filename, fileobj, (err, res) => {
+    postprocess(opts, filename, fileobj, err => {
       if (err) return fn(err)
 
       opts.patterncache[filename] = fileobj
@@ -432,7 +434,7 @@ const createRefObj = (opts, filename, refpath, fn) => {
 
 // return array of reference objects from filepatharr
 const createRefSpecFileArr = (opts, filename, filepatharr, fn) => {
-  (function next (x, refobjarr, filepath) {
+  (function next (x, refobjarr) {
     if (!x--) return fn(null, refobjarr)
     
     createRefObj(opts, filename, filepatharr[x], (err, reffileobj) => {

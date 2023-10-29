@@ -56,7 +56,7 @@ const writeassign = (filename, content, fn) => {
   readobj(filename, (err, obj) => {
     if (err) return fn(err)
 
-    write(filename, Object.assign(obj, content), (err, res) => {
+    write(filename, Object.assign(obj, content), err => {
       if (err) return fn(err)
 
       fn(null, obj)
@@ -71,7 +71,7 @@ const createPath = (directory, fn) => (
     : fs.mkdir(directory, {recursive: true}, fn))
 
 const writeRecursive = (filename, content, fn) => (
-  createPath(path.dirname(filename), (err, res) => {
+  createPath(path.dirname(filename), err => {
     if (err) return fn(err)
       
     write(filename, content, fn)

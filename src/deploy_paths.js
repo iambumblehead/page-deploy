@@ -71,7 +71,7 @@ const withpublicpath = (opts, str, filename) => {
   const supportPathRe = (
     /(["']support\/[^'"]*['"]|^(?:\.\/)?support\/[^\b]*)/gi)
 
-  return str.replace(supportPathRe, (match, m1, m2) => (
+  return str.replace(supportPathRe, match => (
     match.replace(/support/, publicPath)))
 }
 

@@ -23,7 +23,7 @@ const bfsconvertdir = (opts, input, fn) => {
     throw new Error(`input must be a file: ${input}`)
   }
 
-  fs.readdir(input, { withFileTypes : true }, (err, direntarr) => {
+  fs.readdir(input, { withFileTypes: true }, (err, direntarr) => {
     if (err) return fn(err)
 
     deploy_fileconvert.foreachasync(opts, direntarr, (opts, dirent, fn) => {

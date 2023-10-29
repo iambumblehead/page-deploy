@@ -6,32 +6,32 @@
 // for given pattern
 
 import fs from 'node:fs/promises'
-import deploy_msg from './deploy_msg.js';
-import deploy_file from './deploy_file.js';
-import deploy_paths from './deploy_paths.js';
+import deploy_msg from './deploy_msg.js'
+import deploy_file from './deploy_file.js'
+import deploy_paths from './deploy_paths.js'
 
-export default (o => {
-  o.writeSupportDir = (opts, rootfilename, outfilename, fn) => {
-    const supportInput = deploy_paths.pathsupportdir(rootfilename),
-          supportOutput = deploy_paths.pathsupportdir(outfilename);
+const writeSupportDir = (opts, rootfilename, outfilename, fn) => {
+  const supportInput = deploy_paths.pathsupportdir(rootfilename)
+  const supportOutput = deploy_paths.pathsupportdir(outfilename)
 
-    if (deploy_file.isdir(supportInput)) {
-      deploy_file.createPath(supportOutput, async (err, res) => {
-        if (err) return fn(err);
+  if (!deploy_file.isdir(supportInput)) {
+    return fn(null, null)
+  }
 
-        await fs.cp(supportInput, supportOutput, {
-          recursive : true,
-          force : true
-        })
+  deploy_file.createPath(supportOutput, async err => {
+    if (err) return fn(err)
 
-        deploy_msg.convertedfilename(opts, supportOutput);
+    await fs.cp(supportInput, supportOutput, {
+      recursive: true,
+      force: true
+    })
 
-        fn(null, 'success');
-      });
-    } else {
-      fn(null, null);
-    }
-  };
+    deploy_msg.convertedfilename(opts, supportOutput)
 
-  return o;
-})({});
+    fn(null, 'success')
+  })
+}
+
+export default {
+  writeSupportDir
+}
