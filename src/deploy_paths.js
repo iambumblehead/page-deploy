@@ -7,79 +7,92 @@
 // parentdirpath: /path/to/spec/
 //
 
-import path from 'path';
-import pathpublic from 'pathpublic';
+import path from 'path'
+import pathpublic from 'pathpublic'
 
-export default (o => {
+const supportSubDirName = '/support'
 
-  o.supportSubDirName = '/support';
+const removedir = (filepath, dir, sep = path.sep) => {
+  dir =  dir.replace(/^\.\//, '')
 
-  o.removedir = (filepath, dir, sep = path.sep) => {
-    dir =  dir.replace(/^\.\//, '');
+  return filepath
+    .replace(dir + (dir.substr(-1) === sep ? '' : sep), '')
+}
 
-    return filepath
-      .replace(dir + (dir.substr(-1) === sep ? '' : sep), '');
-  };
+const removeinputdir = (opts, filepath) => (
+  removedir(filepath, opts.inputDir))
 
-  o.removeinputdir = (opts, filepath) => o.removedir(filepath, opts.inputDir);
+const removeoutputdir = (opts, filepath) => (
+  removedir(filepath, opts.outputDir))
 
-  o.removeoutputdir = (opts, filepath) => o.removedir(filepath, opts.outputDir);
-
-  o.narrowcwdhome = filepath => String(filepath)
+const narrowcwdhome = filepath => (
+  String(filepath)
     .replace(process.cwd(), '.')
-    .replace(process.env.HOME, '~');
+    .replace(process.env.HOME, '~'))
 
-  o.narrowdir = (opts, filepath) => o.narrowcwdhome(
-    o.removeoutputdir(opts, o.removeinputdir(opts, filepath)));
+const narrowdir = (opts, filepath) => narrowcwdhome(
+  removeoutputdir(opts, removeinputdir(opts, filepath)))
 
-  o.pathsupportdir = filename =>
-    path.join(path.dirname(filename), o.supportSubDirName);
+const pathsupportdir = filename => (
+  path.join(path.dirname(filename), supportSubDirName))
 
-  // input
-  //   src/spec/page/blog/universal
-  //
-  // return
-  //   build/bumblehead-0.0.4/spec/page/blog/universal
-  //
-  o.dirout = (opts, dirname) => {
-    const inputDir = path.normalize(opts.inputDir),
-          outputDir = path.normalize(opts.outputDir);
+// input
+//   src/spec/page/blog/universal
+//
+// return
+//   build/bumblehead-0.0.4/spec/page/blog/universal
+//
+const dirout = (opts, dirname) => {
+  const inputDir = path.normalize(opts.inputDir)
+  const outputDir = path.normalize(opts.outputDir)
 
-    return path.join(outputDir, dirname.replace(inputDir, ''));
-  };
+  return path.join(outputDir, dirname.replace(inputDir, ''))
+}
 
-  // filename filename build/bumblehead-0.3/spec/data/gallery/baseLocale.json
-  // return
-  // build/bumblehead-0.3/spec/build/bumblehead-0.3/spec/data/gallery/support
-  o.outputsupportpath = (opts, filename) => {
-    let inputDir = path.normalize(opts.inputDir),
-        outputDir = path.normalize(opts.outputDir),
-        inputPath = o.pathsupportdir(filename),
-        inputPathRel = o.narrowdir(opts, inputPath),
-        outputPath = path.join(outputDir, inputPathRel);
+// filename filename build/bumblehead-0.3/spec/data/gallery/baseLocale.json
+// return
+// build/bumblehead-0.3/spec/build/bumblehead-0.3/spec/data/gallery/support
+const outputsupportpath = (opts, filename) => {
+  // const inputDir = path.normalize(opts.inputDir)
+  const outputDir = path.normalize(opts.outputDir)
+  const inputPath = pathsupportdir(filename)
+  const inputPathRel = narrowdir(opts, inputPath)
+  const outputPath = path.join(outputDir, inputPathRel)
     
-    return outputPath;
-  };
+  return outputPath
+}
 
-  o.publicsupportpath = (opts, filename) =>
-    pathpublic.get(o.outputsupportpath(opts, filename), opts.publicPath);
+const publicsupportpath = (opts, filename) => (
+  pathpublic.get(outputsupportpath(opts, filename), opts.publicPath))
 
-  // update the support paths to public support paths.
-  o.withpublicpath = (opts, str, filename) => {
-    const publicPath = o.publicsupportpath(opts, filename),
-          supportPathRe =
-            /(["']support\/[^'"]*['"]|^(?:\.\/)?support\/[^\b]*)/gi;
+// update the support paths to public support paths.
+const withpublicpath = (opts, str, filename) => {
+  const publicPath = publicsupportpath(opts, filename)
+  const supportPathRe = (
+    /(["']support\/[^'"]*['"]|^(?:\.\/)?support\/[^\b]*)/gi)
 
-    return str.replace(supportPathRe, (match, m1, m2) => (
-      match.replace(/support/, publicPath)));
-  };
+  return str.replace(supportPathRe, (match, m1, m2) => (
+    match.replace(/support/, publicPath)))
+}
 
-  o.getspecdirpath = specfilepath =>
-    path.dirname(specfilepath);
+const getspecdirpath = specfilepath => (
+  path.dirname(specfilepath))
 
-  o.getparentdirpath = specfilepath =>
-    path.dirname(o.getspecdirpath(specfilepath));
+const getparentdirpath = specfilepath => (
+  path.dirname(getspecdirpath(specfilepath)))
   
-  return o;
-  
-})({});
+export default {
+  supportSubDirName,
+  removedir,
+  removeinputdir,
+  removeoutputdir,
+  narrowcwdhome,
+  narrowdir,
+  pathsupportdir,
+  dirout,
+  outputsupportpath,
+  publicsupportpath,
+  withpublicpath,
+  getspecdirpath,
+  getparentdirpath
+}
