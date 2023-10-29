@@ -5,6 +5,8 @@
   ],
   "plugins": [],
   "globals": {
+    "URL": true,
+    "Promise": true
   },
   "env": {
     "browser": false
