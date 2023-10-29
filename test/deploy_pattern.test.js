@@ -132,10 +132,10 @@ test("getasoutputpath should return datetitle outputdir", async () => {
       outputDir: __dirname,
       inputDir: __dirname,
       datetitlesubdirs: [ '/data/' ]
-    }, '/path/to/inputDir/data/spec-ES.md', {
+    }, `${__dirname}data/spec-ES.md`, {
       title: 'articletitle',
       timeDate: 1222580700000
     }),
-    '/path/to/outputDir/2008.09.27-articletitle/ES.json'
+    `${__dirname}2008.09.27-articletitle/ES.json`
   )
 })
