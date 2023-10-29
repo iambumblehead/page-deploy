@@ -165,7 +165,7 @@ const updatelangdefs = (contentObj, langObj, fn) => {
     if (langobjre.test(str)) {
       str = langObj
     } else if (langkeyre.test(str)) {
-      str = o.objlookup(str.replace(langkeyre, ''), langObj) || str
+      str = objlookup(str.replace(langkeyre, ''), langObj) || str
     }
 
     return str

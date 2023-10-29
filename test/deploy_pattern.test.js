@@ -1,3 +1,4 @@
+import url from 'node:url'
 import util from 'node:util'
 import test from 'node:test'
 import assert from 'node:assert/strict'
@@ -115,6 +116,21 @@ test("getasoutputpath should return datetitle outputdir", async () => {
     deploy_pattern.getasoutputpath({
       outputDir: '/path/to/outputDir',
       inputDir: '/path/to/inputDir',
+      datetitlesubdirs: [ '/data/' ]
+    }, '/path/to/inputDir/data/spec-ES.md', {
+      title: 'articletitle',
+      timeDate: 1222580700000
+    }),
+    '/path/to/outputDir/2008.09.27-articletitle/ES.json'
+  )
+
+  const __dirname = url
+    .fileURLToPath(new URL('.', import.meta.url))
+
+  assert.strictEqual(
+    deploy_pattern.getasoutputpath({
+      outputDir: __dirname,
+      inputDir: __dirname,
       datetitlesubdirs: [ '/data/' ]
     }, '/path/to/inputDir/data/spec-ES.md', {
       title: 'articletitle',
