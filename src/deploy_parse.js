@@ -4,59 +4,62 @@ import striphtmltags from 'strip-html-tags'
 import deploy_msg from './deploy_msg.js'
 import deploy_marked from './deploy_marked.js'
 
-export default (o => {
-  o.extractexcerpt = content => {
-    const match = String(content).match(/<p>(.*)…/gi)
-    const excerpt = match && match[0].slice(0, -1)
+const extractexcerpt = content => {
+  const match = String(content).match(/<p>(.*)…/gi)
+  const excerpt = match && match[0].slice(0, -1)
 
-    if (excerpt) {
-      content = content.replace(match[0], excerpt)
-    }
-
-    return [ content, excerpt && `${excerpt}</p>` ]
-  }
-  
-  o.parseJSON = (filename, filestr) => {
-    try {
-      return JSON.parse(filestr)
-    } catch (e) {
-      deploy_msg.throw_parseerror(filename, e)
-    }    
+  if (excerpt) {
+    content = content.replace(match[0], excerpt)
   }
 
-  o.parseMD = (filename, filestr) => {
-    let metadata = {},
-        content,
-        excerpt
+  return [ content, excerpt && `${excerpt}</p>` ]
+}
 
-    ;[ filestr, metadata ] = deploy_marked.extractsymbols(filestr, metadata)
-    ;[ filestr, metadata ] = deploy_marked.extractmetadata(filestr, metadata)
+const parseJSON = (filename, filestr) => {
+  try {
+    return JSON.parse(filestr)
+  } catch (e) {
+    deploy_msg.throw_parseerror(filename, e)
+  }    
+}
 
-    content = deploy_marked(filestr)
+const parseMD = (filename, filestr) => {
+  let metadata = {},
+      content,
+      excerpt
 
-    ;[ content, excerpt ] = o.extractexcerpt(content)
+  ;[ filestr, metadata ] = deploy_marked.extractsymbols(filestr, metadata)
+  ;[ filestr, metadata ] = deploy_marked.extractmetadata(filestr, metadata)
 
-    metadata.content = content
+  content = deploy_marked(filestr)
 
-    if (excerpt) {
-      metadata.excerpthtml = excerpt
-      metadata.excerptnohtml = htmldecoder.decode(striphtmltags(excerpt))
-    }
+  ;[ content, excerpt ] = extractexcerpt(content)
 
-    return metadata
+  metadata.content = content
+
+  if (excerpt) {
+    metadata.excerpthtml = excerpt
+    metadata.excerptnohtml = htmldecoder.decode(striphtmltags(excerpt))
   }
 
-  o.parsefile = (opts, filestr, filename) => {
-    let extname = path.extname(filename)
+  return metadata
+}
 
-    if (extname === '.json') {
-      return o.parseJSON(filename, filestr)
-    } else if (extname === '.md') {
-      return o.parseMD(filename, filestr)
-    } else {
-      deploy_msg.throw_parsefiletypeerror(opts, filename)
-    }
+const parsefile = (opts, filestr, filename) => {
+  let extname = path.extname(filename)
+
+  if (extname === '.json') {
+    return parseJSON(filename, filestr)
+  } else if (extname === '.md') {
+    return parseMD(filename, filestr)
+  } else {
+    deploy_msg.throw_parsefiletypeerror(opts, filename)
   }
+}
 
-  return o
-})({})
+export default {
+  extractexcerpt,
+  parseJSON,
+  parseMD,
+  parsefile
+}

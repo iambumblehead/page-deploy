@@ -3,6 +3,7 @@
 // Author(s): bumblehead <chris@bumblehead.com>  
 
 import castas from 'castas'
+import path from 'path'
 
 const defaultopts = {
   inputDir: './convert/',
@@ -24,15 +25,19 @@ const getasboolorarr = opt => /true|false/i.test(opt)
   : castas.arr(opt)
 
 export default spec => {
-  const opts = Object.create(defaultopts)
+  const opt = Object.create(defaultopts)
+  const stackpathre = /^.*(\(|at )(.*):[\d]*:[\d]*.*$/
+  const metaurl = opt.metaurl || (path.dirname(
+    (new Error).stack.split('\n')[3].replace(stackpathre, '$2')) + '/')  
 
-  opts.inputDir = castas.str(spec.inputDir, './')
-  opts.publicPath = castas.str(spec.publicPath, './spec')
-  opts.outputDir = castas.str(spec.outputDir, './build/spec')
-  opts.supportDir = castas.str(spec.supportDir, '')
-  opts.datetitlesubdirs = castas.arr(spec.datetitlesubdirs, [])
-  opts.supportedLocaleArr = getasboolorarr(spec.supportedLocaleArr)
-  opts.supportedLangArr = getasboolorarr(spec.supportedLangArr)
+  opt.metaurl = metaurl
+  opt.inputDir = castas.str(spec.inputDir, './')
+  opt.publicPath = castas.str(spec.publicPath, './spec')
+  opt.outputDir = castas.str(spec.outputDir, './build/spec')
+  opt.supportDir = castas.str(spec.supportDir, '')
+  opt.datetitlesubdirs = castas.arr(spec.datetitlesubdirs, [])
+  opt.supportedLocaleArr = getasboolorarr(spec.supportedLocaleArr)
+  opt.supportedLangArr = getasboolorarr(spec.supportedLangArr)
 
-  return opts
+  return opt
 }
