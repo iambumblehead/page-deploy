@@ -9,9 +9,9 @@
     "type": "git",
     "url": "git+https://github.com/iambumblehead/page-deploy.git"
   },
-  "main": "src/deploy.js",
+  "main": "src/pgdep.js",
   "exports": {
-    "import": "./src/deploy.js"
+    "import": "./src/pgdep.js"
   },
   "files": [
     "src"

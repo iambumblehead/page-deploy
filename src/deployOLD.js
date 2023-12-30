@@ -8,14 +8,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import util from 'node:util'
-
-const pgdeploy = () => {}
-
-export {
-  pgdeploy as default,
-  
-}
-/*
 import deploy_msg from './deploy_msg.js'
 import deploy_opts from './deploy_opts.js'
 import deploy_file from './deploy_file.js'
@@ -79,4 +71,3 @@ export {
   bfsconvertdir,
   convert
 }
-*/
