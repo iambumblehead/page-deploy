@@ -8,14 +8,16 @@ const pgscript_helperargspecisvalid = nodespec => (
     typeof nodespec === 'object' && Object.keys(nodespec).every(
       k => pgenumSPECPROPTYPEisValidRe.test(k))))
 
+// returns [ nodename, nodespc, nodechilds ]
 const pgscript_helperargsget = (nodename, nodespec, nodechilds) => {
   const args = [nodename, nodespec, nodechilds]
+
   if (typeof args[0] !== 'string' && args !== null)
     args.unshift(null)
   if (Array.isArray(args[1]))
-    args.unshift(null)
+    args.splice(1, 0, null)
   if (!Array.isArray(args[2]))
-    args.unshift(null)
+    args.splice(2, 0, null)
 
   return args
 }

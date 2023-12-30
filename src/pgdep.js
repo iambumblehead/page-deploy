@@ -32,6 +32,27 @@ import {
   pgenumNODETYPEPATH
 } from './pgenum.js'
 
+const childsdfswrite = async (opts, childs, rooturlpath) => {
+  const childrefs = []
+  for (const child in childs) {
+    if (childs[child] === pgenumNODETYPEPATH) {
+      childrefs.push(pgspecroutepathnodecreate())
+    } else {
+      const childpath = pgnode_specpathget(opts, childs[child])
+      const childsdeep = await childsdfswrite(
+        opts, childs[child].nodechilds, rooturlpath)
+      if (childsdeep.length)
+        childs[child].nodespec.child = childsdeep
+      
+      await pgnode_writedeep(opts, childs[child], childpath)
+
+      childrefs.push(pgspecrefrelativecreate(childpath, rooturlpath))
+    }
+  }
+
+  return childrefs
+}
+
 const pgdep = async opts => {
   console.log(opts)
   console.log(opts.outputDir)
@@ -52,7 +73,7 @@ const pgdep = async opts => {
 
     
   // const url = new url.URL('data.txt', opts.metaurl);
-  const outputDirFull = new url.URL(
+  const rootspecurlpath = new url.URL(
     `${opts.outputDir.replace(/\/$/, '')}/view/root/spec-baseLocale.json`, opts.metaurl);
   // return fs.readFileSync(url, {encoding: 'UTF-8'});
   // const res = await fs.mkdir(outputDirFull, { recursive: true }).catch(e => e)
@@ -64,6 +85,7 @@ const pgdep = async opts => {
   // spec/view/root/spec-baseLocale.json
   // after writing each child... write the above path
 
+  /*
   const childrefs = []
   for (const child in rootchilds) {
     console.log('=================loop')
@@ -88,12 +110,16 @@ const pgdep = async opts => {
     }
     //const outputDirFull = new url.URL(opts.outputDir, opts.metaurl);
   }
-
+  */
   // console.log(childrefs)
   // now that the childs are written...
   // await pgnode_specpathget(opts, rootchilds[0])
   // console.log({ res })
-
+  // console.log('here', JSON.stringify(rootchilds, null, '  '))
+  // throw new Error('===')
+  
+  const childrefs = await childsdfswrite(
+    opts, rootchilds, rootspecurlpath)
 
   const rootnode = Object.assign({}, opts.root.nodespec, {
     child: childrefs
@@ -101,7 +127,7 @@ const pgdep = async opts => {
   // at src/spec/view... save all 'toot' stuff
   // console.log(opts.root)
   console.log(rootnode)
-  await pgfs_writeobj(outputDirFull, rootnode)
+  await pgfs_writeobj(rootspecurlpath, rootnode)
   throw new Error('done - write the root')
   // then save each page stuff
   
