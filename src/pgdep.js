@@ -53,7 +53,7 @@ const pgdep = async opts => {
     
   // const url = new url.URL('data.txt', opts.metaurl);
   const outputDirFull = new url.URL(
-    `${opts.outputDir.replace(/\/$/, '')}/view/spec-baseLocale.json`, opts.metaurl);
+    `${opts.outputDir.replace(/\/$/, '')}/view/root/spec-baseLocale.json`, opts.metaurl);
   // return fs.readFileSync(url, {encoding: 'UTF-8'});
   // const res = await fs.mkdir(outputDirFull, { recursive: true }).catch(e => e)
   // if (res) {
@@ -66,6 +66,12 @@ const pgdep = async opts => {
 
   const childrefs = []
   for (const child in rootchilds) {
+    console.log('=================loop')
+    console.log({
+      child: rootchilds[child],
+      pgenumNODETYPEPATH,
+      rootchilds: rootchilds[0].nodechilds
+    })
     if (rootchilds[child] === pgenumNODETYPEPATH) {
       childrefs.push(pgspecroutepathnodecreate())
     } else {

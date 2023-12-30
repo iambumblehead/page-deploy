@@ -1,4 +1,5 @@
 import {
+  pgenumNODETYPEPATH,
   pgenumSPECPROPTYPEisValidRe
 } from './pgenum.js'
 
@@ -49,7 +50,10 @@ const pgroot = (childs, routes) => {
   return pg
 }
 
+const pgpathtree = pgenumNODETYPEPATH
+
 export {
   pgscript_helpercreate,
+  pgpathtree,
   pgroot
 }

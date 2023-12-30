@@ -12,8 +12,9 @@ import {
 // }
 const pgspecrefrelativecreate = (urlto, urlfrom) => {
   const urltodir = new url.URL(`.`, urlto)
+  const urlfromdir = new url.URL(`.`, urlfrom)
   const pathtodirrelative = path.relative(
-    urlfrom.pathname, urltodir.pathname) + '/'
+    urlfromdir.pathname, urltodir.pathname) + '/'
 
   return {
     type: pgenumREFTYPELOCAL,
