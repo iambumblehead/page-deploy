@@ -7,7 +7,6 @@ import pglanglocal from './pglanglocal.js'
 
 import {
   // pgnode,
-  pgnode_nameisdata,
   pgnode_writedeep,
   pgnode_specrefcreate,
   pgnode_specpathget
@@ -32,15 +31,18 @@ import {
   pgenumNODETYPEPATH
 } from './pgenum.js'
 
-const childsdfswrite = async (opts, childs, rooturlpath) => {
+const childsdfswrite = async (opts, childs, rooturlpath, parenturlpath) => {
   const childrefs = []
   for (const child in childs) {
     if (childs[child] === pgenumNODETYPEPATH) {
       childrefs.push(pgspecroutepathnodecreate())
     } else {
-      const childpath = pgnode_specpathget(opts, childs[child])
+      const childpath = pgnode_specpathget(
+        opts, childs[child],
+        parenturlpath || rooturlpath)
+        // parenturlpath || new url.URL('..', rooturlpath))
       const childsdeep = await childsdfswrite(
-        opts, childs[child].nodechilds, rooturlpath)
+        opts, childs[child].nodechilds, rooturlpath, childpath)
       if (childsdeep.length)
         childs[child].nodespec.child = childsdeep
       
