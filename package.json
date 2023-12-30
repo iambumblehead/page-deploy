@@ -11,7 +11,12 @@
   },
   "main": "src/pgdep.js",
   "exports": {
-    "import": "./src/pgdep.js"
+    ".": {
+      "import": "./src/pgdep.js",
+      "default": "./src/pgdep.js"
+    },
+    "./src/*.js": "./src/*.js",
+    "./package.json": "./package.json"    
   },
   "files": [
     "src"

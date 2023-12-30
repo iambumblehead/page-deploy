@@ -6,12 +6,17 @@ import url from 'node:url'
 import pglanglocal from './pglanglocal.js'
 
 import {
-  pgnode,
+  // pgnode,
   pgnode_nameisdata,
   pgnode_writedeep,
   pgnode_specrefcreate,
   pgnode_specpathget
+  // pgnode_helpercreate
 } from './pgnode.js'
+
+import {
+  pgscript_helpercreate
+} from './pgscript.js'
 
 import {
   pgfs_writeobj
@@ -22,6 +27,10 @@ import {
   pgspecrefrelativecreate
   // pgspecreflocalcreate
 } from './pgspecref.js'
+
+import {
+  pgenumNODETYPEPATH
+} from './pgenum.js'
 
 const pgdep = async opts => {
   console.log(opts)
@@ -57,7 +66,7 @@ const pgdep = async opts => {
 
   const childrefs = []
   for (const child in rootchilds) {
-    if (rootchilds[child] === pgroot_nodepath) {
+    if (rootchilds[child] === pgenumNODETYPEPATH) {
       childrefs.push(pgspecroutepathnodecreate())
     } else {
       const childpath = pgnode_specpathget(opts, rootchilds[child])
@@ -95,7 +104,7 @@ const pgdep = async opts => {
 
 // builds something like...
 // writes to 'src/spec/page'
-
+/*
 const pgroot = (childs, routes) => {
   const pg = pgnode('uiroot', '/', {}, childs)
 
@@ -110,12 +119,14 @@ const pgroot = (childs, routes) => {
 }
 
 const pgroot_nodepath = 'PATHNODE'
-
+*/
 export {
   pgdep as default,
-  pgnode,
-  pgroot,
-  pgroot_nodepath,
+  // pgnode,
+  pgscript_helpercreate,
+  // pgnode_helpercreate,
+//  pgroot,
+//  pgroot_nodepath,
   // pgnodepath,
   pglanglocal
 }

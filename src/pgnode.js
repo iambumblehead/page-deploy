@@ -14,6 +14,7 @@ const pgnode_nameisdata = name => {
   ].some(n => name.startsWith(n))
 }
 
+/*
 const pgnode = (pg, pgname, pgargs, pgchilds) => {  
   return {
     nodechilds: pgchilds,
@@ -25,7 +26,7 @@ const pgnode = (pg, pgname, pgargs, pgchilds) => {
     }
   }
 }
-
+*/
 // to get the 'dirname' from the url, do this
 // ```
 // new url.URL('.', nodePathFull)
@@ -75,13 +76,34 @@ const pgnode_specrefcreate = () => {
   
 }
 
+/*
+const pgnode_helpercreate = pgname => {
+  const argsget = args => {
+    if (typeof args[0] === 'string')
+    const pgname = typeof args[0] === 'string' ? args[0] : null
+    // const 
+    // const pgspec = pgname === 
+    // typeof args[0] === 'string'
+    //  ? args
+    //  : [ null, args[0], args[1] ]
+  }
+  
+  return (...args) => {
+    const [name, opts, childs] = argsget(args)
+
+    return pgnode(pgname, name, opts, childs)
+  }
+}
+*/
+
 // const pgnode_pathnode = 'PATHNODE'
 
 export {
-  pgnode,
+  // pgnode,
   // pgnode_pathnode,
   pgnode_writedeep,
   pgnode_nameisdata,
   pgnode_specpathget,
   pgnode_specrefcreate
+  // pgnode_helpercreate
 }
