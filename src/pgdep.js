@@ -18,7 +18,8 @@ import {
 } from './pgscript.js'
 
 import {
-  pgfs_writeobj
+  pgfs_writeobj,
+  pgfs_dirrmdir
 } from './pgfs.js'
 
 import {
@@ -58,6 +59,11 @@ const childsdfswrite = async (opts, childs, rooturlpath, parenturlpath) => {
 const pgdep = async opts => {
   console.log(opts)
   console.log(opts.outputDir)
+
+  await pgfs_dirrmdir(opts.outputDir)
+  // throw new Error('---')
+  // fs.rmdir(opts.outputDir, { recursive: true })
+  
   // opts.metaurl
   const rootchilds = opts.root.nodechilds
   // const rootchilds = opts.root.nodespec.child
@@ -77,49 +83,10 @@ const pgdep = async opts => {
   // const url = new url.URL('data.txt', opts.metaurl);
   const rootspecurlpath = new url.URL(
     `${opts.outputDir.replace(/\/$/, '')}/view/root/spec-baseLocale.json`, opts.metaurl);
-  // return fs.readFileSync(url, {encoding: 'UTF-8'});
-  // const res = await fs.mkdir(outputDirFull, { recursive: true }).catch(e => e)
-  // if (res) {
-    // console.log(`[...] mkdir: ${res}`)
-  // }
-
   // build the root spec
   // spec/view/root/spec-baseLocale.json
   // after writing each child... write the above path
 
-  /*
-  const childrefs = []
-  for (const child in rootchilds) {
-    console.log('=================loop')
-    console.log({
-      child: rootchilds[child],
-      pgenumNODETYPEPATH,
-      rootchilds: rootchilds[0].nodechilds
-    })
-    if (rootchilds[child] === pgenumNODETYPEPATH) {
-      childrefs.push(pgspecroutepathnodecreate())
-    } else {
-      const childpath = pgnode_specpathget(opts, rootchilds[child])
-      await pgnode_writedeep(opts, rootchilds[child], childpath)
-
-      childrefs.push(pgspecrefrelativecreate(childpath, outputDirFull))
-      // add ref...
-
-      // "type" : "local-ref",
-      // "path" : "../data-errors/"
-      // console.log(pgspecrefrelativecreate(childpath, outputDirFull))
-
-    }
-    //const outputDirFull = new url.URL(opts.outputDir, opts.metaurl);
-  }
-  */
-  // console.log(childrefs)
-  // now that the childs are written...
-  // await pgnode_specpathget(opts, rootchilds[0])
-  // console.log({ res })
-  // console.log('here', JSON.stringify(rootchilds, null, '  '))
-  // throw new Error('===')
-  
   const childrefs = await childsdfswrite(
     opts, rootchilds, rootspecurlpath)
 
@@ -136,31 +103,8 @@ const pgdep = async opts => {
   
 }
 
-// builds something like...
-// writes to 'src/spec/page'
-/*
-const pgroot = (childs, routes) => {
-  const pg = pgnode('uiroot', '/', {}, childs)
-
-  pg.routes = routes
-
-  return pg
-  // create src/spec/page
-  
-  // throw new Error('pgroot!')
-  // copy childs into view... all childs should be data
-  // return [childs, routes]
-}
-
-const pgroot_nodepath = 'PATHNODE'
-*/
 export {
   pgdep as default,
-  // pgnode,
   pgscript_helpercreate,
-  // pgnode_helpercreate,
-//  pgroot,
-//  pgroot_nodepath,
-  // pgnodepath,
   pglanglocal
 }
