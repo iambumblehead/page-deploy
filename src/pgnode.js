@@ -29,7 +29,7 @@ const pgnode_specpathget = (opts, node, parentpath) => {
 const pgnode_writedeep = async (opts, node, fullpath) => {
   const nodespec = node.nodespec
 
-  await pgfs_writeobj(fullpath, nodespec)
+  await pgfs_writeobj(opts, fullpath, nodespec)
 }
 
 const pgnode_specrefcreate = () => {

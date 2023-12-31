@@ -3,6 +3,8 @@ import path from 'node:path'
 import util from 'node:util'
 import url from 'node:url'
 
+import pgopts from './pgopts.js'
+
 import pglanglocal from './pglanglocal.js'
 
 import {
@@ -57,6 +59,8 @@ const childsdfswrite = async (opts, childs, rooturlpath, parenturlpath) => {
 }
 
 const pgdep = async opts => {
+  opts = pgopts(opts)
+
   console.log(opts)
   console.log(opts.outputDir)
 
@@ -96,8 +100,8 @@ const pgdep = async opts => {
   // at src/spec/view... save all 'toot' stuff
   // console.log(opts.root)
   console.log(rootnode)
-  await pgfs_writeobj(rootspecurlpath, rootnode)
-  throw new Error('done - write the root')
+  await pgfs_writeobj(opts, rootspecurlpath, rootnode)
+  // throw new Error('done - write the root')
   // then save each page stuff
   
   

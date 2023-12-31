@@ -1,6 +1,10 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
+import {
+  pglog_writeurl
+} from './pglog.js'
+
 const pgfs_direxists = async dir => (
   dir = await fs.stat(dir).catch(e => null),
   dir && dir.isDirectory())
@@ -16,12 +20,14 @@ const pgfs_write = async (fsurl, content) => {
   return fs.writeFile(fsurl, content)
 }
 
-const pgfs_writeobj = async (fsurl, spec) => (
+const pgfs_writeobj = async (opts, fsurl, spec) => (
+  // console.log({ opts, fsurl }),
+  pglog_writeurl(opts, fsurl),
   pgfs_write(fsurl, JSON.stringify(spec, null, '  ')))
 
 const pgfs_dirrmdir = async dir => (
   await pgfs_direxists(dir) && 
-    fs.rmdir(dir, { recursive: true }))
+    fs.rm(dir, { recursive: true }))
 
 export {
   pgfs_write,
