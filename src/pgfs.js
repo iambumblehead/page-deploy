@@ -9,6 +9,10 @@ const pgfs_direxists = async dir => (
   dir = await fs.stat(dir).catch(e => null),
   dir && dir.isDirectory())
 
+const pgfs_fileexists = async dir => (
+  dir = await fs.stat(dir).catch(e => null),
+  dir && dir.isFile())
+
 const pgfs_dirmkdir = async dir => (
   fs.mkdir(dir, { recursive: true }))
 
@@ -20,6 +24,9 @@ const pgfs_write = async (fsurl, content) => {
   return fs.writeFile(fsurl, content)
 }
 
+const pgfs_read = async fsurl => (
+  fs.readFile(fsurl, 'utf8'))
+
 const pgfs_writeobj = async (opts, fsurl, spec) => (
   // console.log({ opts, fsurl }),
   pglog_writeurl(opts, fsurl),
@@ -30,7 +37,10 @@ const pgfs_dirrmdir = async dir => (
     fs.rm(dir, { recursive: true }))
 
 export {
+  pgfs_read,
   pgfs_write,
   pgfs_writeobj,
-  pgfs_dirrmdir
+  pgfs_dirrmdir,
+  pgfs_direxists,
+  pgfs_fileexists
 }

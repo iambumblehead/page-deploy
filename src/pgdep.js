@@ -4,6 +4,7 @@ import util from 'node:util'
 import url from 'node:url'
 
 import pgopts from './pgopts.js'
+import pgscriptopts from './pgscriptopts.js'
 
 import pglanglocal from './pglanglocal.js'
 
@@ -21,7 +22,9 @@ import {
 
 import {
   pgfs_writeobj,
-  pgfs_dirrmdir
+  pgfs_dirrmdir,
+  pgfs_direxists,
+  pgfs_fileexists
 } from './pgfs.js'
 
 import {
@@ -61,15 +64,16 @@ const childsdfswrite = async (opts, childs, rooturlpath, parenturlpath) => {
 const pgdep = async opts => {
   opts = pgopts(opts)
 
+  const scriptopts = pgscriptopts(opts)
+
   console.log(opts)
   console.log(opts.outputDir)
 
   await pgfs_dirrmdir(opts.outputDir)
-  // throw new Error('---')
-  // fs.rmdir(opts.outputDir, { recursive: true })
+
+  const root = await opts.root(scriptopts)
   
-  // opts.metaurl
-  const rootchilds = opts.root.nodechilds
+  const rootchilds = root.nodechilds
   // const rootchilds = opts.root.nodespec.child
   if (!rootchilds.length) {
     console.log('no childs defined')
@@ -77,7 +81,7 @@ const pgdep = async opts => {
   }
   
   // const rootroutes = opts.root[1]
-  const rootroutes = opts.root.routes
+  const rootroutes = root.routes
   if (!rootroutes.length) {
     console.log('no routes defined')
     return null
@@ -94,7 +98,7 @@ const pgdep = async opts => {
   const childrefs = await childsdfswrite(
     opts, rootchilds, rootspecurlpath)
 
-  const rootnode = Object.assign({}, opts.root.nodespec, {
+  const rootnode = Object.assign({}, root.nodespec, {
     child: childrefs
   })
   // at src/spec/view... save all 'toot' stuff
