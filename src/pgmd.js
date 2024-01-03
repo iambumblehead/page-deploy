@@ -4,8 +4,33 @@ import hljs from 'highlight.js'
 import htmldecoder from 'html-decoder'
 import striphtmltags from 'strip-html-tags'
 
-// import simpletime from 'simpletime'
-import castas from 'castas'
+// (tries to) pick up first match inside <p> tag that includes '…',
+// with no inner opening or closing <p> tags,
+const htmlParagraphExcerptRe = /(?<=<p>)(?:(?!<p>)[^…])+…/u
+
+const metaFieldRe = /\[meta:(.*)\]: <> [\(|"](.*)[\)|"]/g
+const metaFieldNameIsDateRe = /[dD]ate$/
+const metaFieldNameIsArrRe = /[aA]rr|[lL]ist$/
+const metaFieldNameIsBoolRe = /^is/
+const metaFieldValIsBoolRe = /^([Tt]rue|[Ff]alse)$/
+const metaFieldValIsBoolTrueRe = /^[Tt]rue$/
+const metaFieldValIsArrRe = /, ?/
+
+// any following underline '====' or '----' is captured, removed
+const metaTitle = ['title', [
+  '★', /(^|\n)[#_*`]?★ ([^_*`\n]*)[_*`]?(\n[=-]*)?/iu]]
+const metaTimeDate = ['timedate', [
+  '⌚', /(^|\n)[#_*`]?⌚ ([^_*`\n]*)[_*`]?/iu]]
+const metaAuthor = ['author', [
+  '✑', /(^|\n)[#_*`]?✑ ([^_*`]*)[_*`]?/iu]]
+const metaExcerpt = ['excerptnohtml', [
+  '☆', /(^|\n)[#_*`]?☆ ([^_*`]*)[_*`]?/iu]]
+const metaInlineItems = [
+  metaTimeDate,
+  metaTitle,
+  metaAuthor,
+  metaExcerpt
+]
 
 const pgmdmarked = new Marked(
   markedHighlight({
@@ -18,96 +43,77 @@ const pgmdmarked = new Marked(
   })
 )
 
-const pgmdparsedatestr = datestr => (
-  new Date(datestr))
-  // simpletime.extractDateFormatted(datestr, fmt))
+const pgmdmetaextractinline = (mdstr, metaTuple) => {
+  const metaname = metaTuple[0]
+  const metasymbol = metaTuple[1][0]
+  const metare = metaTuple[1][1]
+  const mdstrmatch = mdstr.match(metare)
 
-const pgmdparsedatestrtime = datestr => (
-  pgmdparsedatestr(datestr).getTime())
+  if (!mdstrmatch)
+    return [mdstr]
 
-// return [
-//   str with symbol matching line removed,
-//   text found after symbol (if symbol)
-// ]
-// 
-// extractsymboltext('#★ text', '★') => ['', 'text']
-// extractsymboltext('★ text\n======', '★') => ['', 'text']
-//
-//
-const pgmdextractsymboltext = (str, symbol) => {
-  const symbolre = new RegExp('(.*)?[#_*`]'+symbol+'(.*)', 'ugi')
-  const symbolunderlinere = new RegExp(symbol+'(.*)\n==*', 'ugi')
-  const endmdtagre = /([#_*`]|\n==*)$/
-  const match = (String(str).match(symbolre) ||
-                 String(str).match(symbolunderlinere))
-
-  return (match && match[0])
-    ? [ str.replace(match[0], ''),
-      match[0].split(symbol)[1].trim().replace(endmdtagre, '') ]
-    : [ str ]
+  const matchouter = mdstrmatch[0]
+  const matchinner = mdstrmatch[2]
+  const position = mdstrmatch.index
+  const mdstrfiltered = mdstr.slice(0, position)
+        + mdstr.slice(position + matchouter.length)
+  
+  return [mdstrfiltered, metaname, matchinner]
 }
 
-const pgmdextractsymbols = (str, obj={}, text) => (
-  [ [ '★', 'title' ],
-    [ '✑', 'author' ],
-    [ '☆', 'excerptnohtml' ],
-    [ '⌚', 'timeDate', pgmdparsedatestrtime ]
-  ].reduce(([ str, obj ], [ sym, propname, filter ]) => {
-    [ str, text ] = pgmdextractsymboltext(str, sym)
-
-    if (text) {
-      if (filter) {
-        text = filter(text)
-      }
-
-      obj[propname] = text
-    }
-
-    return [ str, obj ]
-    
-  }, [ str, obj ]))
-
-const pgmdextractmetadata = (str, metadata={}) => {
-  let metaValRe = /\[meta:(.*)\]: <> \((.*)\)/gi
-
-  if (typeof str === 'string') {
-    str.replace(metaValRe, (match, m1, m2) => {
-      if (/date$/i.test(m1)) {
-        metadata[m1] = pgmdparsedatestrtime(m2)
-      } else if (/arr$/i.test(m1)) {
-        metadata[m1] = m2.split(/,/)
-      } else if (/^is/.test(m1) &&
-                 /true|false/g.test(m2)) {
-        metadata[m1] = castas.bool(m2)
-      } else {
-        metadata[m1] = m2
-      }
-    })
+const pgmdmetafieldvaluecase = (fieldname, fieldvalue) => {
+  if (metaFieldNameIsDateRe.test(fieldname)) {
+    fieldvalue = new Date(fieldvalue)
+  } else if (metaFieldNameIsArrRe.test(fieldname)) {
+    fieldvalue = fieldvalue.split(metaFieldValIsArrRe)
+  } else if (metaFieldNameIsBoolRe.test(fieldname) &&
+             metaFieldValIsBoolRe.test(fieldvalue)) {
+    fieldvalue = metaFieldValIsBoolTrueRe.test(fieldvalue)
   }
+
+  return fieldvalue
+}
+
+const pgmdmetaextractfields = (str, metadata={}) => {
+  if (typeof str !== 'string')
+    return [ str, metadata ]
+
+  str.replace(metaFieldRe, (match, m1, m2) => {
+    metadata[m1] = pgmdmetafieldvaluecase(m1, m2)
+  })
   
   return [ str, metadata ]
 }
 
 const pgmdextractexcerpt = content => {
-  const match = String(content).match(/<p>(.*)…/gi)
+  const match = String(content).match(htmlParagraphExcerptRe)
   const excerpt = match && match[0].slice(0, -1)
 
   if (excerpt) {
-    content = content.replace(match[0], excerpt)
+    content = content.slice(0, match.index + match[0].length - 1) +
+      content.slice(match.index + match[0].length)
   }
 
-  return [ content, excerpt && `${excerpt}</p>` ]
+  return [ content, excerpt ]
 }
 
 const pgmdparse = (filename, filestr) => {
   let metadata = {},
-      content,
+      content = String(filestr),
       excerpt
 
-  ;[ filestr, metadata ] = pgmdextractsymbols(filestr, metadata)
-  ;[ filestr, metadata ] = pgmdextractmetadata(filestr, metadata)
+  ;[ content, metadata ] = pgmdmetaextractfields(filestr, metadata)
+  ;[ content, metadata ] = metaInlineItems.reduce((acc, item) => {
+    const res = pgmdmetaextractinline(acc[0], item)
+    if (res[1]) {
+      acc[1][res[1]] = pgmdmetafieldvaluecase(res[1], res[2])
+      acc[0] = res[0]
+    }
 
-  content = pgmdmarked.parse(filestr)
+    return acc
+  }, [ content, metadata ])
+
+  content = pgmdmarked.parse(content)
 
   ;[ content, excerpt ] = pgmdextractexcerpt(content)
 
@@ -117,18 +123,22 @@ const pgmdparse = (filename, filestr) => {
     metadata.excerpthtml = excerpt
     metadata.excerptnohtml = htmldecoder.decode(striphtmltags(excerpt))
   }
-
+  
   return metadata
 }
 
 export {
   pgmdparse as default,
+
+  metaTimeDate,
+  metaTitle,
+  metaAuthor,
+  metaExcerpt,
+  metaInlineItems,
+  
   pgmdmarked,
-  pgmdparsedatestr,
-  pgmdparsedatestrtime,
-  pgmdextractsymboltext,
-  pgmdextractsymbols,
-  pgmdextractmetadata,
   pgmdextractexcerpt,
-  pgmdparse
+  pgmdparse,
+  pgmdmetaextractinline,
+  pgmdmetaextractfields
 }
