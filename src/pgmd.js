@@ -63,7 +63,7 @@ const pgmdmetaextractinline = (mdstr, metaTuple) => {
 
 const pgmdmetafieldvaluecase = (fieldname, fieldvalue) => {
   if (metaFieldNameIsDateRe.test(fieldname)) {
-    fieldvalue = new Date(fieldvalue)
+    fieldvalue = new Date(fieldvalue).getTime()
   } else if (metaFieldNameIsArrRe.test(fieldname)) {
     fieldvalue = fieldvalue.split(metaFieldValIsArrRe)
   } else if (metaFieldNameIsBoolRe.test(fieldname) &&

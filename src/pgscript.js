@@ -25,7 +25,7 @@ const pgscript_helperargsget = (nodename, nodespec, nodechilds) => {
 const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds) => {
   const args = pgscript_helperargsget(nodename, nodespec, nodechilds)
 
-  nodename = args[0]
+  nodename = args[0] || pgname
   nodespec = args[1]
   nodechilds = args[2]
 

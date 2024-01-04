@@ -32,3 +32,12 @@ test("specpathget should return the correct specpath, not root", () => {
     String(url.pathToFileURL('/app/src/spec/view/list-checkbox/spec-baseLocale.json')))
 });
 
+test("specpathget should use pg name, if no name is specified", () => {
+  const nodebox = uicheckbox({ value: true })
+  const parenturl = url.pathToFileURL('/app/src/spec/view/list/spec-baseLocale.json')
+  const nodeurl = pgnode_specurlcreate({}, nodebox, parenturl)
+
+  assert.strictEqual(
+    String(nodeurl),
+    String(url.pathToFileURL('/app/src/spec/view/list-uicheckbox/spec-baseLocale.json')))
+});

@@ -120,7 +120,7 @@ test('metaextractinline should parse metaAuthor', () => {
 test('pgmdextractfields should parse all markdown fields', () => {
   const md = [
     '[meta:title]: <> (copy)',
-    '[meta:timedate]: <> (Fri Nov 25 2016 12:06:00 GMT-0800 (Pacific Standard Time))',
+    '[meta:timedate]: <> "Fri Nov 25 2016 12:06:00 GMT-0800 (Pacific Standard Time)"',
     '[meta:type]: <> (blog)',
     '[meta:ispublished]: <> (true)',
     '[meta:tagsArr]: <> (software,art, flow)',
@@ -140,7 +140,7 @@ test('pgmdextractfields should parse all markdown fields', () => {
 
   assert.deepStrictEqual(res[1], {
     title: 'copy',
-    timedate: new Date(1480104360000),
+    timedate: new Date(1480104360000).getTime(),
     type: 'blog',
     ispublished: true,
     tagsArr: ['software', 'art', 'flow'],
@@ -160,7 +160,7 @@ test('pgmdparse should parse a markdown file, metafields only', () => {
   
   assert.deepStrictEqual(pgmdparse('test.md', md), {
     content: '<p>© <a href="mailto:chris@bumblehead.com">bumblehead</a></p>\n',
-    timedate: new Date(1480104360000),
+    timedate: new Date(1480104360000).getTime(),
     title: 'copy'
   })
 })
@@ -199,7 +199,7 @@ test('pgmdparse should parse a markdown file, metafields and inline', () => {
     tagsArr: [ 'software', 'art' ],
     isComments: false,
     ispublished: true,
-    timedate: new Date(1480104360000),
+    timedate: new Date(1480104360000).getTime(),
     title: 'dragonfly',
     author: 'bumblehead',
     content: '<p><img src="support/screenfetch.png" alt="sceenfetch dragonfly"></p>\n' +
