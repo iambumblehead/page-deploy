@@ -27,7 +27,7 @@ test("helper should return valid node", () => {
       // errmsg: ['ns.base.errmsg', 'an error has ocurred'],
       // errtype: ['ns.base.errtype', 1]
     }
-  })
+  })()
 
   assert.deepStrictEqual(
     nodepre.nodechilds, null)
@@ -50,7 +50,7 @@ test("helper should auto-nest subj namespace as default", () => {
     isopen: true,
     errmsg: 'errmsg',
     errtype: 'errtype'
-  })
+  })()
 
   assert.deepStrictEqual(
     nodepre.nodespec, {

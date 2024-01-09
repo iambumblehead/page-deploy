@@ -22,7 +22,7 @@ const pgscript_helperargsget = (nodename, nodespec, nodechilds) => {
   return args
 }
 
-const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds) => {
+const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds, m) => {
   const args = pgscript_helperargsget(nodename, nodespec, nodechilds)
 
   nodename = args[0] || pgname
@@ -34,22 +34,29 @@ const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds) => {
   if (!nodespec)
     nodespec = {}
 
-  return {
-    nodechilds,
-    nodespec: {
-      node: pgname,
-      name: nodename,
-      ...nodespec
+  // this allows node to be constructed in lazy way,
+  // so parent-defined route-name usable to create node name
+  return (graph, pnode, nodemeta = {}) => {
+    if (nodemeta.nodename) {
+      nodename = nodemeta.nodename
+    }
+
+    return {
+      nodemeta: m ? Object.assign(nodemeta, m) : nodemeta,
+      nodechilds,
+      nodespec: {
+        node: pgname,
+        name: nodename,
+        ...nodespec
+      }
     }
   }
 }
 
 const pgroot = (childs, routes) => {
-  const pg = pgscript_helpercreate('uiroot')('/', null, childs)
-
-  pg.routes = routes
-
-  return pg
+  return pgscript_helpercreate('uiroot')('/', null, childs, {
+    routes
+  })
 }
 
 const pgpathtree = pgenumNODETYPEPATH

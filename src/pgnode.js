@@ -11,13 +11,15 @@ import {
 // ```
 // new url.URL('.', nodePathFull)
 // ```
-const pgnode_specpathget = (opts, node, parentpath) => {
+// const pgnode_specpathget = (opts, node, parentpath) => {
+const pgnode_specurlcreate = (opts, node, parentpath) => {
   const parentDirUrl = new url.URL('.', parentpath)
   const parentDirName = path.basename(parentDirUrl.pathname)
   const nodename = node.nodespec.name
   const nodeDirName = (
     parentDirName === 'root'
-      ? nodename + '/'
+      // ? nodename + '/'
+      ? parentDirName + '-' + nodename + '/'
       : parentDirName + '-' + nodename + '/')
   const outputDirUrl = new url.URL('..', parentpath)
   const nodeDirUrl = new url.URL(nodeDirName, outputDirUrl)
@@ -33,11 +35,12 @@ const pgnode_writedeep = async (opts, node, fullpath) => {
 }
 
 const pgnode_specrefcreate = () => {
-  
+
 }
 
 export {
   pgnode_writedeep,
-  pgnode_specpathget,
+  // pgnode_specpathget,
+  pgnode_specurlcreate,
   pgnode_specrefcreate
 }
