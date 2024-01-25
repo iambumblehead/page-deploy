@@ -7,8 +7,12 @@ const pgerrmdfilenotfound = (opts, path) => (
 const pgerrmdfileordirnotfound = (opts, path) => (
   new Error(`[!!!] error: markdown file or directory not found, "${path}"`))
 
+const pgerrrootnochildsdefined = () => (
+  new Error(`[!!!] error: no childs are defined on the root node`))
+
 export {
   pgerrmddirnotfound,
   pgerrmdfilenotfound,
-  pgerrmdfileordirnotfound
+  pgerrmdfileordirnotfound,
+  pgerrrootnochildsdefined
 }

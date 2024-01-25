@@ -6,11 +6,11 @@ import {
 } from './pglog.js'
 
 const pgfs_direxists = async dir => (
-  dir = await fs.stat(dir).catch(e => null),
+  dir = await fs.stat(dir).catch(() => null),
   dir && dir.isDirectory())
 
 const pgfs_fileexists = async dir => (
-  dir = await fs.stat(dir).catch(e => null),
+  dir = await fs.stat(dir).catch(() => null),
   dir && dir.isFile())
 
 const pgfs_dirmkdir = async dir => (
@@ -28,7 +28,6 @@ const pgfs_read = async fsurl => (
   fs.readFile(fsurl, 'utf8'))
 
 const pgfs_writeobj = async (opts, fsurl, spec) => (
-  // console.log({ opts, fsurl }),
   pglog_writeurl(opts, fsurl),
   pgfs_write(fsurl, JSON.stringify(spec, null, '  ')))
 

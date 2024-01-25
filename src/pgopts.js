@@ -1,7 +1,3 @@
-// Filename: deploy_opts.js  
-// Timestamp: 2017.09.02-22:17:28 (last modified)
-// Author(s): bumblehead <chris@bumblehead.com>  
-
 import castas from 'castas'
 import path from 'path'
 
@@ -20,10 +16,6 @@ const defaultopts = {
   articlescache: {}
 }
 
-const getasboolorarr = opt => /true|false/i.test(opt)
-  ? castas.bool(opt)
-  : castas.arr(opt)
-
 export default useropts => {
   const opt = Object.create(defaultopts)
   const stackpathre = /^.*(\(|at )(.*):[\d]*:[\d]*.*$/
@@ -37,9 +29,9 @@ export default useropts => {
   opt.publicPath = castas.str(useropts.publicPath, './spec')
   opt.outputDir = castas.str(useropts.outputDir, './build/spec')
   opt.supportDir = castas.str(useropts.supportDir, '')
-  opt.datetitlesubdirs = castas.arr(useropts.datetitlesubdirs, [])
-  opt.supportedLocaleArr = getasboolorarr(useropts.supportedLocaleArr)
-  opt.supportedLangArr = getasboolorarr(useropts.supportedLangArr)
+  // opt.datetitlesubdirs = castas.arr(useropts.datetitlesubdirs, [])
+
+  opt.i18n = useropts.i18n || [['eng-US', {}]]
   opt.root = useropts.root
   
   return opt

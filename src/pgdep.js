@@ -1,18 +1,20 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import util from 'node:util'
-import url from 'node:url'
-
 import pgopts from './pgopts.js'
 import pgscriptopts from './pgscriptopts.js'
-
-import pglanglocal from './pglanglocal.js'
+import pglanglocale from './pglanglocale.js'
 
 import {
-  pgnode_writedeep,
-  pgnode_specrefcreate,
-  pgnode_specurlcreate
-} from './pgnode.js'
+  pggraphcreate,
+  pggraphset,
+  pggraphsetchild,
+  pggraphsetchildedge,
+  pggraphsetrouteedge
+} from './pggraph.js'
+
+import {
+  key_urlcreate,
+  key_refchildcreate,
+  key_childlanglocalecreate
+} from './pgkey.js'
 
 import {
   pgscript_helpercreate
@@ -20,102 +22,159 @@ import {
 
 import {
   pgfs_writeobj,
-  pgfs_dirrmdir,
-  pgfs_direxists,
-  pgfs_fileexists
+  pgfs_dirrmdir
 } from './pgfs.js'
-
-import {
-  pgspecroutepathnodecreate,
-  pgspecrefrelativecreate
-} from './pgspecref.js'
 
 import {
   pgenumNODETYPEPATH
 } from './pgenum.js'
 
-const childsdfswrite = async (opts, childs, rurlpath, purlpath) => {
-  const childrefs = []
-  for (const childindex in childs) {
-    const childresolver = childs[childindex]
-    const child = typeof childresolver === 'function'
-      ? childresolver() : childresolver
+// if grouped nodechildlangs defined
+//   return those
+// else if single nodechilds
+//   compose default nodechildlangs from tho
+const nodechildlangsget = (opts, nodespec) => (
+  nodespec.nodechildlangs || (
+    nodespec.nodechilds
+      ? [[ opts.i18n[0][0], nodespec.nodechilds ]]
+      : []))
 
-    if (child === pgenumNODETYPEPATH) {
-      childrefs.push(pgspecroutepathnodecreate())
-    } else {
-      const childpath = pgnode_specurlcreate(
-        opts, child, purlpath || rurlpath)
+const nodechildaslangsgroup = (opts, nodespec) => (
+  Array.isArray(nodespec)
+    ? nodespec
+    : [[ opts.i18n[0][0], nodespec ]])
 
-      // parenturlpath || new url.URL('..', rooturlpath))
-      const childsdeep = await childsdfswrite(
-        opts, child.nodechilds, rurlpath, childpath)
+const routesdfsgraphset = async (opts, graph, nodespec, parentid, routes) => {
+  if (!routes.length)
+    return graph
 
-      if (childsdeep.length)
-        child.nodespec.child = childsdeep
-      
-      await pgnode_writedeep(opts, child, childpath)
+  const route = routes[0]
+  const routename = route[0]
+  const routenamedecoded = routepathparsename(routename)
+  // const routedetails = route[1]
+  const routenoderesolve = route[2]
 
-      childrefs.push(pgspecrefrelativecreate(childpath, rurlpath))
+  // default name 'index' so childs will be contained
+  // within *something* comparable to non-index routes
+  const routenodename = `pg-${routenamedecoded || 'index'}`
+  const routenode = routenoderesolve({}, {}, {
+    nodename: routenodename
+  })
+
+  graph = await specdfsgraphsetroot(opts, graph, routenode, parentid)
+
+  return routesdfsgraphset(opts, graph, nodespec, parentid, routes.slice(1))
+}
+
+// sets graph nodes recursively deeply from nodespec
+// each parent node contains language-locale-specific child lists
+const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
+  const nodechildlanglocalegroups = nodechildlangsget(opts, nodespec)
+  // const noderoutes = (nodespec.nodemeta || {}).routes
+  // const nodechildrefs = []
+
+  for (const nodechildlanglocalegroup of nodechildlanglocalegroups) {
+    const childlanglocale = nodechildlanglocalegroup[0]
+    const childresolvers = nodechildlanglocalegroup[1]
+
+    for (const i in childresolvers) {
+      const childresolver = childresolvers[i]
+      const child = (
+        typeof childresolver === 'function'
+          ? childresolver()
+          : childresolver)
+
+      if (child === pgenumNODETYPEPATH) {
+        graph = pggraphsetchildedge(
+          graph, parentid, childlanglocale, pgenumNODETYPEPATH)
+      } else {
+        // entirely different list of childs is possible
+        // for each langlocale... so each is generated
+        const nodename = child.nodespec.name // '/'
+        const nodelanglocalename = nodename + '/:' + childlanglocale
+        const nodelanglocalekey = key_childlanglocalecreate(
+          parentid, nodelanglocalename)
+
+        graph = pggraphsetchild(
+          graph, parentid, childlanglocale, nodelanglocalekey, child)
+
+        if (child.nodechilds && child.nodechilds.length) {
+          graph = await childsdfsgraphset( // nodespec, fullkeytoparent
+            opts, graph, child, nodelanglocalekey)
+        }
+      }
     }
   }
 
-  return childrefs
+  return graph
+}
+
+
+const specdfsgraphsetroot = async (opts, graph, nodespec, parentkey) => {
+  const isroot = Object.keys(graph).length === 0
+  const langlocalegroups = nodechildaslangsgroup(opts, nodespec)
+  const nodename = nodespec.nodespec.name // '/'
+  const noderoutes = nodespec.nodemeta.routes || []
+
+  // maybe some routes only available some langs
+  for (const langlocalegroup of langlocalegroups) {
+    const nodelanglocale = langlocalegroup[0]
+    const noderesolver = langlocalegroup[1]
+    const nodelanglocalename =
+          (nodename === '/' ? '' : nodename) + '/:' + nodelanglocale
+    const nodelanglocalekey = key_childlanglocalecreate(
+      parentkey, nodelanglocalename)
+
+    graph = pggraphset(graph, nodelanglocalekey, nodespec)
+    graph = isroot ? graph : pggraphsetrouteedge(
+      graph, parentkey, nodelanglocale, nodelanglocalekey)
+    graph = await childsdfsgraphset( // nodespec, fullkeytoparent
+      opts, graph, noderesolver, nodelanglocalekey)
+    graph = await routesdfsgraphset(
+      opts, graph, noderesolver, nodelanglocalekey, noderoutes)
+  }
+
+  return graph
+}
+
+const graphdfswrite = async (opts, lang, graph, key, keyparent) => {
+  const node = graph[key]
+  const nodechilds = node['child:' + lang] || []
+  const noderoutes = node['route:' + lang] || []
+  const nodechildpaths = []
+
+  for (const i in nodechilds) {
+    const childpath = nodechilds[i] === pgenumNODETYPEPATH
+      ? ({ ispathnode: true })
+      : key_refchildcreate(opts, keyparent || key, nodechilds[i])
+    
+    nodechildpaths.push(childpath)
+
+    if (nodechilds[i] !== pgenumNODETYPEPATH) {
+      await graphdfswrite(opts, lang, graph, nodechilds[i], key)
+    }
+  }
+
+  for (const i in noderoutes) {
+    const noderoute = noderoutes[i]
+
+    await graphdfswrite(opts, lang, graph, noderoute, key)
+  }
+
+  const outputurl = key_urlcreate(opts, key)
+  const nodespec = Object.assign({}, node.nodespec, {
+    ...(nodechilds.length && {
+      child: nodechildpaths
+    })
+  })
+
+  await pgfs_writeobj(opts, outputurl, nodespec)
 }
 
 // /blog/ => blog
 // / => pg
 const routepathparsename = routepath => (
   routepath.replace(/\//g, ''))
-
-// for '/' put inside spec/view/page-home
-// or maybe use page-root-index or maybe just 'page' or 'pg' <-- like this
-// const pgdepbuildroutes = async (opts, rootspecurlpath, rootnode, routes, fin) => {
-const pgdepbuildroutes = async (opts, purlpath, pnode, routes, f = []) => {
-  if (!routes.length)
-    return
-
-  const route = routes[0]
-  const routename = route[0]
-  const routenamedecoded = routepathparsename(routename)
-  const routedetails = route[1]
-  const routenoderesolve = route[2]
-  const routenodename = routenamedecoded
-    ? 'pg-' + routenamedecoded
-    : 'pg'
-  const routenode = routenoderesolve({}, {}, {
-    nodename: routenodename
-  })
-
-  // need to find a way to pass down the name
-  // maybe the node should return instead a function...
-  // function is used here...
-
-  const routenodepath = pgnode_specurlcreate(
-    opts, routenode, purlpath)
-
-  const childrefs = await childsdfswrite(
-    opts, routenode.nodechilds, routenodepath)
-
-  const rootnode = Object.assign({}, routenode.nodespec, {
-    child: childrefs
-  })
-
-  await pgfs_writeobj(opts, routenodepath, rootnode)
-
-  // const rootspecurlpath = new url.URL(
-  //  `${opts.outputDir.replace(/\/$/, '')}/view/root/spec-baseLocale.json`, opts.metaurl);
-  /*
-  console.log({
-    purlpath,
-    routename,
-    routedetails,
-    routenode,
-    routenodename
-  })
-  */
-  return pgdepbuildroutes(opts, purlpath, pnode, routes.slice(1))
-}
 
 const pgdep = async opts => {
   opts = pgopts(opts)
@@ -127,45 +186,24 @@ const pgdep = async opts => {
   const rootresolver = await opts.root(scriptopts)
   const root = rootresolver()
 
-  const rootchilds = root.nodechilds
-  if (!rootchilds.length) {
-    console.log('no childs defined')
-    return null
+  const graph = await specdfsgraphsetroot(
+    opts, pggraphcreate(), root, '/:eng-US')
+
+  const langs = opts.i18n.reduce((accum, i18n) => {
+    accum.push(i18n[0])
+    return accum
+  }, [])
+
+  // unknown necessary lang+locale combinations, until children are processed
+  // fallback to 'default' eg, en-US
+  // eng-US, jap-US, eng-JP, jap-JP
+  for (const lang of langs) {
+    graphdfswrite(opts, lang, graph, '/:' + lang)
   }
-
-  const rootroutes = root.nodemeta.routes
-  if (!rootroutes.length) {
-    console.log('no routes defined')
-    return null
-  }
-
-  // const url = new url.URL('data.txt', opts.metaurl);
-  const rootspecurlpath = new url.URL(
-    `${opts.outputDir.replace(/\/$/, '')}/view/root/spec-baseLocale.json`, opts.metaurl);
-  // build the root spec
-  // spec/view/root/spec-baseLocale.json
-  // after writing each child... write the above path
-
-  const childrefs = await childsdfswrite(
-    opts, rootchilds, rootspecurlpath)
-
-  const rootnode = Object.assign({}, root.nodespec, {
-    child: childrefs
-  })
-  // at src/spec/view... save all 'toot' stuff
-  // console.log(opts.root)
-
-  await pgfs_writeobj(opts, rootspecurlpath, rootnode)
-
-  // then save each page stuff
-  await pgdepbuildroutes(
-    opts, rootspecurlpath, rootnode, rootroutes)
-
-  // throw new Error('==')
 }
 
 export {
   pgdep as default,
   pgscript_helpercreate,
-  pglanglocal
+  pglanglocale
 }

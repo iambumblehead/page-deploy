@@ -54,6 +54,8 @@ const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds, m) => {
 }
 
 const pgroot = (childs, routes) => {
+  // root/
+  // return pgscript_helpercreate('uiroot')('/root/', null, childs, {
   return pgscript_helpercreate('uiroot')('/', null, childs, {
     routes
   })

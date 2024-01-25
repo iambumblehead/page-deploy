@@ -25,8 +25,8 @@ console.log(
   ))
 )
 */
-const parsedatestr = (datestr, fmt='yyyy.MM.dd-HH:mm:ss') => (
-  simpletime.extractDateFormatted(datestr, fmt))
+// const parsedatestr = (datestr, fmt='yyyy.MM.dd-HH:mm:ss') => (
+//   simpletime.extractDateFormatted(datestr, fmt))
 
 const mdfile = async (opts, path) => {
   const mdfileurl = new url.URL(path, opts.metaurl)
