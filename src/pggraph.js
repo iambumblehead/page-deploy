@@ -9,7 +9,7 @@ const pggraphcreate = () => (
   pgobjcreate())
 
 const pggraphset = (graph, key, val) => (
-  pgobjset(graph, key, val))
+  pgobjset(graph, key, Object.assign(val, { key })))
 
 const pggraphrm = (graph, key) => (
   pgobjrm(graph, key))
@@ -50,4 +50,3 @@ export {
   pggraphset,
   pggraphrm
 }
-

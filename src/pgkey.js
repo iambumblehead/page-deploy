@@ -50,7 +50,15 @@ const key_childlanglocalecreate = (parentid, childname) => {
   return res
 }
 
+const key_routeencode = key => {
+  return key
+    .replace(/^\/pg-/, '/')
+    .replace(/\/index/, '')
+    .replace(/:\w\w\w-\w\w$/, '')
+}
+
 export {
+  key_routeencode,
   key_urlcreate,
   key_refchildcreate,
   key_pathrelcreate,

@@ -1,6 +1,7 @@
 import pgopts from './pgopts.js'
 import pgscriptopts from './pgscriptopts.js'
 import pglanglocale from './pglanglocale.js'
+import pgmanifest from './pgmanifest.js'
 
 import {
   pggraphcreate,
@@ -9,6 +10,10 @@ import {
   pggraphsetchildedge,
   pggraphsetrouteedge
 } from './pggraph.js'
+
+import {
+  pgurl_manifestcreate
+} from './pgurl.js'
 
 import {
   key_urlcreate,
@@ -24,6 +29,8 @@ import {
   pgfs_writeobj,
   pgfs_dirrmdir
 } from './pgfs.js'
+
+import pglog from './pglog.js'
 
 import {
   pgenumNODETYPEPATH
@@ -198,8 +205,14 @@ const pgdep = async opts => {
   // fallback to 'default' eg, en-US
   // eng-US, jap-US, eng-JP, jap-JP
   for (const lang of langs) {
-    graphdfswrite(opts, lang, graph, '/:' + lang)
+    await graphdfswrite(opts, lang, graph, '/:' + lang)
   }
+
+  const manifest = pgmanifest(opts, graph)
+  const manifesturl = pgurl_manifestcreate(opts)
+
+  await pgfs_writeobj(opts, manifesturl, manifest)
+  pglog(opts, JSON.stringify(manifest, null, '  '))
 }
 
 export {
