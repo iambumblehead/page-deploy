@@ -50,7 +50,10 @@ const pgmanifestcreate = (opts, graph) => {
   const manifestroutes = pgmanifestroute(
     graph, '/:eng-US', 'eng-US')
 
-  return manifestroutes[1][0]
+  return {
+    deploytype: 'flat',
+    routes: manifestroutes[1][0]
+  }
 }
 
 export {
