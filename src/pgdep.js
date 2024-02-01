@@ -57,15 +57,18 @@ const routesdfsgraphset = async (opts, graph, nodespec, parentid, routes) => {
 
   const route = routes[0]
   const routename = route[0]
+
+  // routedetails ex, { title, description }
+  const routedetails = route[1][0]
   const routenamedecoded = routepathparsename(routename)
-  // const routedetails = route[1]
   const routenoderesolve = route[2]
 
   // default name 'index' so childs will be contained
   // within *something* comparable to non-index routes
   const routenodename = `pg-${routenamedecoded || 'index'}`
   const routenode = routenoderesolve({}, {}, {
-    nodename: routenodename
+    nodename: routenodename,
+    routemeta: routedetails
   })
 
   graph = await specdfsgraphsetroot(opts, graph, routenode, parentid)
@@ -174,6 +177,16 @@ const graphdfswrite = async (opts, lang, graph, key, keyparent) => {
       child: nodechildpaths
     })
   })
+
+  const nodemeta = node.nodemeta
+  const routemeta = nodemeta && nodemeta.routemeta
+  if (routemeta) {
+    nodespec.subj = Object.assign(
+      nodespec.subj || {},
+      Object.keys(routemeta).reduce((acc, k) => (
+        acc[`gnmeta${k}`] = routemeta[k],
+        acc), {}))
+  }
 
   await pgfs_writeobj(opts, outputurl, nodespec)
 }
