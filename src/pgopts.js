@@ -31,6 +31,11 @@ export default useropts => {
   opt.supportDir = castas.str(useropts.supportDir, '')
   // opt.datetitlesubdirs = castas.arr(useropts.datetitlesubdirs, [])
 
+  opt.appname = useropts.appname
+    || 'app.gani'
+  opt.appdescription = useropts.appdescription
+    || 'gani app description'
+  opt.deploytype = useropts.deploytype || 'flat'
   opt.i18n = useropts.i18n || [['eng-US', {}]]
   opt.root = useropts.root
   

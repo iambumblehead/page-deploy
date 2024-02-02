@@ -51,7 +51,8 @@ const pgmanifestcreate = (opts, graph) => {
     graph, '/:eng-US', 'eng-US')
 
   return {
-    deploytype: 'flat',
+    appname: opts.appname,
+    deploytype: opts.deploytype,
     routes: manifestroutes[1][0]
   }
 }
