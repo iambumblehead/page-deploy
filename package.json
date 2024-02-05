@@ -12,8 +12,8 @@
   "main": "src/pgdep.js",
   "exports": {
     ".": {
-      "import": "./src/pgdep.js",
-      "default": "./src/pgdep.js"
+      "import": "./src/pgDep.js",
+      "default": "./src/pgDep.js"
     },
     "./src/*.js": "./src/*.js",
     "./package.json": "./package.json"    

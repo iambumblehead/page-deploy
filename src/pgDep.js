@@ -219,6 +219,13 @@ const resolvespecs = async (opts, lang, graph, key, child) => {
 
   return resolvedspec
 }
+
+const isRoute = child => {
+  return Array.isArray(child)
+    && Array.isArray(child[0])
+    && typeof child[0][0] === 'string'
+}
+
 // sets graph nodes recursively deeply from nodespec
 // each parent node contains language-locale-specific child lists
 const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
@@ -237,7 +244,8 @@ const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
           ? childresolver()
           : childresolver)
 
-      if (child === pgEnumNODETYPEPATH) {
+      if (isRoute(child)) {
+      // if (child === pgEnumNODETYPEPATH) {
         graph = pgGraphSetChildEdge(
           graph, parentid, childlanglocale, pgEnumNODETYPEPATH)
       } else {
@@ -298,7 +306,10 @@ const specdfsgraphsetroot = async (opts, graph, nodespec, parentkey) => {
   const isroot = Object.keys(graph).length === 0
   const langlocalegroups = nodechildaslangsgroup(opts, nodespec)
   const nodename = nodespec.nodespec.name // '/'
-  const noderoutes = nodespec.nodemeta.routes || []
+  // const noderoutes = nodespec.nodemeta.routes || []
+  // isRoute(child)
+  const noderoutes = nodespec.nodechilds.find(c => isRoute(c)) || []
+  // onst noderoutes = nodespec.nodemeta.routes || []
 
   // maybe some routes only available some langs
   for (const langlocalegroup of langlocalegroups) {
