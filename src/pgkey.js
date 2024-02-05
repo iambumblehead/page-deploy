@@ -2,8 +2,8 @@ import url from 'node:url'
 import path from 'node:path'
 
 import {
-  pgenumREFTYPELOCAL
-} from './pgenum.js'
+  pgEnumREFTYPELOCAL
+} from './pgEnum.js'
 
 const keylanglocalere = /\/:\w\w\w?-\w\w$/
 
@@ -35,7 +35,7 @@ const key_refchildcreate = (opts, keyparent, keychild) => {
     urlParentDir.pathname, urlChild.pathname)
 
   return {
-    type: pgenumREFTYPELOCAL,
+    type: pgEnumREFTYPELOCAL,
     path: pathtodirrelative
   }
 }
@@ -50,6 +50,9 @@ const key_childlanglocalecreate = (parentid, childname) => {
   return res
 }
 
+const key_langremove = key => (
+  key.replace(keylanglocalere, ''))
+
 const key_routeencode = key => {
   return key
     .replace(/^\/pg-/, '/')
@@ -62,5 +65,6 @@ export {
   key_urlcreate,
   key_refchildcreate,
   key_pathrelcreate,
-  key_childlanglocalecreate
+  key_childlanglocalecreate,
+  key_langremove
 }

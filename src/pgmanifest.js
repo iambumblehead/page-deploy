@@ -53,7 +53,7 @@ const pgmanifestcreate = (opts, graph) => {
   return {
     appname: opts.appname,
     deploytype: opts.deploytype,
-    routes: manifestroutes[1][0]
+    routes: (manifestroutes[1] || [])[0] || []
   }
 }
 

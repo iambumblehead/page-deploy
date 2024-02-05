@@ -1,12 +1,14 @@
 import {
-  pgenumNODETYPEPATH,
-  pgenumSPECPROPTYPEisValidRe
-} from './pgenum.js'
+  pgEnumNODETYPEPATH,
+  pgEnumSPECPROPTYPEisValidRe
+} from './pgEnum.js'
+
+const nextId = ((id = 0) => () => ++id)()
 
 const pgscript_helperargspecisvalid = nodespec => (
   nodespec === null || (
     typeof nodespec === 'object' && Object.keys(nodespec).every(
-      k => pgenumSPECPROPTYPEisValidRe.test(k))))
+      k => pgEnumSPECPROPTYPEisValidRe.test(k))))
 
 // returns [ nodename, nodespc, nodechilds ]
 const pgscript_helperargsget = (nodename, nodespec, nodechilds) => {
@@ -24,6 +26,8 @@ const pgscript_helperargsget = (nodename, nodespec, nodechilds) => {
 
 const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds, m) => {
   const args = pgscript_helperargsget(nodename, nodespec, nodechilds)
+  const nodescriptid = nextId()
+  // console.log({ nodescriptid, nodename })
 
   nodename = args[0] || pgname
   nodespec = args[1]
@@ -36,12 +40,19 @@ const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds, m) => {
 
   // this allows node to be constructed in lazy way,
   // so parent-defined route-name usable to create node name
-  return (graph, pnode, nodemeta = {}) => {
+  return Object.assign((graph, pnode, nodemeta = {}) => {
     if (nodemeta.nodename) {
       nodename = nodemeta.nodename
     }
 
+    if (nodename === 'dataenv') {
+      // console.log({ nodename })
+      //throw new Error('nonon')
+    }
+    
     return {
+      toString: () => 'NODEDESIGN',
+      nodescriptid,
       nodemeta: m ? Object.assign(nodemeta, m) : nodemeta,
       nodechilds,
       nodespec: {
@@ -50,7 +61,10 @@ const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds, m) => {
         ...nodespec
       }
     }
-  }
+  }, {
+    pgscriptid: nodescriptid,
+    pgscript: true
+  })
 }
 
 const pgroot = (childs, routes) => {
@@ -61,7 +75,7 @@ const pgroot = (childs, routes) => {
   })
 }
 
-const pgpathtree = pgenumNODETYPEPATH
+const pgpathtree = pgEnumNODETYPEPATH
 
 export {
   pgscript_helpercreate,

@@ -2,14 +2,16 @@ import pgopts from './pgopts.js'
 import pgscriptopts from './pgscriptopts.js'
 import pglanglocale from './pglanglocale.js'
 import pgmanifest from './pgmanifest.js'
+// import pgdraw from './pgdraw.js'
+import pgdraw from './pgReql.js'
 
 import {
-  pggraphcreate,
-  pggraphset,
-  pggraphsetchild,
-  pggraphsetchildedge,
-  pggraphsetrouteedge
-} from './pggraph.js'
+  pgGraphCreate,
+  pgGraphSet,
+  pgGraphSetChild,
+  pgGraphSetChildEdge,
+  pgGraphSetRouteEdge
+} from './pgGraph.js'
 
 import {
   pgurl_manifestcreate
@@ -33,8 +35,13 @@ import {
 import pglog from './pglog.js'
 
 import {
-  pgenumNODETYPEPATH
-} from './pgenum.js'
+  pgEnumNODETYPEPATH,
+  // pgEnumNODETYPEPATH,
+  pgEnumIsChain,
+  pgEnumIsChainShallow,
+  pgEnumQueryNameIsGREEDYRe,
+  pgEnumIsChainDeep
+} from './pgEnum.js'
 
 // if grouped nodechildlangs defined
 //   return those
@@ -76,6 +83,142 @@ const routesdfsgraphset = async (opts, graph, nodespec, parentid, routes) => {
   return routesdfsgraphset(opts, graph, nodespec, parentid, routes.slice(1))
 }
 
+
+// {
+//   requrl: d.typefn('getrequrl'),
+//   other: 'val'
+// }
+//
+// [{
+//   requrl: d.typefn('getrequrl'),
+//   other: 'val'
+// }]
+//
+// [{
+//   requrl: d.typefn('getrequrl')
+// }, {
+//   other: 'val'
+// }]
+const resolvespec = async (opts, lang, graph, child, key, spec, prop, props = []) => {
+/*
+  if (prop === 'parts') {
+    console.log('SPEC', JSON.stringify(spec))
+    // console.log('VAL', val)
+    throw new Error('===')
+  }
+*/  
+  if (pgEnumIsChainDeep(spec)) {
+    if (Array.isArray(spec)) {
+      for (const specprop in spec) {
+        props[specprop] = await resolvespec(
+          opts, lang, graph, child, key, spec[specprop], specprop)
+
+      }
+
+      // props[key] = props[key].flat()
+      return props.flat()
+      // spec = spec.map((el, i) => resolvespec(el, i))
+    } else {
+      props[0] = null
+      // console.log('shallow one...', spec)
+      for (const specprop of Object.keys(spec)) {
+        console.log({ specprop, spec: String(spec), val: String(spec[specprop]) })
+        // only push if spec[prop] is function AND
+        // if root query is 'greedy' AND
+        // if only one arg was given -- this last one is sloppy and should
+        // maybe detect r('expr')
+        // pgEnumQueryNameIsGREEDYRe
+        // console.log(
+        //   'tgerm',
+        //   typeof spec[specprop] === 'function' &&
+        //    spec[specprop].recs.slice(-1)[0][0])
+        if (typeof spec[specprop] === 'function'
+            && pgEnumQueryNameIsGREEDYRe.test(
+              spec[specprop].recs.slice(-1)[0][0])) {
+
+          // console.log(spec[specprop])
+          // console.log(spec[specprop])
+          // console.log('heas')
+          // throw new Error('===')
+
+          const resolved = await resolvespec(
+            opts, lang, graph, child, key, spec[specprop], specprop)          
+          // let val = await resolvespec(spec[key], key)
+          console.log('pushed resolved', resolved)
+          props.push(resolved)
+        } else {
+          props[0] = props[0] || {}
+          props[0][specprop] = await resolvespec(
+            opts, lang, graph, child, key, spec[specprop], specprop)
+        }
+      }
+
+      console.log('returning looped prps', props)
+      return props[0] === null
+        ? props.slice(1)
+        : props
+    }
+  }
+
+  // pgEnumQueryArgTypeCHAINIsRe.test(obj.type)
+  if (pgEnumIsChain(spec) || typeof spec === 'function') {
+    // spec.recs[0][1].push(prop)
+    // console.log('recs here', spec.recs[0][1])
+    // convert node helper to actual node from graaph
+    // console.log('spec', spec)
+
+    // console.log(child)
+    // throw new Error('must start with node')
+    spec.state = {
+      lang,
+      graph,
+      node: child,
+      outerprop: prop,
+      key
+    }
+    /*
+    spec.recs[0][1] = [prop, ...spec.recs[0][1].map(e => {
+      if (e.graphkeys)
+        e = graph[e.graphkeys[0]]
+      
+      return e
+    })]
+    */
+    // console.log('can spec be augmented w. expr?', spec.recs[0])
+    // console.log('RUN', spec.run.toString())
+    // throw new Error('==')
+    
+    const val = await spec.run()
+    
+    console.log('resultig val', val)
+    //throw new Error('erro')
+    if (prop === 'labelprimary') {
+      // console.log('SPEC', spec)
+      // console.log('VAL', val)
+      // throw new Error('===')
+    }
+    return val
+  }
+
+  return spec
+}
+
+const resolvespecs = async (opts, lang, graph, key, child) => {
+  const resolvedspec = {}
+  const childspec = child.nodespec
+
+  for (const specprop in childspec) {
+    const childspecpropval = childspec[specprop]
+    
+    resolvedspec[specprop] = (
+      pgEnumIsChainDeep(childspecpropval)
+        || typeof childspecpropval === 'function')
+      ? await resolvespec(opts, lang, graph, child, key, childspecpropval, specprop)
+      : childspecpropval
+  }
+
+  return resolvedspec
+}
 // sets graph nodes recursively deeply from nodespec
 // each parent node contains language-locale-specific child lists
 const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
@@ -94,9 +237,9 @@ const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
           ? childresolver()
           : childresolver)
 
-      if (child === pgenumNODETYPEPATH) {
-        graph = pggraphsetchildedge(
-          graph, parentid, childlanglocale, pgenumNODETYPEPATH)
+      if (child === pgEnumNODETYPEPATH) {
+        graph = pgGraphSetChildEdge(
+          graph, parentid, childlanglocale, pgEnumNODETYPEPATH)
       } else {
         // entirely different list of childs is possible
         // for each langlocale... so each is generated
@@ -105,7 +248,38 @@ const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
         const nodelanglocalekey = key_childlanglocalecreate(
           parentid, nodelanglocalename)
 
-        graph = pggraphsetchild(
+        if (typeof childresolver === 'function') {
+          childresolver.graphkeys = childresolver.graphkeys || []
+          childresolver.graphkeys.push(nodelanglocalekey)
+        }
+        // child.nodespec = resolvespec(child.nodespec)
+        // need to set node first
+        child.nodespec = await resolvespecs(
+          opts,
+          childlanglocale,
+          graph,
+          nodelanglocalekey,
+          child)
+          // child.nodespec)
+
+        console.log('nodespec final', child.nodespec.subj)
+        // for (const key of (child.nodespec))
+        //   child.nodespec[key] = await resolvespec(child.nodespec[key], key)
+
+        //   return prev
+        // }, {})
+        /*
+        if (pgEnumIsChainShallow(child.nodespec)) {
+    
+          child.ndoespec = Object.keys(child.nodespec).reduce((prev, key) => {
+            pgEnumIsChainShallow
+          // qst.target = val
+          // r.expr()
+            console.log('CHILD', child)
+          })
+        }
+        */
+        graph = pgGraphSetChild(
           graph, parentid, childlanglocale, nodelanglocalekey, child)
 
         if (child.nodechilds && child.nodechilds.length) {
@@ -135,8 +309,8 @@ const specdfsgraphsetroot = async (opts, graph, nodespec, parentkey) => {
     const nodelanglocalekey = key_childlanglocalecreate(
       parentkey, nodelanglocalename)
 
-    graph = pggraphset(graph, nodelanglocalekey, nodespec)
-    graph = isroot ? graph : pggraphsetrouteedge(
+    graph = pgGraphSet(graph, nodelanglocalekey, nodespec)
+    graph = isroot ? graph : pgGraphSetRouteEdge(
       graph, parentkey, nodelanglocale, nodelanglocalekey)
     graph = await childsdfsgraphset( // nodespec, fullkeytoparent
       opts, graph, noderesolver, nodelanglocalekey)
@@ -154,13 +328,13 @@ const graphdfswrite = async (opts, lang, graph, key, keyparent) => {
   const nodechildpaths = []
 
   for (const i in nodechilds) {
-    const childpath = nodechilds[i] === pgenumNODETYPEPATH
+    const childpath = nodechilds[i] === pgEnumNODETYPEPATH
       ? ({ ispathnode: true })
       : key_refchildcreate(opts, keyparent || key, nodechilds[i])
     
     nodechildpaths.push(childpath)
 
-    if (nodechilds[i] !== pgenumNODETYPEPATH) {
+    if (nodechilds[i] !== pgEnumNODETYPEPATH) {
       await graphdfswrite(opts, lang, graph, nodechilds[i], key)
     }
   }
@@ -207,7 +381,7 @@ const pgdep = async opts => {
   const root = rootresolver()
 
   const graph = await specdfsgraphsetroot(
-    opts, pggraphcreate(), root, '/:eng-US')
+    opts, pgGraphCreate(), root, '/:eng-US')
 
   const langs = opts.i18n.reduce((accum, i18n) => {
     accum.push(i18n[0])
@@ -230,6 +404,7 @@ const pgdep = async opts => {
 
 export {
   pgdep as default,
+  pgdraw,
   pgscript_helpercreate,
   pglanglocale
 }

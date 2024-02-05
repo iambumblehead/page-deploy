@@ -7,10 +7,10 @@ import {
 } from './pgfs.js'
 
 import {
-  pgerrmddirnotfound,
-  pgerrmdfilenotfound,
-  pgerrmdfileordirnotfound
-} from './pgerr.js'
+  pgErrmddirnotfound,
+  pgErrmdfilenotfound,
+  pgErrmdfileordirnotfound
+} from './pgErr.js'
 
 import pgmd from './pgmd.js'
 
@@ -30,12 +30,10 @@ console.log(
 
 const mdfile = async (opts, path) => {
   const mdfileurl = new url.URL(path, opts.metaurl)
-  if (!pgerrmdfilenotfound(mdfileurl))
-    throw pgerrmddirnotfound(path)
+  if (!pgErrmdfilenotfound(mdfileurl))
+    throw pgErrmddirnotfound(path)
 
   const mdmeta = pgmd(mdfileurl, await pgfs_read(mdfileurl))
-
-  //console.log('===========', mdmeta)
 
   return mdmeta
 }
@@ -43,7 +41,7 @@ const mdfile = async (opts, path) => {
 const mddir = async (opts, path) => {
   const mddirurl = new url.URL(path, opts.metaurl)
   if (!pgfs_direxists(mddirurl))
-    throw pgerrmddirnotfound(path)
+    throw pgErrmddirnotfound(path)
 }
 
 const md = async (opts, path) => {
@@ -54,7 +52,7 @@ const md = async (opts, path) => {
   if (stat && stat.isDirectory())
     return mddir(opts, path)
 
-  throw pgerrmdfileordirnotfound(path)
+  throw pgErrmdfileordirnotfound(path)
 }
 
 const pgscriptopts = opts => ({
