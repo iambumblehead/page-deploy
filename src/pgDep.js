@@ -384,11 +384,13 @@ const pgdep = async opts => {
 
   await pgfs_dirrmdir(opts.outputDir)
 
+  // graph building /////////////////
   const rootresolver = await opts.root(scriptopts)
+  
   const root = rootresolver()
-
   const graph = await specdfsgraphsetroot(
     opts, pgGraphCreate(), root, '/:eng-US')
+  // graph building /////////////////
 
   const langs = opts.i18n.reduce((accum, i18n) => {
     accum.push(i18n[0])
@@ -410,7 +412,10 @@ const pgdep = async opts => {
 }
 
 const pg = {
-  creator: pgCreator
+  creator: pgCreator,
+  root: childs => {
+    return pgCreator('uiroot')('/', null, childs)
+  }
 }
 
 export {
