@@ -247,6 +247,14 @@ const spend = async (db, qst, qspec, rows, d = 0, type = typeof qspec, f = null)
 const mockdbReqlQueryOrStateDbName = (qst, db) => (
   qst.db || db.dbSelected)
 
+q.t = (db, qst, args) => {
+  const key = args[0]
+  const valdefault = args[1]
+
+  qst.target = db.i18n(key, valdefault, db.lang)
+
+  return qst
+}
 
 q.node = (db, qst, args) => {
   const nodeidorspec = args[0]
@@ -280,10 +288,10 @@ q.typefn = (db, qst, args) => {
   return qst
 }
 
-q.typeliteral = (db, qst, args) => {
+q.typeliteral = async (db, qst, args) => {
   qst.target = {
     type: 'literal',
-    value: args[0]
+    value: await spend(db, qst, args[0])
   }
 
   return qst

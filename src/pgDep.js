@@ -1,6 +1,6 @@
 import pgCreator from './pgCreator.js'
 import pgOpts from './pgOpts.js'
-import pgmanifest from './pgmanifest.js'
+import pgManifest from './pgManifest.js'
 import pgReql from './pgReql.js'
 
 import {
@@ -44,13 +44,15 @@ import {
 const nodechildlangsget = (opts, nodespec) => (
   nodespec.nodechildlangs || (
     nodespec.nodechilds
-      ? [[ opts.i18n[0][0], nodespec.nodechilds ]]
+    // ? [[ opts.i18n[0][0], nodespec.nodechilds ]]
+      ? [[ opts.i18nPriority[0], nodespec.nodechilds ]]
       : []))
 
 const nodechildaslangsgroup = (opts, nodespec) => (
   Array.isArray(nodespec)
     ? nodespec
-    : [[ opts.i18n[0][0], nodespec ]])
+  // : [[ opts.i18n[0][0], nodespec ]])
+    : [[ opts.i18nPriority[0], nodespec ]])
 
 const routesdfsgraphset = async (opts, graph, nodespec, parentid, routes) => {
   if (!routes.length)
@@ -163,13 +165,13 @@ const resolvespec = async (opts, lang, graph, child, key, spec, prop, props = []
 
     // console.log(child)
     // throw new Error('must start with node')
-    spec.state = {
+    spec.state = Object.assign(spec.state, {
       lang,
       graph,
       node: child,
       outerprop: prop,
       key
-    }
+    })
     /*
     spec.recs[0][1] = [prop, ...spec.recs[0][1].map(e => {
       if (e.graphkeys)
@@ -262,9 +264,9 @@ const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
           graph,
           nodelanglocalekey,
           child)
-          // child.nodespec)
+        // child.nodespec)
 
-        console.log('nodespec final', child.nodespec.subj)
+        // console.log('nodespec final', child.nodespec.subj)
         // for (const key of (child.nodespec))
         //   child.nodespec[key] = await resolvespec(child.nodespec[key], key)
 
@@ -375,6 +377,7 @@ const graphdfswrite = async (opts, lang, graph, key, keyparent) => {
 const routepathparsename = routepath => (
   routepath.replace(/\//g, ''))
 
+/*
 const pgdep = async opts => {
   opts = pgOpts(opts)
 
@@ -399,13 +402,13 @@ const pgdep = async opts => {
     await graphdfswrite(opts, lang, graph, '/:' + lang)
   }
 
-  const manifest = pgmanifest(opts, graph)
+  const manifest = pgManifest(opts, graph)
   const manifesturl = pgurl_manifestcreate(opts)
 
   await pgfs_writeobj(opts, manifesturl, manifest)
   pglog(opts, JSON.stringify(manifest, null, '  '))
 }
-
+*/
 const pg = {
   creator: pgCreator,
   // root: childs => {
@@ -423,10 +426,11 @@ const pg = {
   graphWrite: async (graph, opts) => {
     opts = pgOpts(opts)
 
-    const langs = opts.i18n.reduce((accum, i18n) => {
-      accum.push(i18n[0])
-      return accum
-    }, [])
+    const langs = opts.i18nPriority
+    // const langs = opts.i18n.reduce((accum, i18n) => {
+    //   accum.push(i18n[0])
+    //   return accum
+    // }, [])
 
 
     await pgfs_dirrmdir(opts.outputDir)
@@ -437,7 +441,7 @@ const pg = {
       await graphdfswrite(opts, lang, graph, '/:' + lang)
     }
 
-    const manifest = pgmanifest(opts, graph)
+    const manifest = pgManifest(opts, graph)
     const manifesturl = pgurl_manifestcreate(opts)
 
     await pgfs_writeobj(opts, manifesturl, manifest)
