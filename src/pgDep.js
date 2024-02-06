@@ -1,8 +1,8 @@
+import pgCreator from './pgCreator.js'
 import pgopts from './pgopts.js'
 import pgscriptopts from './pgscriptopts.js'
 import pglanglocale from './pglanglocale.js'
 import pgmanifest from './pgmanifest.js'
-// import pgdraw from './pgdraw.js'
 import pgdraw from './pgReql.js'
 
 import {
@@ -22,10 +22,6 @@ import {
   key_refchildcreate,
   key_childlanglocalecreate
 } from './pgkey.js'
-
-import {
-  pgscript_helpercreate
-} from './pgscript.js'
 
 import {
   pgfs_writeobj,
@@ -413,9 +409,13 @@ const pgdep = async opts => {
   pglog(opts, JSON.stringify(manifest, null, '  '))
 }
 
+const pg = {
+  creator: pgCreator
+}
+
 export {
   pgdep as default,
+  pg,
   pgdraw,
-  pgscript_helpercreate,
   pglanglocale
 }

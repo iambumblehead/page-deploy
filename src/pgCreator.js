@@ -5,13 +5,13 @@ import {
 
 const nextId = ((id = 0) => () => ++id)()
 
-const pgscript_helperargspecisvalid = nodespec => (
+const pgCreatorHelperArgSpecIsValid = nodespec => (
   nodespec === null || (
     typeof nodespec === 'object' && Object.keys(nodespec).every(
       k => pgEnumSPECPROPTYPEisValidRe.test(k))))
 
 // returns [ nodename, nodespc, nodechilds ]
-const pgscript_helperargsget = (nodename, nodespec, nodechilds) => {
+const pgCreatorHelperArgsGet = (nodename, nodespec, nodechilds) => {
   const args = [nodename, nodespec, nodechilds]
 
   if (typeof args[0] !== 'string' && args !== null)
@@ -24,8 +24,8 @@ const pgscript_helperargsget = (nodename, nodespec, nodechilds) => {
   return args
 }
 
-const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds, m) => {
-  const args = pgscript_helperargsget(nodename, nodespec, nodechilds)
+const pgCreatorHelperCreate = pgname => (nodename, nodespec, nodechilds, m) => {
+  const args = pgCreatorHelperArgsGet(nodename, nodespec, nodechilds)
   const nodescriptid = nextId()
   // console.log({ nodescriptid, nodename })
 
@@ -33,7 +33,7 @@ const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds, m) => {
   nodespec = args[1]
   nodechilds = args[2]
 
-  if (nodespec && !pgscript_helperargspecisvalid(nodespec))
+  if (nodespec && !pgCreatorHelperArgSpecIsValid(nodespec))
     nodespec = { subj: nodespec }
   if (!nodespec)
     nodespec = {}
@@ -67,18 +67,20 @@ const pgscript_helpercreate = pgname => (nodename, nodespec, nodechilds, m) => {
   })
 }
 
+export default pgCreatorHelperCreate
+
+/*
 const pgroot = (childs, routes) => {
   // root/
-  // return pgscript_helpercreate('uiroot')('/root/', null, childs, {
-  return pgscript_helpercreate('uiroot')('/', null, childs, {
+  // return pgCreatorHelpercreate('uiroot')('/root/', null, childs, {
+  return pgCreatorHelpercreate('uiroot')('/', null, childs, {
     routes
   })
 }
 
-const pgpathtree = pgEnumNODETYPEPATH
-
 export {
-  pgscript_helpercreate,
-  pgpathtree,
+  pgCreatorHelpercreate,
+  // pgpathtree,
   pgroot
 }
+*/

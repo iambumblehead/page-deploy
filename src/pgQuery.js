@@ -1,3 +1,5 @@
+// import pgCreator from './pgCreator.js'
+
 import {
   key_langremove
 } from './pgkey.js'
@@ -566,6 +568,20 @@ q.september = 9
 q.october = 10
 q.november = 11
 q.december = 12
+
+/*
+q.creator = (db, qst, args) => {
+  const path = args[0]
+
+  qst.target = pgCreator(path)
+
+  return qst
+}
+
+q.createor.fn = (db, qst, args) => {
+  console.log('go!')
+}
+*/
 
 q.run = (db, qst) => {
   if (qst.error) {
