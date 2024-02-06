@@ -1,9 +1,7 @@
 import pgCreator from './pgCreator.js'
-import pgopts from './pgopts.js'
-import pgscriptopts from './pgscriptopts.js'
-import pglanglocale from './pglanglocale.js'
+import pgOpts from './pgOpts.js'
 import pgmanifest from './pgmanifest.js'
-import pgdraw from './pgReql.js'
+import pgReql from './pgReql.js'
 
 import {
   pgGraphCreate,
@@ -378,15 +376,10 @@ const routepathparsename = routepath => (
   routepath.replace(/\//g, ''))
 
 const pgdep = async opts => {
-  opts = pgopts(opts)
-
-  const scriptopts = pgscriptopts(opts)
-
-  await pgfs_dirrmdir(opts.outputDir)
+  opts = pgOpts(opts)
 
   // graph building /////////////////
-  const rootresolver = await opts.root(scriptopts)
-  
+  const rootresolver = await opts.root()
   const root = rootresolver()
   const graph = await specdfsgraphsetroot(
     opts, pgGraphCreate(), root, '/:eng-US')
@@ -397,6 +390,8 @@ const pgdep = async opts => {
     return accum
   }, [])
 
+
+  await pgfs_dirrmdir(opts.outputDir)
   // unknown necessary lang+locale combinations, until children are processed
   // fallback to 'default' eg, en-US
   // eng-US, jap-US, eng-JP, jap-JP
@@ -413,14 +408,41 @@ const pgdep = async opts => {
 
 const pg = {
   creator: pgCreator,
-  root: childs => {
-    return pgCreator('uiroot')('/', null, childs)
+  // root: childs => {
+  //   return pgCreator('uiroot')('/', null, childs)
+  // },
+  graphCreate: async (tree, opts) => {
+    opts = pgOpts(opts)
+
+    const root = pgCreator('uiroot')('/', null, tree)()
+    const graph = await specdfsgraphsetroot(
+      opts, pgGraphCreate(), root, '/:eng-US')
+
+    return graph
+  },
+  graphWrite: async (graph, opts) => {
+    opts = pgOpts(opts)
+
+    const langs = opts.i18n.reduce((accum, i18n) => {
+      accum.push(i18n[0])
+      return accum
+    }, [])
+
+
+    await pgfs_dirrmdir(opts.outputDir)
+    // unknown necessary lang+locale combinations, until children are processed
+    // fallback to 'default' eg, en-US
+    // eng-US, jap-US, eng-JP, jap-JP
+    for (const lang of langs) {
+      await graphdfswrite(opts, lang, graph, '/:' + lang)
+    }
+
+    const manifest = pgmanifest(opts, graph)
+    const manifesturl = pgurl_manifestcreate(opts)
+
+    await pgfs_writeobj(opts, manifesturl, manifest)
+    pglog(opts, JSON.stringify(manifest, null, '  '))    
   }
 }
 
-export {
-  pgdep as default,
-  pg,
-  pgdraw,
-  pglanglocale
-}
+export default Object.assign(pgReql, pg)

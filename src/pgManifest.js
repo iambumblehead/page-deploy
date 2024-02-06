@@ -23,22 +23,22 @@ import {
 //    ]]
 //  ]
 
-const pgmanifestroutes = (graph, key, lang, noderoutes, routes = []) => {
+const pgManifestroutes = (graph, key, lang, noderoutes, routes = []) => {
   if (!noderoutes.length)
     return routes
 
-  const route = pgmanifestroute(graph, noderoutes[0], lang)
+  const route = pgManifestroute(graph, noderoutes[0], lang)
 
   routes.push(route)
 
-  return pgmanifestroutes(graph, key, lang, noderoutes.slice(1), routes)
+  return pgManifestroutes(graph, key, lang, noderoutes.slice(1), routes)
 }
 
-const pgmanifestroute = (graph, key, lang) => {
+const pgManifestroute = (graph, key, lang) => {
   const node = graph[key]
   const noderoutes = node['route:' + lang] || []
 
-  const routes = pgmanifestroutes(graph, key, lang, noderoutes)
+  const routes = pgManifestroutes(graph, key, lang, noderoutes)
   const route = key_routeencode(key)
   
   return routes.length
@@ -46,8 +46,8 @@ const pgmanifestroute = (graph, key, lang) => {
     : [ route ]
 }
 
-const pgmanifestcreate = (opts, graph) => {
-  const manifestroutes = pgmanifestroute(
+const pgManifestcreate = (opts, graph) => {
+  const manifestroutes = pgManifestroute(
     graph, '/:eng-US', 'eng-US')
 
   return {
@@ -58,5 +58,5 @@ const pgmanifestcreate = (opts, graph) => {
 }
 
 export {
-  pgmanifestcreate as default
+  pgManifestcreate as default
 }

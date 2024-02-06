@@ -22,6 +22,7 @@
     "src"
   ],
   "dependencies": {
+    "clak": "1.0.0",
     "castas": "^1.2.1",
     "glob": "10.3.10",
     "highlight.js": "^11.9.0",
