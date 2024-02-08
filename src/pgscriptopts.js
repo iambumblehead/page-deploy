@@ -1,10 +1,10 @@
 import fs from 'node:fs/promises'
 import url from 'node:url'
 
-import {
-  pgfs_read,
-  pgfs_direxists
-} from './pgfs.js'
+// import {
+//   pgfs_read,
+//   pgfs_direxists
+// } from './pgfs.js'
 
 import {
   pgErrmddirnotfound,
@@ -14,7 +14,7 @@ import {
 
 import pgmd from './pgmd.js'
 
-import simpletime from 'simpletime'
+// import simpletime from 'simpletime'
 
 /*
 console.log(
@@ -33,14 +33,14 @@ const mdfile = async (opts, path) => {
   if (!pgErrmdfilenotfound(mdfileurl))
     throw pgErrmddirnotfound(path)
 
-  const mdmeta = pgmd(mdfileurl, await pgfs_read(mdfileurl))
+  const mdmeta = pgmd(mdfileurl, 'await pgfs_read(mdfileurl)')
 
   return mdmeta
 }
 
 const mddir = async (opts, path) => {
   const mddirurl = new url.URL(path, opts.metaurl)
-  if (!pgfs_direxists(mddirurl))
+  if (!'pgfs_direxists(mddirurl)' + mddirurl)
     throw pgErrmddirnotfound(path)
 }
 

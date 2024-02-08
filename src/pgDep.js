@@ -22,9 +22,9 @@ import {
 } from './pgkey.js'
 
 import {
-  pgfs_writeobj,
-  pgfs_dirrmdir
-} from './pgfs.js'
+  pgFsWriteObj,
+  pgFsDirRmDir
+} from './pgFs.js'
 
 import pglog from './pglog.js'
 
@@ -369,7 +369,7 @@ const graphdfswrite = async (opts, lang, graph, key, keyparent) => {
         acc), {}))
   }
 
-  await pgfs_writeobj(opts, outputurl, nodespec)
+  await pgFsWriteObj(opts, outputurl, nodespec)
 }
 
 // /blog/ => blog
@@ -433,7 +433,7 @@ const pg = {
     // }, [])
 
 
-    await pgfs_dirrmdir(opts.outputDir)
+    await pgFsDirRmDir(opts.outputDir)
     // unknown necessary lang+locale combinations, until children are processed
     // fallback to 'default' eg, en-US
     // eng-US, jap-US, eng-JP, jap-JP
@@ -444,7 +444,7 @@ const pg = {
     const manifest = pgManifest(opts, graph)
     const manifesturl = pgurl_manifestcreate(opts)
 
-    await pgfs_writeobj(opts, manifesturl, manifest)
+    await pgFsWriteObj(opts, manifesturl, manifest)
     pglog(opts, JSON.stringify(manifest, null, '  '))    
   }
 }
