@@ -11,8 +11,10 @@ import {
 } from './pgErr.js'
 
 import {
+  pgEnumNodeDesignTypeIs,
+  pgEnumNodeDesignTypeResolverIs,
   pgEnumSPECPROPTYPELOOKUPisValidRe,
-  pgEnumIsNodeDesign,
+  // pgEnumIsNodeDesign,
   pgEnumTypeERROR,
   pgEnumQueryArgTypeARGSIG,
   pgEnumQueryArgTypeARGS,
@@ -260,10 +262,22 @@ q.node = (db, qst, args) => {
   const nodeidorspec = args[0]
   const graph = db.graph
 
-  if (pgEnumIsNodeDesign(nodeidorspec)) {
+  if (pgEnumNodeDesignTypeIs(nodeidorspec)) {
     qst.target = graph[nodeidorspec.graphkeys[0]]
+  } else if (pgEnumNodeDesignTypeResolverIs(nodeidorspec)) {
+    qst.target = graph[nodeidorspec.graphkeys[0]]// '/dataenv/:eng-US'
   }
 
+  
+  // should be improved....
+  // {
+  //   pgscriptid: 1,
+  //   pgscript: true,
+  //   graphkeys: [ '/dataenv/:eng-US' ]
+  // }
+
+
+  console.log('resolves node.', nodeidorspec)
   // target is 'design' node
   // { nodescriptid, nodemeta, nodechilds, nodespec },
   // key: '/dataenv/:eng-US'
@@ -298,7 +312,10 @@ q.typeliteral = async (db, qst, args) => {
 }
 
 q.typensprop = (db, qst, args) => {
-  const node = pgEnumIsNodeDesign(qst.target)
+  if (args[0] === 'requrl') {
+    console.log({ target: qst.target, node: db.node })
+  }
+  const node = pgEnumNodeDesignTypeIs(qst.target)
     ? qst.target
     : db.node
   // const ns = args[2]

@@ -1,9 +1,46 @@
 import {
-  pgEnumNODETYPEPATH,
+  // pgEnumNODETYPEPATH,
+  pgEnumNODEDESIGNTYPE,
+  pgEnumNODEDESIGNTYPERESOLVER,
   pgEnumSPECPROPTYPEisValidRe
 } from './pgEnum.js'
 
 const nextId = ((id = 0) => () => ++id)()
+
+// eg,
+// parent([
+//   child,
+//   child,
+//   [['/path', pchild, pchild]],
+//   child
+// ])
+const pgDesignNodeRoutesIs = child => {
+  return Array.isArray(child)
+    && Array.isArray(child[0])
+    && typeof child[0][0] === 'string'
+}
+
+// node childs may differ for language and/or locale combinations
+//
+// if grouped nodechildlangs defined
+//   return those
+// else if single nodechilds
+//   compose default nodechildlangs from tho
+const pgDesignNodeChildsLangGrouped = (opts, nodespec) => (
+  nodespec.nodechildlangs || (
+    nodespec.nodechilds
+    // ? [[ opts.i18n[0][0], nodespec.nodechilds ]]
+      ? [[ opts.i18nPriority[0], nodespec.nodechilds ]]
+      : []))
+
+// dnode,
+//   => [['eng-US', dnode]]
+// [['eng-US', dnode], ['jap-JP', dnode]]
+//   => [['eng-US', dnode], ['jap-JP', dnode]]
+const pgDesignNodeLangGrouped = (opts, dnode) => (
+  Array.isArray(dnode)
+    ? dnode
+    : [[ opts.i18nPriority[0], dnode ]])
 
 const pgCreatorHelperArgSpecIsValid = nodespec => (
   nodespec === null || (
@@ -24,7 +61,8 @@ const pgCreatorHelperArgsGet = (nodename, nodespec, nodechilds) => {
   return args
 }
 
-const pgCreatorHelperCreate = pgname => (nodename, nodespec, nodechilds, m) => {
+// const pgCreatorHelperCreate = pgname => (nodename, nodespec, nodechilds, m) => {
+const pgDesignNode = pgname => (nodename, nodespec, nodechilds, m) => {
   const args = pgCreatorHelperArgsGet(nodename, nodespec, nodechilds)
   const nodescriptid = nextId()
   // console.log({ nodescriptid, nodename })
@@ -51,7 +89,8 @@ const pgCreatorHelperCreate = pgname => (nodename, nodespec, nodechilds, m) => {
     }
     
     return {
-      toString: () => 'NODEDESIGN',
+      // toString: () => pgEnumNODEDESIGNTYPERESOLVER,
+      nodetype: pgEnumNODEDESIGNTYPE,
       nodescriptid,
       nodemeta: m ? Object.assign(nodemeta, m) : nodemeta,
       nodechilds,
@@ -62,25 +101,32 @@ const pgCreatorHelperCreate = pgname => (nodename, nodespec, nodechilds, m) => {
       }
     }
   }, {
+    nodetype: pgEnumNODEDESIGNTYPERESOLVER,
     pgscriptid: nodescriptid,
     pgscript: true
   })
 }
 
-export default pgCreatorHelperCreate
-
-/*
-const pgroot = (childs, routes) => {
-  // root/
-  // return pgCreatorHelpercreate('uiroot')('/root/', null, childs, {
-  return pgCreatorHelpercreate('uiroot')('/', null, childs, {
-    routes
+const pgDesignNodeChainRun = async (opts, lang, graph, node, spec, prop) => {
+  // establish the query 'environment'
+  spec.state = Object.assign(spec.state, {
+    opts,
+    lang,
+    graph,
+    node,
+    outerprop: prop,
+    key: node.key
   })
+
+  // then, run query
+  return spec.run()
 }
 
 export {
-  pgCreatorHelpercreate,
-  // pgpathtree,
-  pgroot
+  pgDesignNode as default,
+  pgDesignNode,
+  pgDesignNodeChainRun,
+  pgDesignNodeRoutesIs,
+  pgDesignNodeLangGrouped,
+  pgDesignNodeChildsLangGrouped
 }
-*/

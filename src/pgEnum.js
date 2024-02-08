@@ -32,6 +32,8 @@ const pgEnumSPECPROPTYPELOOKUPisValidRe = new RegExp(
   `^(${pgEnumSPECPROPTYPES.join('|')})\\.`)
 
 const pgEnumNODETYPEPATH = 'PATHNODE'
+const pgEnumNODEDESIGNTYPE = 'NODEDESIGNTYPEATOM'
+const pgEnumNODEDESIGNTYPERESOLVER = 'NODEDESIGNTYPERESOLVER'
 
 const pgEnumQueryArgTypeCHAIN = 'reqlARGSCHAIN'
 const pgEnumQueryArgTypeARGS = 'reqlARGSRESULT'
@@ -63,10 +65,13 @@ const pgEnumQueryNameIsGREEDYRe = new RegExp(
 
 const pgEnumQueryNameIsCURSORORDEFAULTRe = /getCursor|default/
 
-const pgEnumIsLookObj = obj => obj
-  && typeof obj === 'object' && !(obj instanceof Date)
+const pgEnumIsLookObj = obj => (
+  obj && typeof obj === 'object'
+    && !(obj instanceof Date))
 
-const pgEnumIsChain = obj => pgEnumIsLookObj(obj)
+// allowance for function is new addition
+const pgEnumIsChain = obj => (
+  pgEnumIsLookObj(obj) || typeof obj === 'function')
   && pgEnumQueryArgTypeCHAINIsRe.test(obj.type)
 
 const pgEnumIsChainShallow = obj => pgEnumIsLookObj(obj) && (
@@ -77,12 +82,30 @@ const pgEnumIsChainDeep = (obj, depth = 4) => pgEnumIsLookObj(obj) && (
   pgEnumIsChainShallow(obj) || (
     depth && Object.keys(obj).some(k => pgEnumIsChainDeep(obj[k], depth - 1))))
 
+// detects if last term in query is greedy,
+// { prop: r('subj.name') }
+// => { name: prop, value: 'subj.name', type: 'nsprop' }
+const pgEnumIsChainANDGREEDY = obj => (
+  pgEnumIsChain(obj) && pgEnumQueryNameIsGREEDYRe
+    .test(obj.recs.slice(-1)[0][0]))
+
 const pgEnumIsQueryArgsResult = obj => pgEnumIsLookObj(obj)
   && Boolean(pgEnumQueryArgTypeARGS in obj)
 
-const pgEnumIsNodeDesign = obj => {
+const pgEnumNodeDesignTypeIs = obj => {
   return obj && typeof obj === 'object' &&
-    'nodespec' in obj
+    obj.nodetype === pgEnumNODEDESIGNTYPE
+    // 'nodespec' in obj
+}
+
+// {
+//   pgscriptid: 1,
+//   pgscript: true,
+//   graphkeys: [ '/dataenv/:eng-US' ]
+// }
+const pgEnumNodeDesignTypeResolverIs = obj => {
+  return typeof obj === 'function' &&
+    obj.nodetype === pgEnumNODEDESIGNTYPERESOLVER
 }
 
 export {
@@ -91,8 +114,9 @@ export {
   pgEnumSPECPROPTYPELOOKUPisValidRe,
 
   pgEnumNODETYPEPATH,
+  pgEnumNODEDESIGNTYPE,
+  pgEnumNODEDESIGNTYPERESOLVER,
 
-  
   pgEnumQueryArgTypeARGS,
   pgEnumQueryArgTypeARGSIG,
   pgEnumQueryArgTypeCHAIN,
@@ -109,6 +133,10 @@ export {
   pgEnumIsChain,
   pgEnumIsChainShallow,
   pgEnumIsChainDeep,
+  pgEnumIsChainANDGREEDY,
   pgEnumIsQueryArgsResult,
-  pgEnumIsNodeDesign
+
+  // pgEnumIsNodeDesign,
+  pgEnumNodeDesignTypeIs,
+  pgEnumNodeDesignTypeResolverIs
 }

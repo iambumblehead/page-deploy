@@ -3,6 +3,8 @@ import pgOpts from './pgOpts.js'
 import pgManifest from './pgManifest.js'
 import pgReql from './pgReql.js'
 
+import pgGraphBuild from './pgGraphBuild.js'
+
 import {
   pgGraphCreate,
   pgGraphSet,
@@ -415,6 +417,9 @@ const pg = {
   //   return pgCreator('uiroot')('/', null, childs)
   // },
   graphCreate: async (tree, opts) => {
+
+    return pgGraphBuild(tree, opts)
+    /*
     opts = pgOpts(opts)
 
     const root = pgCreator('uiroot')('/', null, tree)()
@@ -422,6 +427,7 @@ const pg = {
       opts, pgGraphCreate(), root, '/:eng-US')
 
     return graph
+    */
   },
   graphWrite: async (graph, opts) => {
     opts = pgOpts(opts)
