@@ -298,7 +298,6 @@ q.typefn = (db, qst, args) => {
     type: 'fn',
     fnname: args[0],
     name
-    // name: args[0]
   }
 
   return qst

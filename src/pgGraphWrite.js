@@ -1,13 +1,4 @@
-import pgGraphBuild from './pgGraphBuild.js'
-import pgGraphWrite from './pgGraphWrite.js'
-import pgNodeDesign from './pgNodeDesign.js'
-import pgManifest from './pgManifest.js'
-import pgReql from './pgReql.js'
-import pgLog from './pgLog.js'
-
-import {
-  pgUrlManifestCreate
-} from './pgUrl.js'
+import pgOpts from './pgOpts.js'
 
 import {
   pgKeyUrlCreate,
@@ -15,14 +6,15 @@ import {
 } from './pgKey.js'
 
 import {
-  pgFsWriteObj
+  pgFsWriteObj,
+  pgFsDirRmDir
 } from './pgFs.js'
 
 import {
   pgEnumNODETYPEPATH
 } from './pgEnum.js'
 
-const graphdfswrite = async (opts, lang, graph, key, keyparent) => {
+const pgGraphWriteLang = async (opts, lang, graph, key, keyparent) => {
   const node = graph[key]
   const nodechilds = node['child:' + lang] || []
   const noderoutes = node['route:' + lang] || []
@@ -36,12 +28,12 @@ const graphdfswrite = async (opts, lang, graph, key, keyparent) => {
     nodechildpaths.push(childpath)
 
     if (nodechilds[i] !== pgEnumNODETYPEPATH) {
-      await graphdfswrite(opts, lang, graph, nodechilds[i], key)
+      await pgGraphWriteLang(opts, lang, graph, nodechilds[i], key)
     }
   }
 
   for (const i in noderoutes) {
-    await graphdfswrite(
+    await pgGraphWriteLang(
       opts, lang, graph, noderoutes[i], key)
   }
 
@@ -65,17 +57,20 @@ const graphdfswrite = async (opts, lang, graph, key, keyparent) => {
     opts, pgKeyUrlCreate(opts, key), nodespec)
 }
 
-const pg = {
-  creator: pgNodeDesign,  
-  graphCreate: pgGraphBuild,
-  graphWrite: pgGraphWrite,
 
-  manifestWrite: async (opts, graph) => {
-    const manifest = pgManifest(opts, graph)
-    await pgFsWriteObj(
-      opts, pgUrlManifestCreate(opts), manifest)
-    pgLog(opts, JSON.stringify(manifest, null, '  '))
+const pgGraphWrite = async (graph, opts) => {
+  opts = pgOpts(opts)
+  await pgFsDirRmDir(opts.outputDir)
+
+  // unknown necessary lang+locale combinations, until children are processed
+  // fallback to 'default' eg, en-US
+  // eng-US, jap-US, eng-JP, jap-JP
+  const langs = opts.i18nPriority
+  for (const lang of langs) {
+    await pgGraphWriteLang(opts, lang, graph, '/:' + lang)
   }
 }
 
-export default Object.assign(pgReql, pg)
+export {
+  pgGraphWrite as default
+}
