@@ -5,11 +5,12 @@ import {
   pgEnumREFTYPELOCAL
 } from './pgEnum.js'
 
-const keylanglocalere = /\/:\w\w\w?-\w\w$/
+// $lang-$region
+const pgKeyLocaleRe = /\/:\w\w\w?-\w\w$/
 
 // key:eng-US => /path/key/eng-US.json
 const pgKeyPathRelCreate = (opts, key) => {
-  const match = key.match(keylanglocalere)
+  const match = key.match(pgKeyLocaleRe)
   const langlocalesuffix = match[0]
 
   key = key.slice(1, -langlocalesuffix.length).replace(/\//g, '-')
@@ -44,15 +45,19 @@ const pgKeyRefChildCreate = (opts, keyparent, keychild) => {
 // ('/:eng-US', 'label/:eng-US') => '/label/:eng-US'
 // ('/label/:eng-US', 'checkbox/:eng-US') => '/label/checkbox/:eng-US'
 const pgKeyChildLangLocaleCreate = (parentid, childname) => {
-  const res = parentid.replace(keylanglocalere, '')
+  const res = parentid.replace(pgKeyLocaleRe, '')
     + (childname.startsWith('/') ? '' : '/') + childname
 
   return res
 }
 
+// rename key path sans
 const pgKeyLangRemove = key => (
-  key.replace(keylanglocalere, ''))
+  key.replace(pgKeyLocaleRe, ''))
 
+const pgKeyIsRoot = key => (
+  key && pgKeyLangRemove(key) === '')
+  
 const pgKeyRouteEncode = key => {
   return key
     .replace(/^\/pg-/, '/')
@@ -61,6 +66,7 @@ const pgKeyRouteEncode = key => {
 }
 
 export {
+  pgKeyIsRoot,
   pgKeyRouteEncode,
   pgKeyUrlCreate,
   pgKeyRefChildCreate,

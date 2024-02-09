@@ -1,4 +1,4 @@
-// import pgCreator from './pgCreator.js'
+import pgManifest from './pgManifest.js'
 
 import {
   pgKeyLangRemove
@@ -11,6 +11,7 @@ import {
 } from './pgErr.js'
 
 import {
+  pgEnumIsGraph,
   pgEnumNodeDesignTypeIs,
   pgEnumNodeDesignTypeResolverIs,
   pgEnumGRAPHMETADESIGNNODEMAPS,
@@ -29,6 +30,22 @@ import {
 import {
   pgGraphResolverLocaleKeyGet
 } from './pgGraph.js'
+
+
+// pending removal, should use event system
+import pgLog from './pgLog.js'
+
+import {
+  pgUrlManifestCreate
+} from './pgUrl.js'
+
+import {
+  pgFsWriteObj
+} from './pgFs.js'
+
+import pgGraphWrite from './pgGraphWrite.js'
+import pgGraphBuild from './pgGraphBuild.js'
+
 
 // const isBoolNumStrRe = /boolean|number|string/
 const isBoolNumUndefRe = /boolean|number|undefined/
@@ -251,33 +268,23 @@ const spend = async (db, qst, qspec, rows, d = 0, type = typeof qspec, f = null)
   return f
 }
 
-const mockdbReqlQueryOrStateDbName = (qst, db) => (
-  qst.db || db.dbSelected)
-
-const dot = (graph, locale, id) => {
-  const designNodeMaps = graph[pgEnumGRAPHMETADESIGNNODEMAPS]
-  const idNodeMaps = designNodeMaps[locale]
-
-  return idNodeMaps[id]
-}
-
-q.t = (db, qst, args) => {
+q.t = (st, qst, args) => {
   const key = args[0]
   const valdefault = args[1]
 
-  qst.target = db.i18n(key, valdefault, db.lang)
+  qst.target = st.i18n(key, valdefault, st.lang)
 
   return qst
 }
 
-q.node = (db, qst, args) => {
+q.node = (st, qst, args) => {
   const nodeidorspec = args[0]
-  const graph = db.graph
+  const graph = st.graph
   const isdesign = (
     pgEnumNodeDesignTypeResolverIs(nodeidorspec)
       || pgEnumNodeDesignTypeIs(nodeidorspec))
   const key = isdesign && pgGraphResolverLocaleKeyGet(
-    graph, db.lang, nodeidorspec.nodescriptid)
+    graph, st.lang, nodeidorspec.nodescriptid)
 
   // key: '/dataenv/:eng-US'
   if (key) {
@@ -287,8 +294,8 @@ q.node = (db, qst, args) => {
   return qst
 }
 
-q.typefn = (db, qst, args) => {
-  const name = args[1] || db.outerprop
+q.typefn = (st, qst, args) => {
+  const name = args[1] || st.outerprop
   
   // const node = pgEnumIsNodeDesign(qst.target)
   //    ? qst.target
@@ -312,23 +319,13 @@ q.typeliteral = async (db, qst, args) => {
   return qst
 }
 
-q.typensprop = (db, qst, args) => {
-  if (args[0] === 'requrl') {
-    console.log({ target: qst.target, node: db.node })
-  }
+q.typensprop = (st, qst, args) => {
   const node = pgEnumNodeDesignTypeIs(qst.target)
     ? qst.target
-    : db.node
-  // const ns = args[2]
+    : st.node
+
   const nslookup = args[0]
-  const outerprop = db.outerprop
-
-  // console.log('args', String(node), args, {
-  //   nslookup,
-  //   outerprop
-  // })
-
-
+  const outerprop = st.outerprop
   const nodekey = node && node.key
   // const nodepath = pgKeyLangRemove(node.key)
   const nsfull = pgEnumSPECPROPTYPELOOKUPisValidRe.test(nslookup)
@@ -336,10 +333,6 @@ q.typensprop = (db, qst, args) => {
   const propfull = (nodekey && !nslookup.startsWith('part.'))
     ? `[${pgKeyLangRemove(nodekey)}].${nsfull}`
     : nsfull
-  //'/dataenv/:eng-US'
-
-  // if (/subj/)
-
 
   // {
   //    type: "nsprop",
@@ -349,20 +342,59 @@ q.typensprop = (db, qst, args) => {
   qst.target = {
     type: 'nsprop',
     prop: propfull,
-    // name: args[0]
     name: outerprop
   }
-
-  // console.log('args', qst.target)
 
   return qst
 }
 
-q.md = async (db, qst, args) => {
+q.graph = async (st, qst, args) => {
+  if (Array.isArray(qst.target)) {
+    qst.target = await pgGraphBuild(qst.target, st)
+  } else {
+    throw new Error('unknown target for graph')
+  }
+
+  return qst
+}
+
+q.manifest = async (st, qst, args) => {
+  if (!pgEnumIsGraph(qst.target)) {
+    throw new Error('manifest must be constructed around a graph')
+  }
+
+  qst.target = pgManifest(st, qst.target)
+  
+  return qst
+}
+
+q.write = async (st, qst, args) => {
+  if (pgEnumIsGraph(qst.target)) {
+    await pgGraphWrite(qst.target, st)
+  } else if (qst.target) { // check if manifest
+    // check for ...
+    await pgFsWriteObj(
+      st, pgUrlManifestCreate(st), qst.target)
+    pgLog(st, JSON.stringify(qst.target, null, '  '))
+  }
+
+  return qst
+}
+
+
+q.tree = async (st, qst, args) => {
+  const tree = args[0]
+
+  qst.target = tree
+
+  return qst
+}
+
+q.md = async (st, qst, args) => {
   const path = args[0]
 
   qst.target = path
-  console.log('go md', { path })
+  // console.log('go md', { path })
   /*
   const mdurl = new url.URL(path, opts.metaurl)
   const stat = await fs.stat(mdurl).catch(e => null)
@@ -390,7 +422,7 @@ q.md = async (db, qst, args) => {
 // question: should it be possible for qst.target to be defined here?
 //           even when ...
 //
-q.row = (db, qst, args) => {
+q.row = (st, qst, args) => {
   if (args[0] === pgEnumQueryArgTypeARGSIG && !(args[1] in qst.rowMap)) {
     // keep this for development
     // console.log(qst.target, mockdbSpecSignature(reqlObj), args, qst.rowMap);
@@ -400,27 +432,27 @@ q.row = (db, qst, args) => {
   qst.target = args[0] === pgEnumQueryArgTypeARGSIG
     ? qst.rowMap[args[1]][args[2]]
     : qst.target[args[0]]
-  
+
   return qst
 }
 
-q.row.fn = (db, qst, args) => {
+q.row.fn = (st, qst, args) => {
   if (typeof args[0] === 'string' && !(args[0] in qst.target)) {
     throw pgErrNoAttributeInObject(args[0])
   }
 
-  return q.getField(db, qst, args)
+  return q.getField(st, qst, args)
 }
 
-q.expr = (db, qst, args) => {
+q.expr = (st, qst, args) => {
   const [argvalue] = args
 
-  qst.target = spend(db, qst, argvalue, [qst.target])
+  qst.target = spend(st, qst, argvalue, [qst.target])
 
   return qst
 }
 
-q.expr.fn = (db, qst, args) => {
+q.expr.fn = (st, qst, args) => {
   if (Array.isArray(qst.target)) {
     qst.target = qst.target.map(t => t[args[0]])
   } else if (args[0] in qst.target) {
@@ -432,9 +464,9 @@ q.expr.fn = (db, qst, args) => {
   return qst
 }
 
-q.coerceTo = (db, qst, args) => {
+q.coerceTo = (st, qst, args) => {
   const coerceType = String(args[0]).toLowerCase()
-  let resolved = spend(db, qst, qst.target)
+  let resolved = spend(st, qst, qst.target)
 
   if (coerceType === 'string')
     resolved = String(resolved)
@@ -444,26 +476,26 @@ q.coerceTo = (db, qst, args) => {
   return qst
 }
 
-q.upcase = (db, qst) => {
+q.upcase = (st, qst) => {
   qst.target = String(qst.target).toUpperCase()
 
   return qst
 }
 
-q.downcase = (db, qst) => {
+q.downcase = (st, qst) => {
   qst.target = String(qst.target).toLowerCase()
 
   return qst
 }
 
-q.map = (db, qst, args) => {
+q.map = (st, qst, args) => {
   qst.target = qst
-    .target.map(t => spend(db, qst, args[0], [t]))
+    .target.map(t => spend(st, qst, args[0], [t]))
 
   return qst
 }
 
-q.without = (db, qst, args) => {
+q.without = (st, qst, args) => {
   const queryTarget = qst.target
 
   const withoutFromDoc = (doc, withoutlist) => Object.keys(doc)
@@ -481,7 +513,7 @@ q.without = (db, qst, args) => {
     throw pgErrArgsNumber('without', 1, args.length)
   }
 
-  args = spend(db, qst, args)
+  args = spend(st, qst, args)
 
   if (qst.eqJoinBranch) {
     const isleft = 'left' in args[0]
@@ -511,13 +543,13 @@ q.without = (db, qst, args) => {
 
 // Call an anonymous function using return values from other
 // ReQL commands or queries as arguments.
-q.do = (db, qst, args) => {
+q.do = (st, qst, args) => {
   const [doFn] = args.slice(-1)
 
   if (pgEnumIsChain(doFn)) {
     qst.target = args.length === 1
-      ? spend(db, qst, doFn, [qst.target])
-      : spend(db, qst, doFn, args.slice(0, -1))
+      ? spend(st, qst, doFn, [qst.target])
+      : spend(st, qst, doFn, args.slice(0, -1))
 
     if (pgEnumIsQueryArgsResult(qst.target))
       qst.target = reqlArgsParse(qst.target)[0]
@@ -529,29 +561,29 @@ q.do = (db, qst, args) => {
   return qst
 }
 
-q.or = (db, qst, args) => {
+q.or = (st, qst, args) => {
   const rows = [qst.target]
 
   qst.target = args.reduce((current, arg) => (
-    current || spend(db, qst, arg, rows)
+    current || spend(st, qst, arg, rows)
   ), qst.target)
 
   return qst
 }
 
-q.and = (db, qst, args) => {
+q.and = (st, qst, args) => {
   const rows = [qst.target]
 
   qst.target = args.reduce((current, arg) => (
-    current && spend(db, qst, arg, rows)
+    current && spend(st, qst, arg, rows)
   ), typeof qst.target === 'boolean' ? qst.target : true)
   
   return qst
 }
 
 // r.args(array) → special
-q.args = (db, qst, args) => {
-  const result = spend(db, qst, args[0])
+q.args = (st, qst, args) => {
+  const result = spend(st, qst, args[0])
   if (!Array.isArray(result))
     throw new Error('args must be an array')
 
@@ -560,18 +592,18 @@ q.args = (db, qst, args) => {
   return qst
 }
 
-q.desc = (db, qst, args) => {
+q.desc = (st, qst, args) => {
   qst.target = {
-    sortBy: spend(db, qst, args[0], [qst.target]),
+    sortBy: spend(st, qst, args[0], [qst.target]),
     sortDirection: 'desc'
   }
 
   return qst
 }
 
-q.asc = (db, qst, args) => {
+q.asc = (st, qst, args) => {
   qst.target = {
-    sortBy: spend(db, qst, args[0], [qst.target]),
+    sortBy: spend(st, qst, args[0], [qst.target]),
     sortDirection: 'asc'
   }
 
@@ -598,21 +630,7 @@ q.october = 10
 q.november = 11
 q.december = 12
 
-/*
-q.creator = (db, qst, args) => {
-  const path = args[0]
-
-  qst.target = pgCreator(path)
-
-  return qst
-}
-
-q.createor.fn = (db, qst, args) => {
-  console.log('go!')
-}
-*/
-
-q.run = (db, qst) => {
+q.run = (st, qst) => {
   if (qst.error) {
     throw new Error(qst.error)
   }
@@ -621,7 +639,7 @@ q.run = (db, qst) => {
   return qst
 }
 
-q.serialize = (db, qst) => {
+q.serialize = (st, qst) => {
   qst.target = JSON.stringify(qst.chain)
 
   return qst
@@ -636,7 +654,7 @@ q.serialize = (db, qst) => {
 // If the sequence is empty, the server will produce a ReqlRuntimeError
 // that can be caught with default.
 //
-// NOTE: take care when shape of reduced value differs from shape of sequence values
+// TAKECARE: when shape of reduced value differs from shape of sequence values
 //
 // await r.expr([
 //   { count: 3 }, { count: 0 },
@@ -647,7 +665,7 @@ q.serialize = (db, qst) => {
 //
 // > 'Cannot perform bracket on a non-object non-sequence `8`.'
 //
-q.reduce = (db, qst, args) => {
+q.reduce = (st, qst, args) => {
   if (args.length === 0) {
     throw pgErrArgsNumber('reduce', 1, args.length)
   }
@@ -662,7 +680,7 @@ q.reduce = (db, qst, args) => {
   const seq = qst.target.sort(() => 0.5 - Math.random())
 
   qst.target = seq.slice(1)
-    .reduce((st, arg) => spend(db, qst, args[0], [st, arg]), seq[0])
+    .reduce((st, arg) => spend(st, qst, args[0], [st, arg]), seq[0])
 
   return qst
 }
@@ -674,7 +692,7 @@ q.reduce = (db, qst, args) => {
 //  * it passes an initial base value to the function with the
 //    first element in place of the previous reduction result.
 //
-q.fold = (db, qst, args) => {
+q.fold = (st, qst, args) => {
   const [startVal, reduceFn] = args
 
   if (args.length < 2) {
@@ -682,12 +700,12 @@ q.fold = (db, qst, args) => {
   }
 
   qst.target = qst.target
-    .reduce((st, arg) => spend(db, qst, reduceFn, [st, arg]), startVal)
+    .reduce((st, arg) => spend(st, qst, reduceFn, [st, arg]), startVal)
 
   return qst
 }
 
-q.forEach =  (db, qst, args) => {
+q.forEach =  (st, qst, args) => {
   const [forEachRow] = args
 
   if (args.length !== 1) {
@@ -695,7 +713,7 @@ q.forEach =  (db, qst, args) => {
   }
 
   qst.target = qst.target.reduce((st, arg) => {
-    const result = spend(db, qst, forEachRow, [arg])
+    const result = spend(st, qst, forEachRow, [arg])
 
     return "mmDbStateAggregate(st, result)"
   }, {})

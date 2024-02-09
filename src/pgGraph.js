@@ -1,9 +1,12 @@
 import {
-  pgEnumGRAPHMETADESIGNNODEMAPS
+  pgEnumGRAPHMETADESIGNNODEMAPS,
+  pgEnumGRAPHTYPE
 } from './pgEnum.js'
 
 
-const pgGraphCreate = () => ({})
+const pgGraphCreate = () => ({
+  nodetype: pgEnumGRAPHTYPE
+})
 
 const pgGraphSet = (graph, key, val) => (
   graph[key] = val,

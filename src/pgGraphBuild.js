@@ -108,23 +108,25 @@ const pgGraphBuildNodeChilds = async (opts, graph, parentid, nodespec) => {
 }
 
 const pgGraphBuildNode = async (opts, graph, parentkey, nodespec) => {
-  const isroot = Object.keys(graph).length === 0
+  // /:eng-US <-- root node looks like this
+  // const parentKeyIsRoot = pgKeyIsRoot(parentkey)
   const langlocalegroups = pgNodeDesignLangGrouped(opts, nodespec)
   const nodename = nodespec.nodespec.name // eg, '/'
   const noderoutes = nodespec.nodechilds
     .find(c => pgNodeDesignRoutesIs(c)) || []
+  const nodeIsRoot = nodename === '/'  
 
   // some routes only available some langs
   for (const langlocalegroup of langlocalegroups) {
     const nodelanglocale = langlocalegroup[0]
     const noderesolver = langlocalegroup[1]
-    const nodelanglocalename =
-          (nodename === '/' ? '' : nodename) + '/:' + nodelanglocale
+    const nodelanglocalename = (
+      nodename === '/' ? '' : nodename) + '/:' + nodelanglocale
     const nodelanglocalekey = pgKeyChildLangLocaleCreate(
       parentkey, nodelanglocalename)
 
     graph = pgGraphSet(graph, nodelanglocalekey, nodespec)
-    graph = isroot ? graph : pgGraphSetRouteEdge(
+    graph = nodeIsRoot ? graph : pgGraphSetRouteEdge(
       graph, parentkey, nodelanglocale, nodelanglocalekey)
     graph = await pgGraphBuildNodeChilds(
       opts, graph, nodelanglocalekey, noderesolver)

@@ -33,6 +33,8 @@ const pgEnumSPECPROPTYPELOOKUPisValidRe = new RegExp(
 
 const pgEnumGRAPHMETADESIGNNODEMAPS = 'META_DESIGNNODEMAPS'
 
+const pgEnumGRAPHTYPE = 'PGGRAPH'
+
 const pgEnumNODETYPEPATH = 'PATHNODE'
 const pgEnumNODEDESIGNTYPE = 'NODEDESIGNTYPEATOM'
 const pgEnumNODEDESIGNTYPERESOLVER = 'NODEDESIGNTYPERESOLVER'
@@ -108,13 +110,19 @@ const pgEnumNodeDesignTypeResolverIs = obj => (
   typeof obj === 'function' &&
     obj.nodetype === pgEnumNODEDESIGNTYPERESOLVER)
 
+const pgEnumIsGraph = obj => obj && (
+  typeof obj === 'object' &&
+    obj.nodetype === pgEnumGRAPHTYPE)
+
 export {
   pgEnumREFTYPELOCAL,
   pgEnumSPECPROPTYPEisValidRe,
   pgEnumSPECPROPTYPELOOKUPisValidRe,
 
+  pgEnumGRAPHTYPE,
   pgEnumGRAPHMETADESIGNNODEMAPS,
-  
+
+  pgEnumIsGraph,
   pgEnumNODETYPEPATH,
   pgEnumNODEDESIGNTYPE,
   pgEnumNODEDESIGNTYPERESOLVER,
