@@ -1,7 +1,7 @@
-// import mmConn from './mmConn.mjs'
 import pgChainRecNext from './pgChainRec.js'
 
 import {
+  pgEnumNodeDesignTypeResolverIs,
   pgEnumQueryArgTypeCHAINIsRe,
   pgEnumQueryArgTypeARGSIG
 } from './pgEnum.js'
@@ -58,14 +58,14 @@ const mockdbChainSuspendArgFn = (chainCreate, recId, arg) => {
 // deeply recurse data converting chain leaves to spec
 const pgChainRawArg = (arg, recId, chainCreate, type = typeof arg) => {
   if (isBoolNumUndefRe.test(type)
-      || arg instanceof Date || !arg) {
-    // || arg instanceof Date || arg instanceof mmConn || !arg) {
+      || arg instanceof Date
+      || pgEnumNodeDesignTypeResolverIs(arg) || !arg) {
     // nothing
   } else if (Array.isArray(arg)) {
     arg = arg.map(a => pgChainRawArg(a, recId, chainCreate))
   } else if (pgEnumQueryArgTypeCHAINIsRe.test(arg)) {
     arg = pgChainRecNext(arg)
-  } else if (typeof arg === 'function' && arg.pgscript !== true) {
+  } else if (typeof arg === 'function') {
     arg = mockdbChainSuspendArgFn(chainCreate, recId, arg)
   } else if (type === 'object') {
     arg = Object.keys(arg).reduce((a, k) => (

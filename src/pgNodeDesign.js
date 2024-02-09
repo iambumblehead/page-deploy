@@ -9,6 +9,10 @@ import {
   pgEnumIsChainANDGREEDY
 } from './pgEnum.js'
 
+import {
+  pgKeyChildLangLocaleCreate
+} from './pgKey.js'
+
 const nextId = ((id = 0) => () => ++id)()
 
 // eg,
@@ -127,7 +131,18 @@ const pgNodeDesignRun = async (opts, ll, graph, child) => {
       opts, ll, graph, child, prop, nodespec[prop])
   }
 
-  return nodespecresolved
+  return Object.assign(child, {
+    nodespec: nodespecresolved
+  })
+}
+
+const pgNodeDesignLangLocaleKeyCreate = (ll, parentKey, node) => {
+  const nodename = node.nodespec.name
+  const nodelanglocalename = nodename + '/:' + ll
+  const nodelanglocalekey = pgKeyChildLangLocaleCreate(
+    parentKey, nodelanglocalename)
+
+  return nodelanglocalekey
 }
 
 const pgNodeDesign = pgname => (nodename, nodespec, nodechilds, m) => {
@@ -155,16 +170,14 @@ const pgNodeDesign = pgname => (nodename, nodespec, nodechilds, m) => {
       nodescriptid,
       nodemeta: m ? Object.assign(nodemeta, m) : nodemeta,
       nodechilds,
-      nodespec: {
+      nodespec: Object.assign({
         node: pgname,
-        name: nodename,
-        ...nodespec
-      }
+        name: nodename
+      }, nodespec)
     }
   }, {
     nodetype: pgEnumNODEDESIGNTYPERESOLVER,
-    pgscriptid: nodescriptid,
-    pgscript: true
+    nodescriptid
   })
 }
 
@@ -175,9 +188,7 @@ const pgNodeDesignChainRun = async (opts, lang, graph, node, spec, prop) => {
     lang,
     graph,
     node,
-    outerprop: prop,
-    // legacy
-    key: node.key
+    outerprop: prop
   })
 
   return spec.run()
@@ -191,5 +202,6 @@ export {
   pgNodeDesignChainRun,
   pgNodeDesignRoutesIs,
   pgNodeDesignLangGrouped,
+  pgNodeDesignLangLocaleKeyCreate,
   pgNodeDesignChildsLangGrouped
 }

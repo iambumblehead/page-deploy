@@ -31,6 +31,8 @@ const pgEnumSPECPROPTYPEisValidRe = new RegExp(
 const pgEnumSPECPROPTYPELOOKUPisValidRe = new RegExp(
   `^(${pgEnumSPECPROPTYPES.join('|')})\\.`)
 
+const pgEnumGRAPHMETADESIGNNODEMAPS = 'META_DESIGNNODEMAPS'
+
 const pgEnumNODETYPEPATH = 'PATHNODE'
 const pgEnumNODEDESIGNTYPE = 'NODEDESIGNTYPEATOM'
 const pgEnumNODEDESIGNTYPERESOLVER = 'NODEDESIGNTYPERESOLVER'
@@ -92,27 +94,27 @@ const pgEnumIsChainANDGREEDY = obj => (
 const pgEnumIsQueryArgsResult = obj => pgEnumIsLookObj(obj)
   && Boolean(pgEnumQueryArgTypeARGS in obj)
 
-const pgEnumNodeDesignTypeIs = obj => {
-  return obj && typeof obj === 'object' &&
-    obj.nodetype === pgEnumNODEDESIGNTYPE
-    // 'nodespec' in obj
-}
+const pgEnumNodeDesignTypeIs = obj => (
+  obj && typeof obj === 'object' &&
+    obj.nodetype === pgEnumNODEDESIGNTYPE)
 
+// pgEnumNodeDesignTypeResolverIs
 // {
+//   nodetype: pgEnumNODEDESIGNTYPERESOLVER
 //   pgscriptid: 1,
 //   pgscript: true,
-//   graphkeys: [ '/dataenv/:eng-US' ]
 // }
-const pgEnumNodeDesignTypeResolverIs = obj => {
-  return typeof obj === 'function' &&
-    obj.nodetype === pgEnumNODEDESIGNTYPERESOLVER
-}
+const pgEnumNodeDesignTypeResolverIs = obj => (
+  typeof obj === 'function' &&
+    obj.nodetype === pgEnumNODEDESIGNTYPERESOLVER)
 
 export {
   pgEnumREFTYPELOCAL,
   pgEnumSPECPROPTYPEisValidRe,
   pgEnumSPECPROPTYPELOOKUPisValidRe,
 
+  pgEnumGRAPHMETADESIGNNODEMAPS,
+  
   pgEnumNODETYPEPATH,
   pgEnumNODEDESIGNTYPE,
   pgEnumNODEDESIGNTYPERESOLVER,

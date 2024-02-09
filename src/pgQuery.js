@@ -13,6 +13,7 @@ import {
 import {
   pgEnumNodeDesignTypeIs,
   pgEnumNodeDesignTypeResolverIs,
+  pgEnumGRAPHMETADESIGNNODEMAPS,
   pgEnumSPECPROPTYPELOOKUPisValidRe,
   // pgEnumIsNodeDesign,
   pgEnumTypeERROR,
@@ -24,6 +25,10 @@ import {
   pgEnumIsChainShallow,
   pgEnumIsChain
 } from './pgEnum.js'
+
+import {
+  pgGraphResolverLocaleKeyGet
+} from './pgGraph.js'
 
 // const isBoolNumStrRe = /boolean|number|string/
 const isBoolNumUndefRe = /boolean|number|undefined/
@@ -249,6 +254,13 @@ const spend = async (db, qst, qspec, rows, d = 0, type = typeof qspec, f = null)
 const mockdbReqlQueryOrStateDbName = (qst, db) => (
   qst.db || db.dbSelected)
 
+const dot = (graph, locale, id) => {
+  const designNodeMaps = graph[pgEnumGRAPHMETADESIGNNODEMAPS]
+  const idNodeMaps = designNodeMaps[locale]
+
+  return idNodeMaps[id]
+}
+
 q.t = (db, qst, args) => {
   const key = args[0]
   const valdefault = args[1]
@@ -261,26 +273,16 @@ q.t = (db, qst, args) => {
 q.node = (db, qst, args) => {
   const nodeidorspec = args[0]
   const graph = db.graph
+  const isdesign = (
+    pgEnumNodeDesignTypeResolverIs(nodeidorspec)
+      || pgEnumNodeDesignTypeIs(nodeidorspec))
+  const key = isdesign && pgGraphResolverLocaleKeyGet(
+    graph, db.lang, nodeidorspec.nodescriptid)
 
-  if (pgEnumNodeDesignTypeIs(nodeidorspec)) {
-    qst.target = graph[nodeidorspec.graphkeys[0]]
-  } else if (pgEnumNodeDesignTypeResolverIs(nodeidorspec)) {
-    qst.target = graph[nodeidorspec.graphkeys[0]]// '/dataenv/:eng-US'
-  }
-
-  
-  // should be improved....
-  // {
-  //   pgscriptid: 1,
-  //   pgscript: true,
-  //   graphkeys: [ '/dataenv/:eng-US' ]
-  // }
-
-
-  console.log('resolves node.', nodeidorspec)
-  // target is 'design' node
-  // { nodescriptid, nodemeta, nodechilds, nodespec },
   // key: '/dataenv/:eng-US'
+  if (key) {
+    qst.target = graph[key]
+  }
 
   return qst
 }

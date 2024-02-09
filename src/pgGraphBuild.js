@@ -5,6 +5,7 @@ import {
   pgNodeDesignRun,
   pgNodeDesign,
   pgNodeDesignRoutesIs,
+  pgNodeDesignLangLocaleKeyCreate,
   pgNodeDesignLangGrouped,
   pgNodeDesignChildsLangGrouped
 } from './pgNodeDesign.js'
@@ -14,23 +15,26 @@ import {
   pgGraphSet,
   pgGraphSetChild,
   pgGraphSetChildEdge,
-  pgGraphSetRouteEdge
+  pgGraphSetRouteEdge,
+  pgGraphResolverLocaleKeySet
 } from './pgGraph.js'
 
 import {
   pgEnumNODETYPEPATH,
+  pgEnumNodeDesignTypeResolverIs
 } from './pgEnum.js'
 
 import {
   pgKeyChildLangLocaleCreate
 } from './pgKey.js'
 
+const pathSepRe = /\//g
+
 // /blog/ => blog
 // / => pg
-const routepathparsename = routepath => (
-  routepath.replace(/\//g, ''))
+const routepathparsename = routepath => routepath.replace(pathSepRe, '')
 
-const routesdfsgraphset = async (opts, graph, nodespec, parentid, routes) => {
+const pgGraphBuildNodeRoutes = async (opts, graph, parentKey, node, routes) => {
   if (!routes.length)
     return graph
 
@@ -50,61 +54,51 @@ const routesdfsgraphset = async (opts, graph, nodespec, parentid, routes) => {
     routemeta: routedetails
   })
 
-  graph = await pgGraphBuildDFS(opts, graph, routenode, parentid)
+  graph = await pgGraphBuildNode(opts, graph, parentKey, routenode)
 
-  return routesdfsgraphset(opts, graph, nodespec, parentid, routes.slice(1))
+  return pgGraphBuildNodeRoutes(
+    opts, graph, parentKey, node, routes.slice(1))
 }
 
-const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
-  const nodechildlanglocalegroups = pgNodeDesignChildsLangGrouped(
-    opts, nodespec)
-  // const noderoutes = (nodespec.nodemeta || {}).routes
-  // const nodechildrefs = []
+const pgGraphBuildNodeChilds = async (opts, graph, parentid, nodespec) => {
+  const nodechildlanglocalegroups = (
+    pgNodeDesignChildsLangGrouped(opts, nodespec))
 
   for (const nodechildlanglocalegroup of nodechildlanglocalegroups) {
-    const childlanglocale = nodechildlanglocalegroup[0]
-    const childresolvers = nodechildlanglocalegroup[1]
+    const childll = nodechildlanglocalegroup[0]
+    const childllresolvers = nodechildlanglocalegroup[1]
 
-    for (const i in childresolvers) {
-      const childresolver = childresolvers[i]
-      const child = (
-        typeof childresolver === 'function'
-          ? childresolver()
-          : childresolver)
+    for (const i in childllresolvers) {
+      const childllresolver = childllresolvers[i]
 
-      if (pgNodeDesignRoutesIs(child)) {
+      if (pgNodeDesignRoutesIs(childllresolver)) {
         graph = pgGraphSetChildEdge(
-          graph, parentid, childlanglocale, pgEnumNODETYPEPATH)
+          graph, parentid, childll, pgEnumNODETYPEPATH)
       } else {
-        // entirely different list of childs is possible
-        // for each langlocale... so each is generated
-        const nodename = child.nodespec.name // '/'
-        const nodelanglocalename = nodename + '/:' + childlanglocale
-        const nodelanglocalekey = pgKeyChildLangLocaleCreate(
-          parentid, nodelanglocalename)
+        const childDesign = pgEnumNodeDesignTypeResolverIs(childllresolver)
+          ? childllresolver()
+          : childllresolver
 
-        if (typeof childresolver === 'function') {
-          
-          childresolver.graphkeys = childresolver.graphkeys || []
-          childresolver.graphkeys.push(nodelanglocalekey)
-        }
-        // child.nodespec = resolvespec(child.nodespec)
-        // need to set node first
-        // console.log(child, nodelanglocalekey)
-        child.nodespec = await pgNodeDesignRun(
-          opts,
-          childlanglocale,
-          graph,
-          Object.assign(child, {
-            key: nodelanglocalekey
-          }))
+        // different childs list possible each language
+        const nodelanglocalekey = pgNodeDesignLangLocaleKeyCreate(
+          childll, parentid, childDesign)
 
+        graph = pgGraphResolverLocaleKeySet(
+          graph, childll, nodelanglocalekey, childDesign.nodescriptid)
+
+        const childDesignHydrated = await pgNodeDesignRun(
+          opts, childll, graph,
+          Object.assign(childDesign, { key: nodelanglocalekey }))
+        const childDesignHydratedChilds =
+          childDesignHydrated.nodechilds || []
+        
         graph = pgGraphSetChild(
-          graph, parentid, childlanglocale, nodelanglocalekey, child)
+          graph, parentid,
+          childll, nodelanglocalekey, childDesignHydrated)
 
-        if (child.nodechilds && child.nodechilds.length) {
-          graph = await childsdfsgraphset( // nodespec, fullkeytoparent
-            opts, graph, child, nodelanglocalekey)
+        if ((childDesignHydratedChilds || []).length) {
+          graph = await pgGraphBuildNodeChilds(
+            opts, graph, nodelanglocalekey, childDesignHydrated)
         }
       }
     }
@@ -113,7 +107,7 @@ const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
   return graph
 }
 
-const pgGraphBuildDFS = async (opts, graph, nodespec, parentkey) => {
+const pgGraphBuildNode = async (opts, graph, parentkey, nodespec) => {
   const isroot = Object.keys(graph).length === 0
   const langlocalegroups = pgNodeDesignLangGrouped(opts, nodespec)
   const nodename = nodespec.nodespec.name // eg, '/'
@@ -132,10 +126,10 @@ const pgGraphBuildDFS = async (opts, graph, nodespec, parentkey) => {
     graph = pgGraphSet(graph, nodelanglocalekey, nodespec)
     graph = isroot ? graph : pgGraphSetRouteEdge(
       graph, parentkey, nodelanglocale, nodelanglocalekey)
-    graph = await childsdfsgraphset( // nodespec, fullkeytoparent
-      opts, graph, noderesolver, nodelanglocalekey)
-    graph = await routesdfsgraphset(
-      opts, graph, noderesolver, nodelanglocalekey, noderoutes)
+    graph = await pgGraphBuildNodeChilds(
+      opts, graph, nodelanglocalekey, noderesolver)
+    graph = await pgGraphBuildNodeRoutes(
+      opts, graph, nodelanglocalekey, noderesolver,  noderoutes)
   }
 
   return graph
@@ -145,8 +139,8 @@ const pgGraphBuild = async (dtree, opts) => {
   opts = pgOpts(opts)
 
   const dNodeRoot = pgNodeDesign('uiroot')('/', null, dtree)()
-  const graph = await pgGraphBuildDFS(
-    opts, pgGraphCreate(), dNodeRoot, '/:eng-US')
+  const graph = await pgGraphBuildNode(
+    opts, pgGraphCreate(), '/:eng-US', dNodeRoot)
 
   return graph
 }
