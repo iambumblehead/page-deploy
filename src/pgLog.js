@@ -1,15 +1,15 @@
-const pglog = (opts, msg) => {
+const pgLog = (opts, msg) => {
   if (opts.verbose > 0) {
     console.log(msg)
   }
 }
 
-const pglog_writeurl = (opts, url) => pglog(
+const pgLogWriteUrl = (opts, url) => pgLog(
   opts, '[mmm] write: ' + url.pathname
     .replace(process.cwd(), '.')
     .replace(process.env.HOME, '~'))
 
 export {
-  pglog as default,
-  pglog_writeurl
+  pgLog as default,
+  pgLogWriteUrl
 }

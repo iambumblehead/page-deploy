@@ -1,6 +1,6 @@
 import {
-  key_routeencode
-} from './pgkey.js'
+  pgKeyRouteEncode
+} from './pgKey.js'
 
 // generates something like below
 // [
@@ -37,9 +37,8 @@ const pgManifestroutes = (graph, key, lang, noderoutes, routes = []) => {
 const pgManifestroute = (graph, key, lang) => {
   const node = graph[key]
   const noderoutes = node['route:' + lang] || []
-
   const routes = pgManifestroutes(graph, key, lang, noderoutes)
-  const route = key_routeencode(key)
+  const route = pgKeyRouteEncode(key)
   
   return routes.length
     ? [ route, [ routes.flat() ]]

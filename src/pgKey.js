@@ -8,7 +8,7 @@ import {
 const keylanglocalere = /\/:\w\w\w?-\w\w$/
 
 // key:eng-US => /path/key/eng-US.json
-const key_pathrelcreate = (opts, key) => {
+const pgKeyPathRelCreate = (opts, key) => {
   const match = key.match(keylanglocalere)
   const langlocalesuffix = match[0]
 
@@ -19,17 +19,17 @@ const key_pathrelcreate = (opts, key) => {
   return key
 }
 
-const key_urlcreate = (opts, key) => {
+const pgKeyUrlCreate = (opts, key) => {
   const outUrl = new url.URL(opts.outputDir, opts.metaurl)
-  const keyUrl = new url.URL(key_pathrelcreate(opts, key), outUrl)
+  const keyUrl = new url.URL(pgKeyPathRelCreate(opts, key), outUrl)
 
   return keyUrl
 }
 
-const key_refchildcreate = (opts, keyparent, keychild) => {
-  const urlParent = key_urlcreate(opts, keyparent)
+const pgKeyRefChildCreate = (opts, keyparent, keychild) => {
+  const urlParent = pgKeyUrlCreate(opts, keyparent)
   const urlParentDir = new url.URL(`.`, urlParent)
-  const urlChild = key_urlcreate(opts, keychild)
+  const urlChild = pgKeyUrlCreate(opts, keychild)
 
   const pathtodirrelative = path.relative(
     urlParentDir.pathname, urlChild.pathname)
@@ -43,17 +43,17 @@ const key_refchildcreate = (opts, keyparent, keychild) => {
 // ('/:eng-US', '/:eng-US') => '/:eng-US'
 // ('/:eng-US', 'label/:eng-US') => '/label/:eng-US'
 // ('/label/:eng-US', 'checkbox/:eng-US') => '/label/checkbox/:eng-US'
-const key_childlanglocalecreate = (parentid, childname) => {
+const pgKeyChildLangLocaleCreate = (parentid, childname) => {
   const res = parentid.replace(keylanglocalere, '')
     + (childname.startsWith('/') ? '' : '/') + childname
 
   return res
 }
 
-const key_langremove = key => (
+const pgKeyLangRemove = key => (
   key.replace(keylanglocalere, ''))
 
-const key_routeencode = key => {
+const pgKeyRouteEncode = key => {
   return key
     .replace(/^\/pg-/, '/')
     .replace(/\/index/, '')
@@ -61,10 +61,10 @@ const key_routeencode = key => {
 }
 
 export {
-  key_routeencode,
-  key_urlcreate,
-  key_refchildcreate,
-  key_pathrelcreate,
-  key_childlanglocalecreate,
-  key_langremove
+  pgKeyRouteEncode,
+  pgKeyUrlCreate,
+  pgKeyRefChildCreate,
+  pgKeyPathRelCreate,
+  pgKeyChildLangLocaleCreate,
+  pgKeyLangRemove
 }

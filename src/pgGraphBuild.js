@@ -2,11 +2,9 @@
 import pgOpts from './pgOpts.js'
 
 import {
-  pgNodeDesignPropRun,
   pgNodeDesignRun,
   pgNodeDesign,
   pgNodeDesignRoutesIs,
-  // pgNodeDesignChainRun,
   pgNodeDesignLangGrouped,
   pgNodeDesignChildsLangGrouped
 } from './pgNodeDesign.js'
@@ -21,18 +19,11 @@ import {
 
 import {
   pgEnumNODETYPEPATH,
-  // pgEnumNODETYPEPATH,
-  pgEnumIsChain,
-  // pgEnumQueryNameIsGREEDYRe,,
-  pgEnumIsChainANDGREEDY,
-  pgEnumIsChainDeep
 } from './pgEnum.js'
 
 import {
-  key_urlcreate,
-  key_refchildcreate,
-  key_childlanglocalecreate
-} from './pgkey.js'
+  pgKeyChildLangLocaleCreate
+} from './pgKey.js'
 
 // /blog/ => blog
 // / => pg
@@ -89,7 +80,7 @@ const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
         // for each langlocale... so each is generated
         const nodename = child.nodespec.name // '/'
         const nodelanglocalename = nodename + '/:' + childlanglocale
-        const nodelanglocalekey = key_childlanglocalecreate(
+        const nodelanglocalekey = pgKeyChildLangLocaleCreate(
           parentid, nodelanglocalename)
 
         if (typeof childresolver === 'function') {
@@ -135,7 +126,7 @@ const pgGraphBuildDFS = async (opts, graph, nodespec, parentkey) => {
     const noderesolver = langlocalegroup[1]
     const nodelanglocalename =
           (nodename === '/' ? '' : nodename) + '/:' + nodelanglocale
-    const nodelanglocalekey = key_childlanglocalecreate(
+    const nodelanglocalekey = pgKeyChildLangLocaleCreate(
       parentkey, nodelanglocalename)
 
     graph = pgGraphSet(graph, nodelanglocalekey, nodespec)

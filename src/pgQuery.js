@@ -1,8 +1,8 @@
 // import pgCreator from './pgCreator.js'
 
 import {
-  key_langremove
-} from './pgkey.js'
+  pgKeyLangRemove
+} from './pgKey.js'
 
 import {
   pgErrArgsNumber,
@@ -327,10 +327,13 @@ q.typensprop = (db, qst, args) => {
   //   outerprop
   // })
 
+
+  const nodekey = node && node.key
+  // const nodepath = pgKeyLangRemove(node.key)
   const nsfull = pgEnumSPECPROPTYPELOOKUPisValidRe.test(nslookup)
     ? nslookup : `subj.${nslookup}`
-  const propfull = (node && node.key && !nslookup.startsWith('part.'))
-    ? `[${key_langremove(node.key)}].${nsfull}`
+  const propfull = (nodekey && !nslookup.startsWith('part.'))
+    ? `[${pgKeyLangRemove(nodekey)}].${nsfull}`
     : nsfull
   //'/dataenv/:eng-US'
 
