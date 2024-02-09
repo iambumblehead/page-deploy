@@ -1,4 +1,4 @@
-import pgCreator from './pgCreator.js'
+import pgNodeDesign from './pgNodeDesign.js'
 import pgOpts from './pgOpts.js'
 import pgManifest from './pgManifest.js'
 import pgReql from './pgReql.js'
@@ -379,56 +379,14 @@ const graphdfswrite = async (opts, lang, graph, key, keyparent) => {
 const routepathparsename = routepath => (
   routepath.replace(/\//g, ''))
 
-/*
-const pgdep = async opts => {
-  opts = pgOpts(opts)
 
-  // graph building /////////////////
-  const rootresolver = await opts.root()
-  const root = rootresolver()
-  const graph = await specdfsgraphsetroot(
-    opts, pgGraphCreate(), root, '/:eng-US')
-  // graph building /////////////////
-
-  const langs = opts.i18n.reduce((accum, i18n) => {
-    accum.push(i18n[0])
-    return accum
-  }, [])
-
-
-  await pgfs_dirrmdir(opts.outputDir)
-  // unknown necessary lang+locale combinations, until children are processed
-  // fallback to 'default' eg, en-US
-  // eng-US, jap-US, eng-JP, jap-JP
-  for (const lang of langs) {
-    await graphdfswrite(opts, lang, graph, '/:' + lang)
-  }
-
-  const manifest = pgManifest(opts, graph)
-  const manifesturl = pgurl_manifestcreate(opts)
-
-  await pgfs_writeobj(opts, manifesturl, manifest)
-  pglog(opts, JSON.stringify(manifest, null, '  '))
-}
-*/
 const pg = {
-  creator: pgCreator,
+  creator: pgNodeDesign,
   // root: childs => {
   //   return pgCreator('uiroot')('/', null, childs)
   // },
-  graphCreate: async (tree, opts) => {
-
-    return pgGraphBuild(tree, opts)
-    /*
-    opts = pgOpts(opts)
-
-    const root = pgCreator('uiroot')('/', null, tree)()
-    const graph = await specdfsgraphsetroot(
-      opts, pgGraphCreate(), root, '/:eng-US')
-
-    return graph
-    */
-  },
+  
+  graphCreate: pgGraphBuild,
   graphWrite: async (graph, opts) => {
     opts = pgOpts(opts)
 

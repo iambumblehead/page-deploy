@@ -2,7 +2,11 @@ import {
   // pgEnumNODETYPEPATH,
   pgEnumNODEDESIGNTYPE,
   pgEnumNODEDESIGNTYPERESOLVER,
-  pgEnumSPECPROPTYPEisValidRe
+  pgEnumSPECPROPTYPEisValidRe,
+
+  pgEnumIsChain,
+  pgEnumIsChainDeep,
+  pgEnumIsChainANDGREEDY
 } from './pgEnum.js'
 
 const nextId = ((id = 0) => () => ++id)()
@@ -14,7 +18,7 @@ const nextId = ((id = 0) => () => ++id)()
 //   [['/path', pchild, pchild]],
 //   child
 // ])
-const pgDesignNodeRoutesIs = child => {
+const pgNodeDesignRoutesIs = child => {
   return Array.isArray(child)
     && Array.isArray(child[0])
     && typeof child[0][0] === 'string'
@@ -26,10 +30,9 @@ const pgDesignNodeRoutesIs = child => {
 //   return those
 // else if single nodechilds
 //   compose default nodechildlangs from tho
-const pgDesignNodeChildsLangGrouped = (opts, nodespec) => (
+const pgNodeDesignChildsLangGrouped = (opts, nodespec) => (
   nodespec.nodechildlangs || (
     nodespec.nodechilds
-    // ? [[ opts.i18n[0][0], nodespec.nodechilds ]]
       ? [[ opts.i18nPriority[0], nodespec.nodechilds ]]
       : []))
 
@@ -37,7 +40,7 @@ const pgDesignNodeChildsLangGrouped = (opts, nodespec) => (
 //   => [['eng-US', dnode]]
 // [['eng-US', dnode], ['jap-JP', dnode]]
 //   => [['eng-US', dnode], ['jap-JP', dnode]]
-const pgDesignNodeLangGrouped = (opts, dnode) => (
+const pgNodeDesignLangGrouped = (opts, dnode) => (
   Array.isArray(dnode)
     ? dnode
     : [[ opts.i18nPriority[0], dnode ]])
@@ -47,7 +50,8 @@ const pgCreatorHelperArgSpecIsValid = nodespec => (
     typeof nodespec === 'object' && Object.keys(nodespec).every(
       k => pgEnumSPECPROPTYPEisValidRe.test(k))))
 
-// returns [ nodename, nodespc, nodechilds ]
+// returns normalized args
+// ex, [ nodename, nodespc, nodechilds ]
 const pgCreatorHelperArgsGet = (nodename, nodespec, nodechilds) => {
   const args = [nodename, nodespec, nodechilds]
 
@@ -61,11 +65,74 @@ const pgCreatorHelperArgsGet = (nodename, nodespec, nodechilds) => {
   return args
 }
 
-// const pgCreatorHelperCreate = pgname => (nodename, nodespec, nodechilds, m) => {
-const pgDesignNode = pgname => (nodename, nodespec, nodechilds, m) => {
+// {
+//   requrl: d.typefn('getrequrl'),
+//   other: 'val'
+// }
+//
+// [{
+//   requrl: d.typefn('getrequrl'),
+//   other: 'val'
+// }]
+//
+// [{
+//   requrl: d.typefn('getrequrl')
+// }, {
+//   other: 'val'
+// }]
+const pgNodeDesignPropRun = async (opts, ll, graph, node, prop, val) => {
+  if (pgEnumIsChain(val)) {
+    return pgNodeDesignChainRun(
+      opts, ll, graph, node, val, prop)
+  }
+
+  if (!pgEnumIsChainDeep(val))
+    return val // return literal value
+
+  const acc = []
+  if (Array.isArray(val)) {
+    for (const valprop in val) {
+      acc[valprop] = await pgNodeDesignPropRun(
+        opts, ll, graph, node, valprop, val[valprop])
+    }
+
+    return acc.flat()
+  }
+
+  for (const valprop of Object.keys(val)) {
+    const resolved = await pgNodeDesignPropRun(
+      opts, ll, graph, node, valprop, val[valprop])
+
+    if (pgEnumIsChainANDGREEDY(val[valprop])) {
+      acc.push(resolved)
+    } else {
+      acc[0] = acc[0] || {}
+      acc[0][valprop] = resolved
+    }
+  }
+
+  return acc[0] === undefined ? acc.slice(1) : acc
+}
+
+// possibly the caller could call nodeproprun directly
+// a placeholder in case the order of top-level properties
+// becomes important or if resolving downward and upward
+// becomes important
+const pgNodeDesignRun = async (opts, ll, graph, child) => {
+  const nodespec = child.nodespec
+  const nodespecresolved = {}
+
+  for (const prop in nodespec) {
+    nodespecresolved[prop] = await pgNodeDesignPropRun(
+      opts, ll, graph, child, prop, nodespec[prop])
+  }
+
+  return nodespecresolved
+}
+
+const pgNodeDesign = pgname => (nodename, nodespec, nodechilds, m) => {
   const args = pgCreatorHelperArgsGet(nodename, nodespec, nodechilds)
   const nodescriptid = nextId()
-  // console.log({ nodescriptid, nodename })
 
   nodename = args[0] || pgname
   nodespec = args[1]
@@ -78,18 +145,12 @@ const pgDesignNode = pgname => (nodename, nodespec, nodechilds, m) => {
 
   // this allows node to be constructed in lazy way,
   // so parent-defined route-name usable to create node name
-  return Object.assign((graph, pnode, nodemeta = {}) => {
-    if (nodemeta.nodename) {
+  return Object.assign((nodemeta = {}) => {
+    if (nodemeta && nodemeta.nodename) {
       nodename = nodemeta.nodename
     }
 
-    if (nodename === 'dataenv') {
-      // console.log({ nodename })
-      //throw new Error('nonon')
-    }
-    
     return {
-      // toString: () => pgEnumNODEDESIGNTYPERESOLVER,
       nodetype: pgEnumNODEDESIGNTYPE,
       nodescriptid,
       nodemeta: m ? Object.assign(nodemeta, m) : nodemeta,
@@ -107,26 +168,28 @@ const pgDesignNode = pgname => (nodename, nodespec, nodechilds, m) => {
   })
 }
 
-const pgDesignNodeChainRun = async (opts, lang, graph, node, spec, prop) => {
-  // establish the query 'environment'
+// define the query 'environment' then run query
+const pgNodeDesignChainRun = async (opts, lang, graph, node, spec, prop) => {
   spec.state = Object.assign(spec.state, {
     opts,
     lang,
     graph,
     node,
     outerprop: prop,
+    // legacy
     key: node.key
   })
 
-  // then, run query
   return spec.run()
 }
 
 export {
-  pgDesignNode as default,
-  pgDesignNode,
-  pgDesignNodeChainRun,
-  pgDesignNodeRoutesIs,
-  pgDesignNodeLangGrouped,
-  pgDesignNodeChildsLangGrouped
+  pgNodeDesign as default,
+  pgNodeDesign,
+  pgNodeDesignRun,
+  pgNodeDesignPropRun,
+  pgNodeDesignChainRun,
+  pgNodeDesignRoutesIs,
+  pgNodeDesignLangGrouped,
+  pgNodeDesignChildsLangGrouped
 }

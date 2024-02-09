@@ -2,12 +2,14 @@
 import pgOpts from './pgOpts.js'
 
 import {
-  pgDesignNode,
-  pgDesignNodeRoutesIs,
-  pgDesignNodeChainRun,
-  pgDesignNodeLangGrouped,
-  pgDesignNodeChildsLangGrouped
-} from './pgCreator.js'
+  pgNodeDesignPropRun,
+  pgNodeDesignRun,
+  pgNodeDesign,
+  pgNodeDesignRoutesIs,
+  // pgNodeDesignChainRun,
+  pgNodeDesignLangGrouped,
+  pgNodeDesignChildsLangGrouped
+} from './pgNodeDesign.js'
 
 import {
   pgGraphCreate,
@@ -37,75 +39,6 @@ import {
 const routepathparsename = routepath => (
   routepath.replace(/\//g, ''))
 
-// {
-//   requrl: d.typefn('getrequrl'),
-//   other: 'val'
-// }
-//
-// [{
-//   requrl: d.typefn('getrequrl'),
-//   other: 'val'
-// }]
-//
-// [{
-//   requrl: d.typefn('getrequrl')
-// }, {
-//   other: 'val'
-// }]
-const resolvespec = async (opts, lang, graph, child, spec, prop, acc = []) => {
-  if (pgEnumIsChain(spec)) {
-    return pgDesignNodeChainRun(
-      opts, lang, graph, child, spec, prop)
-  }
-
-  if (!pgEnumIsChainDeep(spec))
-    return spec // return literal value
-
-  if (Array.isArray(spec)) {
-    for (const specprop in spec) {
-      acc[specprop] = await resolvespec(
-        opts, lang, graph, child, spec[specprop], specprop)
-    }
-
-    return acc.flat()
-  }
-
-  for (const specprop of Object.keys(spec)) {
-    const resolved = await resolvespec(
-      opts, lang, graph, child, spec[specprop], specprop)
-
-    if (String(resolved.prop).endsWith('subj.requrl')) {
-      // console.log('RESOLVED', resolved, child)
-      // throw new Error('====')
-    }
-    if (pgEnumIsChainANDGREEDY(spec[specprop])) {
-      acc.push(resolved)
-    } else {
-      acc[0] = acc[0] || {}
-      acc[0][specprop] = resolved
-    }
-  }
-
-  return acc[0] === undefined ? acc.slice(1) : acc
-}
-
-const resolvespecs = async (opts, lang, graph, child) => {
-  const resolvedspec = {}
-  const childspec = child.nodespec
-
-  for (const specprop in childspec) {
-    const childspecpropval = childspec[specprop]
-    
-    resolvedspec[specprop] = (
-      pgEnumIsChainDeep(childspecpropval)
-        || typeof childspecpropval === 'function')
-      ? await resolvespec(opts, lang, graph, child, childspecpropval, specprop)
-      : childspecpropval
-  }
-
-  return resolvedspec
-}
-
 const routesdfsgraphset = async (opts, graph, nodespec, parentid, routes) => {
   if (!routes.length)
     return graph
@@ -121,7 +54,7 @@ const routesdfsgraphset = async (opts, graph, nodespec, parentid, routes) => {
   // default name 'index' so childs will be contained
   // within *something* comparable to non-index routes
   const routenodename = `pg-${routenamedecoded || 'index'}`
-  const routenode = routenoderesolve({}, {}, {
+  const routenode = routenoderesolve({
     nodename: routenodename,
     routemeta: routedetails
   })
@@ -132,7 +65,8 @@ const routesdfsgraphset = async (opts, graph, nodespec, parentid, routes) => {
 }
 
 const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
-  const nodechildlanglocalegroups = pgDesignNodeChildsLangGrouped(opts, nodespec)
+  const nodechildlanglocalegroups = pgNodeDesignChildsLangGrouped(
+    opts, nodespec)
   // const noderoutes = (nodespec.nodemeta || {}).routes
   // const nodechildrefs = []
 
@@ -147,8 +81,7 @@ const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
           ? childresolver()
           : childresolver)
 
-      if (pgDesignNodeRoutesIs(child)) {
-      // if (child === pgEnumNODETYPEPATH) {
+      if (pgNodeDesignRoutesIs(child)) {
         graph = pgGraphSetChildEdge(
           graph, parentid, childlanglocale, pgEnumNODETYPEPATH)
       } else {
@@ -160,17 +93,17 @@ const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
           parentid, nodelanglocalename)
 
         if (typeof childresolver === 'function') {
+          
           childresolver.graphkeys = childresolver.graphkeys || []
           childresolver.graphkeys.push(nodelanglocalekey)
         }
         // child.nodespec = resolvespec(child.nodespec)
         // need to set node first
         // console.log(child, nodelanglocalekey)
-        child.nodespec = await resolvespecs(
+        child.nodespec = await pgNodeDesignRun(
           opts,
           childlanglocale,
           graph,
-          // nodelanglocalekey,
           Object.assign(child, {
             key: nodelanglocalekey
           }))
@@ -191,15 +124,12 @@ const childsdfsgraphset = async (opts, graph, nodespec, parentid) => {
 
 const pgGraphBuildDFS = async (opts, graph, nodespec, parentkey) => {
   const isroot = Object.keys(graph).length === 0
-  const langlocalegroups = pgDesignNodeLangGrouped(opts, nodespec)
-  const nodename = nodespec.nodespec.name // '/'
-  // const noderoutes = nodespec.nodemeta.routes || []
-  // isRoute(child)
+  const langlocalegroups = pgNodeDesignLangGrouped(opts, nodespec)
+  const nodename = nodespec.nodespec.name // eg, '/'
   const noderoutes = nodespec.nodechilds
-    .find(c => pgDesignNodeRoutesIs(c)) || []
-  // onst noderoutes = nodespec.nodemeta.routes || []
+    .find(c => pgNodeDesignRoutesIs(c)) || []
 
-  // maybe some routes only available some langs
+  // some routes only available some langs
   for (const langlocalegroup of langlocalegroups) {
     const nodelanglocale = langlocalegroup[0]
     const noderesolver = langlocalegroup[1]
@@ -223,7 +153,7 @@ const pgGraphBuildDFS = async (opts, graph, nodespec, parentkey) => {
 const pgGraphBuild = async (dtree, opts) => {
   opts = pgOpts(opts)
 
-  const dNodeRoot = pgDesignNode('uiroot')('/', null, dtree)()
+  const dNodeRoot = pgNodeDesign('uiroot')('/', null, dtree)()
   const graph = await pgGraphBuildDFS(
     opts, pgGraphCreate(), dNodeRoot, '/:eng-US')
 
