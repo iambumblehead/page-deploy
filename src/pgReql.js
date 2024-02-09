@@ -1,7 +1,8 @@
 import pgOpts from './pgOpts.js'
 import pgChain from './pgChain.js'
 
-const buildChain = (dbState = {}) => {
+export default (opts = {}) => {
+  const dbState = pgOpts(opts)
   const d = pgChain(dbState)
 
   return {
@@ -9,5 +10,4 @@ const buildChain = (dbState = {}) => {
     dbState
   }
 }
-//
-export default opts => buildChain(pgOpts(opts))
+
