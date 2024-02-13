@@ -1,3 +1,9 @@
+import url from 'node:url'
+
+import {
+  pgFsRead
+} from './pgFs.js'
+
 import {
   pgKeyRouteEncode
 } from './pgKey.js'
@@ -23,21 +29,21 @@ import {
 //    ]]
 //  ]
 
-const pgManifestroutes = (graph, key, lang, noderoutes, routes = []) => {
+const pgManifestRoutes = (graph, key, lang, noderoutes, routes = []) => {
   if (!noderoutes.length)
     return routes
 
-  const route = pgManifestroute(graph, noderoutes[0], lang)
+  const route = pgManifestRoute(graph, noderoutes[0], lang)
 
   routes.push(route)
 
-  return pgManifestroutes(graph, key, lang, noderoutes.slice(1), routes)
+  return pgManifestRoutes(graph, key, lang, noderoutes.slice(1), routes)
 }
 
-const pgManifestroute = (graph, key, lang) => {
+const pgManifestRoute = (graph, key, lang) => {
   const node = graph[key]
   const noderoutes = node['route:' + lang] || []
-  const routes = pgManifestroutes(graph, key, lang, noderoutes)
+  const routes = pgManifestRoutes(graph, key, lang, noderoutes)
   const route = pgKeyRouteEncode(key)
   
   return routes.length
@@ -45,17 +51,41 @@ const pgManifestroute = (graph, key, lang) => {
     : [ route ]
 }
 
-const pgManifestcreate = (opts, graph) => {
-  const manifestroutes = pgManifestroute(
+// 'appname:1.0.0,gjson.gani:48.3.2,2024.10.03'
+const pgManifestBuildIdCreate = async opts => {
+  const date = new Date()
+  const packageUrl = new url.URL('../package.json', import.meta.url)
+  const packageVersion = (
+    await pgFsRead(packageUrl)
+      .then(s => JSON.parse(s))
+      .then(p => p.version)
+      .catch(() => '??.??.??'))
+
+  return [
+    opts.name + ':' + opts.version,
+    'gani.gjson:' + packageVersion,
+    [ date.getFullYear(),
+      ("0" + date.getMonth() + 1).slice(-2),
+      ("0" + date.getDay()).slice(-2)
+    ].join('.')
+  ].join()
+}
+
+const pgManifestCreate = async (opts, graph, arg) => {
+  const manifestroutes = pgManifestRoute(
     graph, '/:eng-US', 'eng-US')
 
+  // console.log(opts)
   return {
-    appname: opts.appname,
-    deploytype: opts.deploytype,
+    buildid: await pgManifestBuildIdCreate(opts),
+    deploy: opts.deploytype,
+    name: opts.name,
+    version: opts.version,
+    description: opts.description,
     routes: (manifestroutes[1] || [])[0] || []
   }
 }
 
 export {
-  pgManifestcreate as default
+  pgManifestCreate as default
 }

@@ -363,7 +363,10 @@ q.manifest = async (st, qst, args) => {
     throw new Error('manifest must be constructed around a graph')
   }
 
-  qst.target = pgManifest(st, qst.target)
+  args = await spend(st, qst, args)
+  console.log('args', args[0])
+  qst.target = await pgManifest(
+    Object.assign({}, st, args[0]), qst.target)
   
   return qst
 }
@@ -444,10 +447,19 @@ q.row.fn = (st, qst, args) => {
   return q.getField(st, qst, args)
 }
 
-q.expr = (st, qst, args) => {
+q.default = async (st, qst, args) => {
+  if (qst.target === null) {
+    qst.error = null
+    qst.target = await spend(st, qst, args[0])
+  }
+
+  return qst
+}
+
+q.expr = async (st, qst, args) => {
   const [argvalue] = args
 
-  qst.target = spend(st, qst, argvalue, [qst.target])
+  qst.target = await spend(st, qst, argvalue, [qst.target])
 
   return qst
 }
@@ -561,12 +573,18 @@ q.do = (st, qst, args) => {
   return qst
 }
 
-q.or = (st, qst, args) => {
+q.or = async (st, qst, args) => {
   const rows = [qst.target]
 
-  qst.target = args.reduce((current, arg) => (
-    current || spend(st, qst, arg, rows)
-  ), qst.target)
+  while (!qst.target && args.length) {
+    qst.target = await spend(st, qst, args[0], rows)
+    args = args.slice(1)
+  }
+
+  console.log('OR called', rows, args, qst.target)
+//  qst.target = args.reduce((current, arg) => (
+//    current || spend(st, qst, arg, rows)
+//  ), qst.target)
 
   return qst
 }

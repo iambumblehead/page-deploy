@@ -16,10 +16,12 @@ const pgFsFileExists = async dir => (
 const pgFsDirMkDir = async dir => (
   fs.mkdir(dir, { recursive: true }))
 
+const pgFsDirMkDirP = async dir => (
+  !await pgFsDirExists(dir)
+    && pgFsDirMkDir(dir))
+
 const pgFsWrite = async (fsurl, content) => {
-  const fsurldir = path.dirname(fsurl.pathname) + '/'
-  if (!await pgFsDirExists(fsurldir))
-    await pgFsDirMkDir(fsurldir)
+  await pgFsDirMkDirP(path.dirname(fsurl.pathname) + '/')
 
   return fs.writeFile(fsurl, content)
 }
