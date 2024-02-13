@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
-  pgmdparse,
+  pgMdParse,
 
   metaTimeDate,
   metaTitle,
@@ -11,7 +11,7 @@ import {
   metaInlineItems,
   pgmdmetaextractinline,
   pgmdmetaextractfields
-} from '../src/pgmd.js'
+} from '../src/pgMd.js'
 
 test('metaextractinline should parse metaTimeDate', () => {
   const md = [
@@ -149,7 +149,7 @@ test('pgmdextractfields should parse all markdown fields', () => {
   })
 })
 
-test('pgmdparse should parse a markdown file, metafields only', () => {
+test('pgMdParse should parse a markdown file, metafields only', () => {
   const md = [
     '[meta:timedate]: <> ":datetimestr"'
       .replace(/:datetimestr/, new Date(1480104360000)),
@@ -160,7 +160,7 @@ test('pgmdparse should parse a markdown file, metafields only', () => {
     '[0]: mailto:chris@bumblehead.com'
   ].join('\n')
   
-  assert.deepStrictEqual(pgmdparse('test.md', md), {
+  assert.deepStrictEqual(pgMdParse('test.md', md), {
     content: '<p>© <a href="mailto:chris@bumblehead.com">bumblehead</a></p>\n',
     timedate: new Date(1480104360000).getTime(),
     title: 'copy'
@@ -168,7 +168,7 @@ test('pgmdparse should parse a markdown file, metafields only', () => {
 })
 
 
-test('pgmdparse should parse a markdown file, metafields and inline', () => {
+test('pgMdParse should parse a markdown file, metafields and inline', () => {
   const md = [
     '[meta:type]: <> (blog)',
     '[meta:tagsArr]: <> (software,art)',
@@ -198,7 +198,7 @@ test('pgmdparse should parse a markdown file, metafields and inline', () => {
     '[21]: support/screenfetch.png'
   ].join('\n')
 
-  assert.deepStrictEqual(pgmdparse('test.md', md), {
+  assert.deepStrictEqual(pgMdParse('test.md', md), {
     type: 'blog',
     tagsArr: [ 'software', 'art' ],
     isComments: false,

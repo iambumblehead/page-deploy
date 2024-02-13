@@ -97,13 +97,11 @@ const pgmdextractexcerpt = content => {
   return [ content, excerpt ]
 }
 
-const pgmdparse = (filename, filestr) => {
-  let metadata = {},
-      content = String(filestr),
-      excerpt
+const pgMdParseFields = filestr => {
+  const [content, metadata] = pgmdmetaextractfields(filestr, {})
 
-  ;[ content, metadata ] = pgmdmetaextractfields(filestr, metadata)
-  ;[ content, metadata ] = metaInlineItems.reduce((acc, item) => {
+  // returns [content, metadata]
+  return metaInlineItems.reduce((acc, item) => {
     const res = pgmdmetaextractinline(acc[0], item)
     if (res[1]) {
       acc[1][res[1]] = pgmdmetafieldvaluecase(res[1], res[2])
@@ -111,24 +109,32 @@ const pgmdparse = (filename, filestr) => {
     }
 
     return acc
-  }, [ content, metadata ])
+  }, [content, metadata])
+}
 
-  content = pgmdmarked.parse(content)
-
-  ;[ content, excerpt ] = pgmdextractexcerpt(content)
+const pgMdParseContents = (filestr, metadata = {}) => {
+  const [content, excerpt] = pgmdextractexcerpt(pgmdmarked.parse(filestr))
 
   metadata.content = content
-
   if (excerpt) {
     metadata.excerpthtml = excerpt
     metadata.excerptnohtml = htmldecoder.decode(striphtmltags(excerpt))
   }
   
-  return metadata
+  return metadata  
+}
+
+const pgMdParse = (filename, filestr) => {
+  const parsedFields = pgMdParseFields(filestr)
+  const parsedFieldsContent = parsedFields[0]
+  const parsedFieldsMetadata = parsedFields[1]
+
+  return pgMdParseContents(parsedFieldsContent, parsedFieldsMetadata)
 }
 
 export {
-  pgmdparse as default,
+  pgMdParse as default,
+  pgMdParseFields,
 
   metaTimeDate,
   metaTitle,
@@ -138,7 +144,7 @@ export {
   
   pgmdmarked,
   pgmdextractexcerpt,
-  pgmdparse,
+  pgMdParse,
   pgmdmetaextractinline,
   pgmdmetaextractfields
 }

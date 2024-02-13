@@ -1,3 +1,4 @@
+import url from 'node:url'
 import pgManifest from './pgManifest.js'
 
 import {
@@ -31,6 +32,10 @@ import {
   pgGraphResolverLocaleKeyGet
 } from './pgGraph.js'
 
+import {
+  pgMdParse
+} from './pgMd.js'
+
 
 // pending removal, should use event system
 import pgLog from './pgLog.js'
@@ -40,7 +45,8 @@ import {
 } from './pgUrl.js'
 
 import {
-  pgFsWriteObj
+  pgFsRead,
+  pgFsWriteObj  
 } from './pgFs.js'
 
 import pgGraphWrite from './pgGraphWrite.js'
@@ -394,9 +400,35 @@ q.tree = async (st, qst, args) => {
 }
 
 q.md = async (st, qst, args) => {
-  const path = args[0]
+  const path = args[0] || qst.target
 
   qst.target = path
+
+  // if no new lines and if it ends with 'md', build it
+
+  // consider parsePartial
+  // consider rename to pgMd.js
+  // consider todesign.js
+  // consider $lang and :pg vars
+  if (String(path).includes('\n')) {
+    await pgFsRead(path)
+  } else if (path.endsWith('.md')) {
+    const mdurl = new url.URL(path, st.metaurl)
+    const mdstr = await pgFsRead(mdurl)
+    const mdobj = pgMdParse(path, mdstr)
+
+    qst.target = mdobj
+    // const stat = await fs.stat(mdurl).catch(e => null)
+    // if (stat && stat.isFile())
+    //   return mdfile(opts, path)
+    // if (stat && stat.isDirectory())
+    //   return mddir(opts, path)
+    // throw pgerrmdfileordirnotfound(path)
+  } else if (path.endsWith('/')) {
+    // try to find dir?
+  }
+    
+  
   // console.log('go md', { path })
   /*
   const mdurl = new url.URL(path, opts.metaurl)
@@ -500,10 +532,17 @@ q.downcase = (st, qst) => {
   return qst
 }
 
-q.map = (st, qst, args) => {
-  qst.target = qst
-    .target.map(t => spend(st, qst, args[0], [t]))
+q.map = async (st, qst, args) => {
+  // qst.target = qst
+  //   .target.map(t => spend(st, qst, args[0], [t]))
 
+  const listold = qst.target
+  const listnew = []
+
+  for (const i in listold)
+    listnew[i] = await spend(st, qst, args[0], [listold[i]])
+
+  qst.target = listnew
   return qst
 }
 
