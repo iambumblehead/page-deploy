@@ -63,6 +63,7 @@ const pgmdmetaextractinline = (mdstr, metaTuple) => {
 
 const pgmdmetafieldvaluecase = (fieldname, fieldvalue) => {
   if (metaFieldNameIsDateRe.test(fieldname)) {
+    // date must be parseable with Date constructor ISO8601
     fieldvalue = new Date(fieldvalue).getTime()
   } else if (metaFieldNameIsArrRe.test(fieldname)) {
     fieldvalue = fieldvalue.split(metaFieldValIsArrRe)
