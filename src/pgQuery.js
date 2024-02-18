@@ -2,11 +2,16 @@ import url from 'node:url'
 import pgManifest from './pgManifest.js'
 
 import {
+  pgLocaleResolve
+} from './pgLocale.js'
+
+import {
   pgKeyLangRemove
 } from './pgKey.js'
 
 import {
   pgErrArgsNumber,
+  pgErrTableDoesNotExist,
   pgErrCannotUseNestedRow,
   pgErrNoAttributeInObject
 } from './pgErr.js'
@@ -15,7 +20,7 @@ import {
   pgEnumIsGraph,
   pgEnumNodeDesignTypeIs,
   pgEnumNodeDesignTypeResolverIs,
-  pgEnumGRAPHMETADESIGNNODEMAPS,
+  // pgEnumGRAPHMETADESIGNNODEMAPS,
   pgEnumSPECPROPTYPELOOKUPisValidRe,
   // pgEnumIsNodeDesign,
   pgEnumTypeERROR,
@@ -27,6 +32,31 @@ import {
   pgEnumIsChainShallow,
   pgEnumIsChain
 } from './pgEnum.js'
+
+import {
+  // mmDbStateAggregate,
+  // mmDbStateDbCreate,
+  // mmDbStateDbDrop,
+  // pgDbStateDbGet,
+  // pgDbStateTableSet,
+  pgDbStateTableGet,
+  pgDbStateTableGetResolved
+  // mmDbStateTableIndexAdd,
+  // mmDbStateTableGetIndexNames,
+  // mmDbStateTableGetIndexTuple,
+  // mmDbStateTableGetPrimaryKey,
+  // mmDbStateTableCursorSet,
+  // mmDbStateTableDocCursorSet,
+  // mmDbStateTableCursorSplice,
+  // mmDbStateTableDocCursorSplice,
+  // mmDbStateTableCursorsPushChanges,
+  // mmDbStateTableCursorsGetOrCreate,
+  // mmDbStateTableDocCursorsGetOrCreate,
+  // mmDbStateTableConfigGet,
+  // mmDbStateTableCreate,
+  // mmDbStateTableDrop,
+  // mmDbStateDbConfigGet
+} from './pgDbState.js'
 
 import {
   pgGraphResolverLocaleKeyGet
@@ -274,11 +304,45 @@ const spend = async (db, qst, qspec, rows, d = 0, type = typeof qspec, f = null)
   return f
 }
 
-q.t = (st, qst, args) => {
+const mockdbReqlQueryOrStateDbName = (qst, db) => (
+  qst.db || db.dbSelected)
+
+// as well as resolving locale sources, also constructs
+// additional options around those, such as priortiy locale
+// lists using list of locale derived from the sources
+const mockdbi18nResolved = async (st, qst) => {
+  const dbname = mockdbReqlQueryOrStateDbName(qst, st)
+  const i18ntable = pgDbStateTableGet(st, dbname, 'i18n')
+  const i18ndoc = (i18ntable || [])[0]
+
+  if (!i18ndoc || i18ndoc.resolved) {
+    return i18ndoc
+  }
+
+  if (i18ndoc.csv && i18ndoc.csv.endsWith('.csv')) {
+    i18ndoc.csv = await pgFsRead(new url.URL(i18ndoc.csv, st.metaurl))
+    i18ndoc.priority = st.i18nPriority || i18ndoc.priority
+      || (i18ndoc.csv && i18ndoc.csv.match(/(?<=")\w\w\w?-\w\w(?=")/g))
+      || ['eng-US']
+  }
+
+  if (!i18ndoc.priority) {
+    i18ndoc.priority = st.i18nPriority || ['eng-US']
+  }
+
+  return i18ndoc
+}
+
+// 'i' for 'i18n'
+q.i = async (st, qst, args) => {
   const key = args[0]
   const valdefault = args[1]
+  const i18nDoc = await mockdbi18nResolved(st, qst)
 
-  qst.target = st.i18n(key, valdefault, st.lang)
+  // todo: rename 'lang' to 'localeId' here (later)
+  qst.target = typeof st.i18nResolve === 'function'
+    ? st.i18nResolve(st, i18nDoc, key, valdefault, st.lang)
+    : pgLocaleResolve(st, i18nDoc, key, valdefault, st.lang)
 
   return qst
 }
@@ -333,7 +397,6 @@ q.typensprop = (st, qst, args) => {
   const nslookup = args[0]
   const outerprop = st.outerprop
   const nodekey = node && node.key
-  // const nodepath = pgKeyLangRemove(node.key)
   const nsfull = pgEnumSPECPROPTYPELOOKUPisValidRe.test(nslookup)
     ? nslookup : `subj.${nslookup}`
   const propfull = (nodekey && !nslookup.startsWith('part.'))
@@ -355,11 +418,17 @@ q.typensprop = (st, qst, args) => {
 }
 
 q.graph = async (st, qst, args) => {
-  if (Array.isArray(qst.target)) {
-    qst.target = await pgGraphBuild(qst.target, st)
-  } else {
-    throw new Error('unknown target for graph')
-  }
+  const tree = args[0]
+
+  if (!Array.isArray(tree))
+    throw new Error('unknown target for graph (needs tree)')
+
+  // list of languages used when building the graph
+  st.i18nPriority = st.i18nPriority
+    || (await mockdbi18nResolved(st, qst) || {}).priority
+    || ['eng-US']
+
+  qst.target = await pgGraphBuild(tree, st)
 
   return qst
 }
@@ -378,18 +447,30 @@ q.manifest = async (st, qst, args) => {
 }
 
 q.write = async (st, qst, args) => {
+  const target = qst.target
+  const writeopts = args[0] || {}
+
+  if (Array.isArray(target)) {
+    for (const i in target)
+      await q.write(st, Object.assign({}, qst, { target: target[i] }), args)
+
+    return qst
+  }
+
+  const newst = Object.assign({}, st, writeopts)
+
   if (pgEnumIsGraph(qst.target)) {
-    await pgGraphWrite(qst.target, st)
+    await pgGraphWrite(qst.target, newst)
   } else if (qst.target) { // check if manifest
-    // check for ...
     await pgFsWriteObj(
-      st, pgUrlManifestCreate(st), qst.target)
-    pgLog(st, JSON.stringify(qst.target, null, '  '))
+      newst, pgUrlManifestCreate(newst), qst.target)
+    pgLog(newst, JSON.stringify(qst.target, null, '  '))
+  } else {
+    throw new Error('unsupported write target')
   }
 
   return qst
 }
-
 
 q.tree = async (st, qst, args) => {
   const tree = args[0]
@@ -405,10 +486,6 @@ q.md = async (st, qst, args) => {
   qst.target = path
 
   // if no new lines and if it ends with 'md', build it
-
-  // consider parsePartial
-  // consider rename to pgMd.js
-  // consider todesign.js
   // consider $lang and :pg vars
   if (String(path).includes('\n')) {
     await pgFsRead(path)
@@ -418,28 +495,9 @@ q.md = async (st, qst, args) => {
     const mdobj = pgMdParse(path, mdstr)
 
     qst.target = mdobj
-    // const stat = await fs.stat(mdurl).catch(e => null)
-    // if (stat && stat.isFile())
-    //   return mdfile(opts, path)
-    // if (stat && stat.isDirectory())
-    //   return mddir(opts, path)
-    // throw pgerrmdfileordirnotfound(path)
   } else if (path.endsWith('/')) {
     // try to find dir?
   }
-    
-  
-  // console.log('go md', { path })
-  /*
-  const mdurl = new url.URL(path, opts.metaurl)
-  const stat = await fs.stat(mdurl).catch(e => null)
-  if (stat && stat.isFile())
-    return mdfile(opts, path)
-  if (stat && stat.isDirectory())
-    return mddir(opts, path)
-
-    throw pgerrmdfileordirnotfound(path)
-  */
 
   return qst
 }
@@ -594,13 +652,13 @@ q.without = (st, qst, args) => {
 
 // Call an anonymous function using return values from other
 // ReQL commands or queries as arguments.
-q.do = (st, qst, args) => {
+q.do = async (st, qst, args) => {
   const [doFn] = args.slice(-1)
 
   if (pgEnumIsChain(doFn)) {
     qst.target = args.length === 1
-      ? spend(st, qst, doFn, [qst.target])
-      : spend(st, qst, doFn, args.slice(0, -1))
+      ? await spend(st, qst, doFn, [qst.target])
+      : await spend(st, qst, doFn, args.slice(0, -1))
 
     if (pgEnumIsQueryArgsResult(qst.target))
       qst.target = reqlArgsParse(qst.target)[0]
@@ -620,10 +678,9 @@ q.or = async (st, qst, args) => {
     args = args.slice(1)
   }
 
-  console.log('OR called', rows, args, qst.target)
-//  qst.target = args.reduce((current, arg) => (
-//    current || spend(st, qst, arg, rows)
-//  ), qst.target)
+  // qst.target = args.reduce((current, arg) => (
+  //   current || spend(st, qst, arg, rows)
+  // ), qst.target)
 
   return qst
 }
@@ -778,9 +835,6 @@ q.forEach =  (st, qst, args) => {
   return qst
 }
 
-// https://stackoverflow.com/questions/17415579 \
-//  /how-to-iso-8601-format-a-date-with-timezone-offset-in-javascript \
-//  /17415677#17415677
 q.toISO8601 = (st, qst, args) => {
   const date = qst.target
   const tzo = -date.getTimezoneOffset()
@@ -798,6 +852,23 @@ q.toISO8601 = (st, qst, args) => {
 
   return qst
 }
+
+q.table = async (st, qst, args) => {
+  const tablename = args[0]
+  const dbName = mockdbReqlQueryOrStateDbName(qst, st)
+  const table = await pgDbStateTableGetResolved(st, dbName, tablename)
+
+  if (!Array.isArray(table))
+    throw pgErrTableDoesNotExist(dbName, tablename)
+
+  qst.tablename = tablename
+  qst.tablelist = table
+  qst.target = table.slice()
+
+  return qst
+}
+
+q.table.fn = q.getField
 
 
 export default Object.assign(spend, q)

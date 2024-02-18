@@ -1,3 +1,6 @@
+const pgEnumLOCALETYPEUNIVERSALREGION = 'ZZ'
+const pgEnumLOCALETYPEUNIVERSALLANG = 'zzz'
+
 const pgEnumREFTYPELOCAL = 'local-ref'
 
 const pgEnumSPECPROPTYPEDEF = 'def' // default
@@ -148,5 +151,8 @@ export {
 
   // pgEnumIsNodeDesign,
   pgEnumNodeDesignTypeIs,
-  pgEnumNodeDesignTypeResolverIs
+  pgEnumNodeDesignTypeResolverIs,
+
+  pgEnumLOCALETYPEUNIVERSALREGION,
+  pgEnumLOCALETYPEUNIVERSALLANG
 }

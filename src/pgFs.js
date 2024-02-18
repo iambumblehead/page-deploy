@@ -5,9 +5,15 @@ import {
   pgLogWriteUrl
 } from './pgLog.js'
 
+const pgFsStat = async fileOrDir => (
+  fs.stat(fileOrDir).catch(() => null))
+
 const pgFsDirExists = async dir => (
   dir = await fs.stat(dir).catch(() => null),
   dir && dir.isDirectory())
+
+const pgFsDirRead = async dir => (
+  fs.readdir(dir))
 
 const pgFsFileExists = async dir => (
   dir = await fs.stat(dir).catch(() => null),
@@ -38,10 +44,12 @@ const pgFsDirRmDir = async dir => (
     fs.rm(dir, { recursive: true }))
 
 export {
+  pgFsStat,
   pgFsRead,
   pgFsWrite,
   pgFsWriteObj,
+  pgFsFileExists,
   pgFsDirRmDir,
   pgFsDirExists,
-  pgFsFileExists
+  pgFsDirRead
 }
