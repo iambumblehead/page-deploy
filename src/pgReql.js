@@ -38,7 +38,6 @@ const buildDb = (tables, config) => {
     dbState = pgDbStateTableCreate(
       dbState, dbState.dbSelected, tablelist[0],
       tableConfig[0])
-    console.log('tablelist[0]', tablelist[0])
     dbState = pgDbStateTableSet(
       dbState, dbState.dbSelected, tablelist[0],
       tablelist.slice(tableConfig ? 2 : 1))
