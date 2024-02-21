@@ -1,5 +1,9 @@
 import { randomUUID } from 'crypto'
-import { pgEnumIsChainShallow } from './pgEnum.mjs'
+import { pgEnumIsChainShallow } from './pgEnum.js'
+
+import {
+  pgLocaleIdResolve
+} from './pgLocale.js'
 
 const isNumOrStr = (o, to = typeof o) => (
   to === 'number' || to === 'string')
@@ -12,10 +16,20 @@ const pgTableIdOrDocAsPrimaryKey = (idOrDoc, primaryKey) => (
     ? idOrDoc
     : idOrDoc && idOrDoc[primaryKey])
 
-const pgTableDocGet = (table, idOrDoc, primaryKey) => {
+// experimental for now, should return an ordered list
+// an exact match is returned immediately, fallback documents
+// added to list and best match returned
+const pgTableDocGet = (table, idOrDoc, primaryKey, lang) => {
   const id = pgTableIdOrDocAsPrimaryKey(idOrDoc, primaryKey)
-  
-  return table.find(doc => id === doc[primaryKey]) || null
+  const idLang = id + '.' + pgLocaleIdResolve(lang)
+  const isDocId = doc => {
+    const docId = doc[primaryKey]
+
+    return docId === idLang
+      || docId === id
+  }
+
+  return table.find(isDocId) || null
 }
 
 const pgTableDocsGet = (table, idOrDocs = [], primaryKey = 'id') => {

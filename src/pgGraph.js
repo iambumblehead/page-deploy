@@ -1,11 +1,13 @@
 import {
   pgEnumGRAPHMETADESIGNNODEMAPS,
+  pgEnumGRAPHMETADETAILS,
   pgEnumGRAPHTYPE
 } from './pgEnum.js'
 
-
-const pgGraphCreate = () => ({
-  nodetype: pgEnumGRAPHTYPE
+const pgGraphCreate = details => ({
+  nodetype: pgEnumGRAPHTYPE,
+  [pgEnumGRAPHMETADETAILS]: details,
+  [pgEnumGRAPHMETADESIGNNODEMAPS]: {}
 })
 
 const pgGraphSet = (graph, key, val) => (
@@ -73,6 +75,10 @@ const pgGraphResolverLocaleKeyGet = (graph, locale, id) => {
   return idNodeMaps[locale]
 }
 
+const pgGraphGetRootKeys = graph => (
+  Object.keys(graph)
+    .filter(key => key.startsWith('/:')))
+
 export {
   pgGraphSet,
   pgGraphSetNode,
@@ -80,6 +86,7 @@ export {
   pgGraphSetChildEdge,
   pgGraphSetChild,
   pgGraphCreate,
+  pgGraphGetRootKeys,
   pgGraphRm,
   pgGraphResolverLocaleKeySet,
   pgGraphResolverLocaleKeyGet

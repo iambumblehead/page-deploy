@@ -5,17 +5,25 @@ import {
   pgEnumREFTYPELOCAL
 } from './pgEnum.js'
 
-// $lang-$region
-const pgKeyLocaleRe = /\/:\w\w\w?-\w\w$/
+import {
+  pgLocaleKeyMatchRe
+} from './pgLocale.js'
 
 // key:eng-US => /path/key/eng-US.json
 const pgKeyPathRelCreate = (opts, key) => {
-  const match = key.match(pgKeyLocaleRe)
-  const langlocalesuffix = match[0]
+  const pathSepRe = /\//g
+  const match = key.match(pgLocaleKeyMatchRe)
+  const localeSuffix = match[1]
 
-  key = key.slice(1, -langlocalesuffix.length).replace(/\//g, '-')
+  // '/my/path/:eng'
+  //
+  // 1. -> 'my-path'
+  // 2.    -> 'root-my-path'
+  // 3.        -> 'root-my-path/eng.json'
+  //
+  key = key.slice(1, -(match[0].length + 1)).replace(pathSepRe, '-')
   key = key ? 'root-' + key : 'root'
-  key = key + '/' + `${langlocalesuffix.slice(2)}.json`
+  key = key + '/' + localeSuffix + '.json'
 
   return key
 }
@@ -44,16 +52,13 @@ const pgKeyRefChildCreate = (opts, keyparent, keychild) => {
 // ('/:eng-US', '/:eng-US') => '/:eng-US'
 // ('/:eng-US', 'label/:eng-US') => '/label/:eng-US'
 // ('/label/:eng-US', 'checkbox/:eng-US') => '/label/checkbox/:eng-US'
-const pgKeyChildLangLocaleCreate = (parentid, childname) => {
-  const res = parentid.replace(pgKeyLocaleRe, '')
-    + (childname.startsWith('/') ? '' : '/') + childname
+const pgKeyChildLangLocaleCreate = (key, childName) => (
+  key.replace(pgLocaleKeyMatchRe, childName))
 
-  return res
-}
-
-// rename key path sans
+// (below example needs to be verified)
+// '/path/to/doc/:eng-US' -> '/path/to/doc/'
 const pgKeyLangRemove = key => (
-  key.replace(pgKeyLocaleRe, ''))
+  key.replace(pgLocaleKeyMatchRe, ''))
 
 const pgKeyIsRoot = key => (
   key && pgKeyLangRemove(key) === '')

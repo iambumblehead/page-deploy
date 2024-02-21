@@ -54,5 +54,9 @@ const pgReqlArgs = (arg0, arg1) => (
 export default (opts, configList) => {
   const args = pgReqlArgs(opts, configList)
 
+  args[0].i18nDoc = (
+    (args[1] || [])
+      .find(table => table[0] === 'i18n') || [])[1]
+
   return buildChain(pgOpts(args[0]), buildDb(args[1]))
 }

@@ -1,5 +1,6 @@
 const pgEnumLOCALETYPEUNIVERSALREGION = 'ZZ'
 const pgEnumLOCALETYPEUNIVERSALLANG = 'zzz'
+const pgEnumLOCALETYPEUNIVERSALID = 'zzz-ZZ'
 
 const pgEnumREFTYPELOCAL = 'local-ref'
 
@@ -35,6 +36,7 @@ const pgEnumSPECPROPTYPELOOKUPisValidRe = new RegExp(
   `^(${pgEnumSPECPROPTYPES.join('|')})\\.`)
 
 const pgEnumGRAPHMETADESIGNNODEMAPS = 'META_DESIGNNODEMAPS'
+const pgEnumGRAPHMETADETAILS = 'META_DETAILS'
 
 const pgEnumGRAPHTYPE = 'PGGRAPH'
 
@@ -124,6 +126,7 @@ export {
 
   pgEnumGRAPHTYPE,
   pgEnumGRAPHMETADESIGNNODEMAPS,
+  pgEnumGRAPHMETADETAILS,
 
   pgEnumIsGraph,
   pgEnumNODETYPEPATH,
@@ -153,6 +156,7 @@ export {
   pgEnumNodeDesignTypeIs,
   pgEnumNodeDesignTypeResolverIs,
 
+  pgEnumLOCALETYPEUNIVERSALID,
   pgEnumLOCALETYPEUNIVERSALREGION,
   pgEnumLOCALETYPEUNIVERSALLANG
 }

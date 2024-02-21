@@ -5,9 +5,7 @@ import {
   pgNodeDesignRun,
   pgNodeDesign,
   pgNodeDesignRoutesIs,
-  pgNodeDesignLangLocaleKeyCreate,
-  pgNodeDesignLangGrouped,
-  pgNodeDesignChildsLangGrouped
+  pgNodeDesignLangLocaleKeyCreate
 } from './pgNodeDesign.js'
 
 import {
@@ -18,6 +16,13 @@ import {
   pgGraphSetRouteEdge,
   pgGraphResolverLocaleKeySet
 } from './pgGraph.js'
+
+import {
+  pgLocaleKeyCreate,
+  pgLocaleGroupsNodeDesign,
+  pgLocaleGroupsNodeDesignChilds,
+  pgLocaleOptsLocaleLangStart
+} from './pgLocale.js'
 
 import {
   pgEnumNODETYPEPATH,
@@ -60,9 +65,9 @@ const pgGraphBuildNodeRoutes = async (opts, graph, parentKey, node, routes) => {
     opts, graph, parentKey, node, routes.slice(1))
 }
 
-const pgGraphBuildNodeChilds = async (opts, graph, parentid, nodespec) => {
+const pgGraphBuildNodeChilds = async (opts, graph, parentKey, nodespec) => {
   const nodechildlanglocalegroups = (
-    pgNodeDesignChildsLangGrouped(opts, nodespec))
+    pgLocaleGroupsNodeDesignChilds(opts, nodespec))
 
   for (const nodechildlanglocalegroup of nodechildlanglocalegroups) {
     const childll = nodechildlanglocalegroup[0]
@@ -73,7 +78,7 @@ const pgGraphBuildNodeChilds = async (opts, graph, parentid, nodespec) => {
 
       if (pgNodeDesignRoutesIs(childllresolver)) {
         graph = pgGraphSetChildEdge(
-          graph, parentid, childll, pgEnumNODETYPEPATH)
+          graph, parentKey, childll, pgEnumNODETYPEPATH)
       } else {
         const childDesign = pgEnumNodeDesignTypeResolverIs(childllresolver)
           ? childllresolver()
@@ -81,7 +86,7 @@ const pgGraphBuildNodeChilds = async (opts, graph, parentid, nodespec) => {
 
         // different childs list possible each language
         const nodelanglocalekey = pgNodeDesignLangLocaleKeyCreate(
-          childll, parentid, childDesign)
+          childll, parentKey, childDesign)
 
         graph = pgGraphResolverLocaleKeySet(
           graph, childll, nodelanglocalekey, childDesign.nodescriptid)
@@ -91,9 +96,9 @@ const pgGraphBuildNodeChilds = async (opts, graph, parentid, nodespec) => {
           Object.assign(childDesign, { key: nodelanglocalekey }))
         const childDesignHydratedChilds =
           childDesignHydrated.nodechilds || []
-        
+
         graph = pgGraphSetChild(
-          graph, parentid,
+          graph, parentKey,
           childll, nodelanglocalekey, childDesignHydrated)
 
         if ((childDesignHydratedChilds || []).length) {
@@ -109,8 +114,7 @@ const pgGraphBuildNodeChilds = async (opts, graph, parentid, nodespec) => {
 
 const pgGraphBuildNode = async (opts, graph, parentkey, nodespec) => {
   // /:eng-US <-- root node looks like this
-  // const parentKeyIsRoot = pgKeyIsRoot(parentkey)
-  const langlocalegroups = pgNodeDesignLangGrouped(opts, nodespec)
+  const langlocalegroups = pgLocaleGroupsNodeDesign(opts, nodespec)
   const nodename = nodespec.nodespec.name // eg, '/'
   const noderoutes = nodespec.nodechilds
     .find(c => pgNodeDesignRoutesIs(c)) || []
@@ -121,10 +125,10 @@ const pgGraphBuildNode = async (opts, graph, parentkey, nodespec) => {
     const nodelanglocale = langlocalegroup[0]
     const noderesolver = langlocalegroup[1]
     const nodelanglocalename = (
-      nodename === '/' ? '' : nodename) + '/:' + nodelanglocale
+      nodename === '/' ? '' : nodename + '/') + ':' + nodelanglocale
     const nodelanglocalekey = pgKeyChildLangLocaleCreate(
       parentkey, nodelanglocalename)
-
+    
     graph = pgGraphSet(graph, nodelanglocalekey, nodespec)
     graph = nodeIsRoot ? graph : pgGraphSetRouteEdge(
       graph, parentkey, nodelanglocale, nodelanglocalekey)
@@ -140,9 +144,14 @@ const pgGraphBuildNode = async (opts, graph, parentkey, nodespec) => {
 const pgGraphBuild = async (dtree, opts) => {
   opts = pgOpts(opts)
 
-  const dNodeRoot = pgNodeDesign('uiroot')('/', null, dtree)()
+  const treemanifest = dtree[0]
+  const tree = dtree[1]
+  const rootPath = '/'
+  const rootDNode = pgNodeDesign('uiroot')(rootPath, null, tree)()
+  const rootLocaleId = pgLocaleOptsLocaleLangStart(opts)
+  const rootKey = pgLocaleKeyCreate(rootPath, rootLocaleId)
   const graph = await pgGraphBuildNode(
-    opts, pgGraphCreate(), '/:eng-US', dNodeRoot)
+    opts, pgGraphCreate(treemanifest), rootKey, rootDNode)
 
   return graph
 }

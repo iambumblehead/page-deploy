@@ -40,6 +40,11 @@ const pgErrTableDoesNotExist = (dbName, tableName) => new Error(
   'Table `:tableName` does not exist.'
     .replace(/:tableName/, [dbName, tableName].join('.')))
 
+const pgErrPrimaryKeyWrongType = primaryKey => new Error(
+  ('Primary keys must be either a'
+   + ' number, string, bool, pseudotype or array (got type :type)')
+    .replace(/:type/, String(typeof primaryKey).toUpperCase()))
+
 const pgErrArgsNumber = (queryId, takes = 0, given = 1, atLeast) => new Error(
   '`:queryId` takes :takesArgs :argument, :givenArgs provided.'
     .replace(/:queryId/, queryId)
@@ -93,5 +98,6 @@ export {
   pgErrInvalidTableName,
   pgErrInvalidDbName,
   pgErrTableExists,
-  pgErrTableDoesNotExist
+  pgErrTableDoesNotExist,
+  pgErrPrimaryKeyWrongType
 }

@@ -14,6 +14,11 @@ import {
   pgEnumNODETYPEPATH
 } from './pgEnum.js'
 
+import {
+  pgLocaleKeyCreate,
+  pgLocaleOptsLocaleLangStart
+} from './pgLocale.js'
+
 const cache = {}
 
 const pgGraphWriteIsRecursed = (c => key => (
@@ -74,15 +79,18 @@ const pgGraphWriteLang = async (opts, lang, graph, key, keyparent) => {
 
 
 const pgGraphWrite = async (graph, opts) => {
-  // opts = pgOpts(opts)
   await pgFsDirRmDir(opts.outputDir)
 
   // unknown necessary lang+locale combinations, until children are processed
   // fallback to 'default' eg, en-US
   // eng-US, jap-US, eng-JP, jap-JP  
-  const langs = opts.i18nPriority
+  // const langs = opts.i18nPriority
+  const langs = [pgLocaleOptsLocaleLangStart(opts)]
+  const rootPath = '/'
+
   for (const lang of langs) {
-    await pgGraphWriteLang(opts, lang, graph, '/:' + lang)
+    await pgGraphWriteLang(
+      opts, lang, graph, pgLocaleKeyCreate(rootPath, lang))
   }
 }
 

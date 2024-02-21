@@ -8,6 +8,14 @@ import {
   pgKeyRouteEncode
 } from './pgKey.js'
 
+import {
+  pgGraphGetRootKeys
+} from './pgGraph.js'
+
+import {
+  pgLocaleKeyMatchRe
+} from './pgLocale.js'
+
 // generates something like below
 // [
 //    '/',
@@ -28,7 +36,6 @@ import {
 //      '/media/:article'
 //    ]]
 //  ]
-
 const pgManifestRoutes = (graph, key, lang, noderoutes, routes = []) => {
   if (!noderoutes.length)
     return routes
@@ -45,6 +52,7 @@ const pgManifestRoute = (graph, key, lang) => {
   const noderoutes = node['route:' + lang] || []
   const routes = pgManifestRoutes(graph, key, lang, noderoutes)
   const route = pgKeyRouteEncode(key)
+    .replace(pgLocaleKeyMatchRe, '')
   
   return routes.length
     ? [ route, [ routes.flat() ]]
@@ -72,10 +80,12 @@ const pgManifestBuildIdCreate = async opts => {
 }
 
 const pgManifestCreate = async (opts, graph, arg) => {
+  const rootKeys = pgGraphGetRootKeys(graph)
+  const rootKey = rootKeys[0]
+  const rootKeyLocaleId = rootKey.match(pgLocaleKeyMatchRe)[1]
   const manifestroutes = pgManifestRoute(
-    graph, '/:eng-US', 'eng-US')
+    graph, rootKey, rootKeyLocaleId)
 
-  // console.log(opts)
   return {
     buildid: await pgManifestBuildIdCreate(opts),
     deploy: opts.deploytype,

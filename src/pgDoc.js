@@ -48,6 +48,10 @@ const pgDoc = async cUrl => {
 
   // wip
   doc.id = path.basename(href, path.extname(href))
+    .slice(3, -4) // remove /(^pg\..|\.doc$)/
+    .replace(localeId, locale.join('-'))
+
+  // console.log('id', doc.id)
   // doc.id = (doc.id || doc.name || doc.title)
   //   + (localeId ? '.' + localeId : '')
 

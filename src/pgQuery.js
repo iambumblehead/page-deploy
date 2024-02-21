@@ -2,7 +2,8 @@ import url from 'node:url'
 import pgManifest from './pgManifest.js'
 
 import {
-  pgLocaleResolve
+  pgLocaleDocResolve,
+  pgLocaleIdResolve
 } from './pgLocale.js'
 
 import {
@@ -13,7 +14,8 @@ import {
   pgErrArgsNumber,
   pgErrTableDoesNotExist,
   pgErrCannotUseNestedRow,
-  pgErrNoAttributeInObject
+  pgErrNoAttributeInObject,
+  pgErrPrimaryKeyWrongType
 } from './pgErr.js'
 
 import {
@@ -40,11 +42,11 @@ import {
   // pgDbStateDbGet,
   // pgDbStateTableSet,
   pgDbStateTableGet,
-  pgDbStateTableGetResolved
+  pgDbStateTableGetResolved,
   // mmDbStateTableIndexAdd,
   // mmDbStateTableGetIndexNames,
   // mmDbStateTableGetIndexTuple,
-  // mmDbStateTableGetPrimaryKey,
+  pgDbStateTableGetPrimaryKey,
   // mmDbStateTableCursorSet,
   // mmDbStateTableDocCursorSet,
   // mmDbStateTableCursorSplice,
@@ -57,6 +59,10 @@ import {
   // mmDbStateTableDrop,
   // mmDbStateDbConfigGet
 } from './pgDbState.js'
+
+import {
+  pgTableDocGet
+} from './pgTable.js'
 
 import {
   pgGraphResolverLocaleKeyGet
@@ -95,6 +101,9 @@ const reqlArgsParse = obj => (
 
 const reqlArgsCreate = value => (
   { [pgEnumQueryArgTypeARGS]: value })
+
+const isNumOrStr = (o, to = typeof o) => (
+  to === 'number' || to === 'string')
 
 // created by 'asc' and 'desc' queries
 const isSortObj = obj => isLookObj(obj)
@@ -152,7 +161,7 @@ const spendRecs = async (db, qst, reqlObj, rows) => {
   // const val = reqlObj.recs.reduce((qstNext, rec, i) => {
   for (let i in reqlObj.recs) {
     let rec = reqlObj.recs[i]
-// const val = reqlObj.recs.reduce((qstNext, rec, i) => {
+    // const val = reqlObj.recs.reduce((qstNext, rec, i) => {
     // avoid mutating original args w/ suspended values
     const queryArgs = rec[1].slice()
 
@@ -342,7 +351,7 @@ q.i = async (st, qst, args) => {
   // todo: rename 'lang' to 'localeId' here (later)
   qst.target = typeof st.i18nResolve === 'function'
     ? st.i18nResolve(st, i18nDoc, key, valdefault, st.lang)
-    : pgLocaleResolve(st, i18nDoc, key, valdefault, st.lang)
+    : pgLocaleDocResolve(st, i18nDoc, key, valdefault, st.lang)
 
   return qst
 }
@@ -433,38 +442,19 @@ q.graph = async (st, qst, args) => {
   return qst
 }
 
-q.manifest = async (st, qst, args) => {
-  if (!pgEnumIsGraph(qst.target)) {
-    throw new Error('manifest must be constructed around a graph')
-  }
-
-  args = await spend(st, qst, args)
-  console.log('args', args[0])
-  qst.target = await pgManifest(
-    Object.assign({}, st, args[0]), qst.target)
-  
-  return qst
-}
-
 q.write = async (st, qst, args) => {
   const target = qst.target
   const writeopts = args[0] || {}
-
-  if (Array.isArray(target)) {
-    for (const i in target)
-      await q.write(st, Object.assign({}, qst, { target: target[i] }), args)
-
-    return qst
-  }
-
   const newst = Object.assign({}, st, writeopts)
 
-  if (pgEnumIsGraph(qst.target)) {
-    await pgGraphWrite(qst.target, newst)
-  } else if (qst.target) { // check if manifest
+  if (pgEnumIsGraph(target)) {
+    await pgGraphWrite(target, newst)
+    const manifest = await pgManifest(
+      Object.assign({}, st, target.META_DETAILS), target)
+
     await pgFsWriteObj(
-      newst, pgUrlManifestCreate(newst), qst.target)
-    pgLog(newst, JSON.stringify(qst.target, null, '  '))
+      newst, pgUrlManifestCreate(newst), manifest)
+    pgLog(newst, JSON.stringify(manifest, null, '  '))
   } else {
     throw new Error('unsupported write target')
   }
@@ -870,5 +860,41 @@ q.table = async (st, qst, args) => {
 
 q.table.fn = q.getField
 
+q.get = async (cst, qst, args) => {
+  const queryLocale = pgLocaleIdResolve(cst.lang)
+  const primaryKeyValue = await spend(cst, qst, args[0])
+  const dbName = mockdbReqlQueryOrStateDbName(qst, cst)
+  const primaryKey = pgDbStateTableGetPrimaryKey(cst, dbName, qst.tablename)
+  const tableDoc = pgTableDocGet(
+    qst.target, primaryKeyValue, primaryKey, queryLocale)
+  // || pgLocaleIdResolve
+
+  if (args.length === 0) {
+    throw pgErrArgsNumber('get', 1, 0)
+  }
+
+  if (!tableDoc) {
+    throw new Error('temp... doc not found!', {
+      primaryKeyValue, queryLocale
+    })
+  }
+
+  if (!isNumOrStr(primaryKeyValue) && !Array.isArray(primaryKeyValue)) {
+    throw pgErrPrimaryKeyWrongType(primaryKeyValue)
+  }
+
+  // define primaryKeyValue on qst to use in subsequent change() query
+  // for the case of change() request for document which does not exist (yet)
+  qst.primaryKeyValue = primaryKeyValue
+  qst.target = tableDoc || null
+
+  return qst
+}
+
+q.get.fn = (db, qst, args) => {
+  qst.target = spend(db, qst, args[0], [qst.target])
+
+  return qst
+}
 
 export default Object.assign(spend, q)

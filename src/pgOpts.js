@@ -1,6 +1,10 @@
 import castas from 'castas'
 import path from 'path'
 
+import {
+  pgLocaleTreeMapCreate
+} from './pgLocale.js'
+
 const defaultopts = {
   inputDir: './convert/',
   outputDir: './converted/',
@@ -25,17 +29,16 @@ export default useropts => {
   opt.verbose = typeof useropts.verbose === 'number'
     ? useropts.verbose : 1
   opt.metaurl = metaurl
-  opt.inputDir = castas.str(useropts.inputDir, './')
+
+  // opt.inputDir = castas.str(useropts.inputDir, './')
   opt.publicPath = castas.str(useropts.publicPath, './spec')
   opt.outputDir = castas.str(useropts.outputDir, './build/spec')
   opt.supportDir = castas.str(useropts.supportDir, '')
 
-  opt.appname = useropts.appname
-    || 'app.gani'
-  opt.appdescription = useropts.appdescription
-    || 'gani app description'
   opt.deploytype = useropts.deploytype || 'flat'
-  opt.i18nPriority = useropts.i18nPriority
+  opt.i18nDoc = useropts.i18nDoc
+  opt.i18nDoc.localeTreePriorityMap = pgLocaleTreeMapCreate(
+    opt.i18nDoc.localeTreePriorityList)
   
   return opt
 }

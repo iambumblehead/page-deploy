@@ -1,5 +1,4 @@
 import {
-  // pgEnumNODETYPEPATH,
   pgEnumNODEDESIGNTYPE,
   pgEnumNODEDESIGNTYPERESOLVER,
   pgEnumSPECPROPTYPEisValidRe,
@@ -8,6 +7,10 @@ import {
   pgEnumIsChainDeep,
   pgEnumIsChainANDGREEDY
 } from './pgEnum.js'
+
+import {
+  pgLocaleKeyCreate
+} from './pgLocale.js'
 
 import {
   pgKeyChildLangLocaleCreate
@@ -27,27 +30,6 @@ const pgNodeDesignRoutesIs = child => {
     && Array.isArray(child[0])
     && typeof child[0][0] === 'string'
 }
-
-// node childs may differ for language and/or locale combinations
-//
-// if grouped nodechildlangs defined
-//   return those
-// else if single nodechilds
-//   compose default nodechildlangs from tho
-const pgNodeDesignChildsLangGrouped = (opts, nodespec) => (
-  nodespec.nodechildlangs || (
-    nodespec.nodechilds
-      ? [[ opts.i18nPriority[0], nodespec.nodechilds ]]
-      : []))
-
-// dnode,
-//   => [['eng-US', dnode]]
-// [['eng-US', dnode], ['jap-JP', dnode]]
-//   => [['eng-US', dnode], ['jap-JP', dnode]]
-const pgNodeDesignLangGrouped = (opts, dnode) => (
-  Array.isArray(dnode)
-    ? dnode
-    : [[ opts.i18nPriority[0], dnode ]])
 
 const pgCreatorHelperArgSpecIsValid = nodespec => (
   nodespec === null || (
@@ -136,13 +118,13 @@ const pgNodeDesignRun = async (opts, ll, graph, child) => {
   })
 }
 
-const pgNodeDesignLangLocaleKeyCreate = (ll, parentKey, node) => {
+const pgNodeDesignLangLocaleKeyCreate = (localeId, parentKey, node) => {
   const nodename = node.nodespec.name
-  const nodelanglocalename = nodename + '/:' + ll
-  const nodelanglocalekey = pgKeyChildLangLocaleCreate(
-    parentKey, nodelanglocalename)
+  const nodekey = pgLocaleKeyCreate(
+    pgKeyChildLangLocaleCreate(parentKey, nodename) + '/', localeId)
 
-  return nodelanglocalekey
+  // { nodelanglocalekey: '/dataenv/:eng' }
+  return nodekey
 }
 
 const pgNodeDesign = pgname => (nodename, nodespec, nodechilds, m) => {
@@ -201,7 +183,5 @@ export {
   pgNodeDesignPropRun,
   pgNodeDesignChainRun,
   pgNodeDesignRoutesIs,
-  pgNodeDesignLangGrouped,
-  pgNodeDesignLangLocaleKeyCreate,
-  pgNodeDesignChildsLangGrouped
+  pgNodeDesignLangLocaleKeyCreate
 }
