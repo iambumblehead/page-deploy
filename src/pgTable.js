@@ -89,18 +89,32 @@ const pgTableSet = (table, docs) => {
   return [table]
 }
 
-const pgTableDocGetIndexValue = (doc, idxl, spend, qst, cst, idxValDefault) => {
+const pgTableDocSpecSpend = async (spend, cst, qst, spec, doc) => (
+  spend(cst, qst, spec, [doc]))
+
+const pgTableDocSpecSpendAll = async (spend, cst, qst, specs, doc, ac = []) => {
+  if (specs.length === 0)
+    return ac
+
+  ac.push(await spend(cst, qst, specs[0], [doc]))
+
+  return pgTableDocSpecSpendAll(spend, cst, qst, specs.slice(1), doc, ac)
+}
+
+const pgTableDocGetIndexValue = async (doc, idxl, spend, qst, cst, idxDef) => {
   const [indexName, spec] = idxl
 
   if (pgEnumIsChainShallow(spec)) {
-    idxValDefault = Array.isArray(spec)
-      ? spec.map(field => spend(cst, qst, field, [doc]))
-      : spend(cst, qst, spec, [doc])
+    idxDef = Array.isArray(spec)
+      ? await pgTableDocSpecSpendAll(spend, cst, qst, spec, doc)
+      : await pgTableDocSpecSpend(spend, cst, qst, spec, doc)
+      // ? spec.map(field => spend(cst, qst, field, [doc]))
+      // : spend(cst, qst, spec, [doc])
   } else {
-    idxValDefault = doc[indexName]
+    idxDef = doc[indexName]
   }
 
-  return idxValDefault
+  return idxDef
 }
 
 const pgTableDocHasIndexValueFn = (tableIndexTuple, indexValues, dbState) => {

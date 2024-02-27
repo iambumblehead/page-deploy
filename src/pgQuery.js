@@ -15,7 +15,8 @@ import {
   pgErrTableDoesNotExist,
   pgErrCannotUseNestedRow,
   pgErrNoAttributeInObject,
-  pgErrPrimaryKeyWrongType
+  pgErrPrimaryKeyWrongType,
+  pgErrNotATIMEpsuedotype
 } from './pgErr.js'
 
 import {
@@ -45,7 +46,7 @@ import {
   pgDbStateTableGetResolved,
   // mmDbStateTableIndexAdd,
   // mmDbStateTableGetIndexNames,
-  // mmDbStateTableGetIndexTuple,
+  pgDbStateTableGetIndexTuple,
   pgDbStateTableGetPrimaryKey,
   // mmDbStateTableCursorSet,
   // mmDbStateTableDocCursorSet,
@@ -61,7 +62,8 @@ import {
 } from './pgDbState.js'
 
 import {
-  pgTableDocGet
+  pgTableDocGet,
+  pgTableDocGetIndexValue
 } from './pgTable.js'
 
 import {
@@ -157,7 +159,7 @@ const spendRecs = async (db, qst, reqlObj, rows) => {
     rowMap: qst.rowMap || {},
     rowDepth: qst.rowDepth || 0
   }
-  
+
   // const val = reqlObj.recs.reduce((qstNext, rec, i) => {
   for (let i in reqlObj.recs) {
     let rec = reqlObj.recs[i]
@@ -505,7 +507,7 @@ q.md = async (st, qst, args) => {
 // question: should it be possible for qst.target to be defined here?
 //           even when ...
 //
-q.row = (st, qst, args) => {
+q.row = (cst, qst, args) => {
   if (args[0] === pgEnumQueryArgTypeARGSIG && !(args[1] in qst.rowMap)) {
     // keep this for development
     // console.log(qst.target, mockdbSpecSignature(reqlObj), args, qst.rowMap);
@@ -519,7 +521,7 @@ q.row = (st, qst, args) => {
   return qst
 }
 
-q.row.fn = (st, qst, args) => {
+q.row.fn = async (st, qst, args) => {
   if (typeof args[0] === 'string' && !(args[0] in qst.target)) {
     throw pgErrNoAttributeInObject(args[0])
   }
@@ -696,18 +698,18 @@ q.args = (st, qst, args) => {
   return qst
 }
 
-q.desc = (st, qst, args) => {
+q.desc = async (st, qst, args) => {
   qst.target = {
-    sortBy: spend(st, qst, args[0], [qst.target]),
+    sortBy: await spend(st, qst, args[0], [qst.target]),
     sortDirection: 'desc'
   }
 
   return qst
 }
 
-q.asc = (st, qst, args) => {
+q.asc = async (st, qst, args) => {
   qst.target = {
-    sortBy: spend(st, qst, args[0], [qst.target]),
+    sortBy: await spend(st, qst, args[0], [qst.target]),
     sortDirection: 'asc'
   }
 
@@ -891,8 +893,178 @@ q.get = async (cst, qst, args) => {
   return qst
 }
 
-q.get.fn = (db, qst, args) => {
-  qst.target = spend(db, qst, args[0], [qst.target])
+q.get.fn = async (db, qst, args) => {
+  qst.target = await spend(db, qst, args[0], [qst.target])
+
+  return qst
+}
+
+q.orderBy = async (cst, qst, args) => {
+  const queryTarget = qst.target
+  const queryOptions = pgEnumIsChain(args[0])
+    ? args[0]
+    : queryArgsOptions(args)
+  const queryOptionsIndex = await spend(cst, qst, queryOptions.index)
+  const indexSortBy = (
+    typeof queryOptionsIndex === 'object' && queryOptionsIndex.sortBy)
+  const indexSortDirection = (
+    typeof queryOptionsIndex === 'object' && queryOptionsIndex.sortDirection)
+      || 'asc'
+  const indexString = typeof queryOptionsIndex === 'string' && queryOptionsIndex
+  const argsSortPropValue = typeof args[0] === 'string' && args[0]
+  const indexName = indexSortBy || indexString || 'id'
+  let fieldSortDirection = (
+    typeof queryTarget === 'object' && queryTarget.sortDirection)
+  const dbName = mockdbReqlQueryOrStateDbName(qst, cst)
+  const tableIndexTuple = pgDbStateTableGetIndexTuple(
+    cst, dbName, qst.tablename, indexName)
+  const sortDirectionDefault = () => (
+    fieldSortDirection || indexSortDirection)
+  const sortDirection = (isAscending, dir = sortDirectionDefault()) => (
+    isAscending * (dir === 'asc' ? 1 : -1))
+
+  const getSortFieldValue = async doc => {
+    let value
+
+    // ex, queryOptions,
+    //  ({ index: r.desc('date') })
+    //  doc => doc('upvotes')
+    if (pgEnumIsChainShallow(queryOptions)) {
+      value = await spend(cst, qst, queryOptions, [doc])
+
+      const sortObj = sortObjParse(value)
+      if (sortObj) {
+        if (sortObj.sortDirection) {
+          fieldSortDirection = sortObj.sortDirection
+        }
+
+        //value = sortObj.sortBy
+        value = doc[sortObj.sortBy]
+      }
+    } else if (argsSortPropValue) {
+      value = doc[argsSortPropValue]
+    } else {
+      value = await pgTableDocGetIndexValue(
+        doc, tableIndexTuple, spend, qst, cst)
+    }
+
+    return value
+  }
+
+  if (!args.length) {
+    throw pgErrArgsNumber('orderBy', 1, args.length, true)
+  }
+
+  const queryTargetResolved = await Promise.all(
+    queryTarget.map(async doc => [await getSortFieldValue(doc), doc]))
+
+  qst.target = queryTargetResolved.sort((doctupa, doctupb) => (
+    sortDirection(doctupa[0] < doctupb[0] ? -1 : 1)
+  )).map(doctup => doctup[1])
+  // qst.target = queryTarget.sort((doca, docb) => {
+  //   const docaField = getSortFieldValue(doca, tableIndexTuple)
+  //   const docbField = getSortFieldValue(docb, tableIndexTuple)
+  //
+  //   return sortDirection(docaField < docbField ? -1 : 1)
+  // })
+
+  return qst
+}
+
+q.filter = async (db, qst, args) => {
+  // qst.ntarget = await Promise
+  //   .all(qst.target.map(t => spend(db, qst, args[0], [t])))
+  qst.target = await Promise
+    .all(qst.target.map(t => spend(db, qst, args[0], [t])))
+    .then(results => qst.target.filter((_, i) => results[i]))
+
+  // qst.target = qst.target.filter(item => {
+  //   const finitem = spend(db, qst, args[0], [item])
+  //
+  //   if (finitem && typeof finitem === 'object') {
+  //     return Object
+  //       .keys(finitem)
+  //       .every(key => finitem[key] === item[key])
+  //   }
+  //
+  //   return finitem
+  // })
+
+  return qst
+}
+
+q.error = async (cst, qst, args) => {
+  const [error] = await spend(cst, qst, args)
+
+  throw new Error(error)
+}
+
+// Get a single field from an object. If called on a sequence, gets that field
+// from every object in the sequence, skipping objects that lack it.
+//
+// https://rethinkdb.com/api/javascript/get_field
+q.getField = async (db, qst, args) => {
+  const [fieldName] = await spend(db, qst, args)
+
+  if (args.length === 0) {
+    throw pgErrArgsNumber('(...)', 1, args.length)
+  }
+
+  // if ( Array.isArray( qst.target ) ) {
+  //  qst.error = 'Expected type DATUM but found SEQUENCE"';
+  //  qst.target = null;
+  //   return qst;
+  // }
+
+  qst.target = Array.isArray(qst.target)
+    ? qst.target.map(t => t[fieldName])
+    : qst.target[fieldName]
+
+  return qst
+}
+
+q.filter.fn = q.getField
+
+q.count = (cst, qst) => {
+  qst.target = qst.target.length
+
+  return qst
+}
+
+q.ge = async (cst, qst, args) => {
+  qst.target = qst.target >= await spend(cst, qst, args[0])
+
+  return qst
+}
+
+q.lt = async (cst, qst, args) => {
+  const argTarget = await spend(cst, qst, args[0])
+
+  if (argTarget instanceof Date && !(qst.target instanceof Date)) {
+    throw pgErrNotATIMEpsuedotype('forEach', 1, args.length)
+  }
+
+  if (typeof qst.target === typeof qst.target) {
+    qst.target = qst.target < argTarget
+  }
+
+  return qst
+}
+
+q.le = async (cst, qst, args) => {
+  qst.target = qst.target <= await spend(cst, qst, args[0])
+
+  return qst
+}
+
+q.eq = async (cst, qst, args) => {
+  qst.target = qst.target === await spend(cst, qst, args[0])
+
+  return qst
+}
+
+q.ne = async (cst, qst, args) => {
+  qst.target = qst.target !== await spend(cst, qst, args[0])
 
   return qst
 }

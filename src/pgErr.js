@@ -76,6 +76,9 @@ const pgErrExpectedTypeFOOButFoundBAR = (foo, bar) => new Error(
 const pgErrCannotCallFOOonBARTYPEvalue = (foo, bar) => new Error(
   `Cannot call ${foo} on ${bar} value.`)
 
+const pgErrNotATIMEpsuedotype = () => new Error(
+  'Not a TIME pseudotype: `null`')
+
 export {
   pgErrDirNotFound,
   pgErrFileNotFound,
@@ -99,5 +102,6 @@ export {
   pgErrInvalidDbName,
   pgErrTableExists,
   pgErrTableDoesNotExist,
-  pgErrPrimaryKeyWrongType
+  pgErrPrimaryKeyWrongType,
+  pgErrNotATIMEpsuedotype
 }
