@@ -150,12 +150,29 @@ const isBoolNumOrStr = (o, to = typeof o) => (
 const isSortObj = obj => isLookObj(obj)
   && 'sortBy' in obj
 
-const arrFilterConcurrentAsync = async (arr, fn) => Promise.all(
-  arr.map((elem, i) => fn(elem, i).then(t => t ? elem : []))
-).then(res => res.flat())
+// const arrFilterConcurrentAsync = async (arr, fn) => Promise.all(
+//   arr.map((elem, i) => fn(elem, i).then(t => t ? elem : []))
+// ).then(res => res.flat())
+const arrFilterConcurrentAsync = async (arr, fn, fin = []) => {
+  if (arr.length === 0)
+    return fin
 
-const arrMapConcurrentAsync = async (arr, fn) => Promise.all(
-  arr.map((elem, i) => fn(elem, i)))
+  if (await fn(arr[0]))
+    fin.push(arr[0])
+
+  return arrFilterConcurrentAsync(arr.slice(1), fn, fin)
+}
+
+// const arrMapConcurrentAsync = async (arr, fn) => Promise.all(
+//  arr.map((elem, i) => fn(elem, i)))
+const arrMapConcurrentAsync = async (arr, fn, fin = []) => {
+  if (arr.length === 0)
+    return fin
+
+  fin.push(await fn(arr[0]))
+
+  return arrMapConcurrentAsync(arr.slice(1), fn, fin)
+}
 
 const arrReduceAsync = async (arr, fn, acc) => arr.length === 0
   ? acc
