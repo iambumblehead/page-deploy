@@ -192,7 +192,6 @@ const spendRecsNext = async (db, reqlObj, rows, recs, qstNext, i = 0) => {
 
   const rec = recs[i]
 
-  // const val = reqlObj.recs.reduce((qstNext, rec, i) => {
   // avoid mutating original args w/ suspended values
   const queryArgs = rec[1].slice()
 
