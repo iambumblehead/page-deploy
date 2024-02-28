@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import url from 'node:url'
 import pgManifest from './pgManifest.js'
 
@@ -12,11 +13,21 @@ import {
 
 import {
   pgErrArgsNumber,
+  pgErrTableExists,
+  pgErrInvalidTableName,
   pgErrTableDoesNotExist,
   pgErrCannotUseNestedRow,
   pgErrNoAttributeInObject,
   pgErrPrimaryKeyWrongType,
-  pgErrNotATIMEpsuedotype
+  pgErrNotATIMEpsuedotype,
+  pgErrExpectedTypeFOOButFoundBAR,
+  pgErrCannotCallFOOonBARTYPEvalue,
+  pgErrIndexOutOfBounds,
+  pgErrUnrecognizedOption,
+  pgErrInvalidDbName,
+  pgErrPrimaryKeyCannotBeChanged,
+  pgErrDuplicatePrimaryKey,
+  pgErrSecondArgumentOfQueryMustBeObject
 } from './pgErr.js'
 
 import {
@@ -29,25 +40,27 @@ import {
   pgEnumTypeERROR,
   pgEnumQueryArgTypeARGSIG,
   pgEnumQueryArgTypeARGS,
-  // pgEnumQueryArgTypeCHAIN,
-  pgEnumQueryNameIsCURSORORDEFAULTRe,
+  pgEnumQueryArgTypeCHAIN,
+  pgEnumQueryNameIsDEFAULTRe,
+  // pgEnumQueryNameIsCURSORORDEFAULTRe,
   pgEnumIsQueryArgsResult,
   pgEnumIsChainShallow,
   pgEnumIsChain
 } from './pgEnum.js'
 
 import {
-  // mmDbStateAggregate,
-  // mmDbStateDbCreate,
-  // mmDbStateDbDrop,
-  // pgDbStateDbGet,
+  pgDbStateAggregate,
+  pgDbStateDbCreate,
+  pgDbStateDbDrop,
+  pgDbStateDbGet,
   // pgDbStateTableSet,
   pgDbStateTableGet,
   pgDbStateTableGetResolved,
-  // mmDbStateTableIndexAdd,
-  // mmDbStateTableGetIndexNames,
+  pgDbStateTableIndexAdd,
+  pgDbStateTableGetIndexNames,
   pgDbStateTableGetIndexTuple,
   pgDbStateTableGetPrimaryKey,
+
   // mmDbStateTableCursorSet,
   // mmDbStateTableDocCursorSet,
   // mmDbStateTableCursorSplice,
@@ -55,15 +68,38 @@ import {
   // mmDbStateTableCursorsPushChanges,
   // mmDbStateTableCursorsGetOrCreate,
   // mmDbStateTableDocCursorsGetOrCreate,
-  // mmDbStateTableConfigGet,
-  // mmDbStateTableCreate,
-  // mmDbStateTableDrop,
-  // mmDbStateDbConfigGet
+  pgDbStateTableConfigGet,
+  pgDbStateTableCreate,
+  pgDbStateTableDrop,
+  pgDbStateDbConfigGet
 } from './pgDbState.js'
 
 import {
+  // pgQueryResFilterUndefined,
+  // pgQueryResChangeTypeADD,
+  // pgQueryResChangeTypeREMOVE,
+  // pgQueryResChangeTypeCHANGE,
+  // pgQueryResChangeTypeINITIAL,
+  // pgQueryResChangeTypeUNINITIAL,
+  // pgQueryResChangeTypeSTATE,
+
+  pgQueryResChangesErrorPush,
+  pgQueryResChangesSpecFinal,
+  pgQueryResChangesSpecPush,
+  pgQueryResChangesFieldCreate,
+  pgQueryResTableStatus,
+  pgQueryResTableInfo
+} from './pgQueryRes.js'
+
+import {
   pgTableDocGet,
-  pgTableDocGetIndexValue
+  pgTableDocRm,
+  pgTableDocsGet,
+  pgTableDocsSet,
+  pgTableDocHasIndexValueFn,
+  pgTableDocGetIndexValue,
+  pgTableDocEnsurePrimaryKey,
+  pgTableSet
 } from './pgTable.js'
 
 import {
@@ -107,9 +143,33 @@ const reqlArgsCreate = value => (
 const isNumOrStr = (o, to = typeof o) => (
   to === 'number' || to === 'string')
 
+const isBoolNumOrStr = (o, to = typeof o) => (
+  to === 'boolean' || to === 'number' || to === 'string')
+
 // created by 'asc' and 'desc' queries
 const isSortObj = obj => isLookObj(obj)
   && 'sortBy' in obj
+
+const arrFilterConcurrentAsync = async (arr, fn) => Promise.all(
+  arr.map((elem, i) => fn(elem, i).then(t => t ? elem : []))
+).then(res => res.flat())
+
+const arrMapConcurrentAsync = async (arr, fn) => Promise.all(
+  arr.map((elem, i) => fn(elem, i)))
+
+const arrReduceAsync = async (arr, fn, acc) => arr.length === 0
+  ? acc
+  : arrReduceAsync(arr.slice(1), fn, await fn(acc, arr[0]))
+
+const arrSomeAsync = async (arr, fn) => arr.length
+  && (await fn(arr[0]) || (
+    // console.log('next', arr.slice(1)),
+    arrSomeAsync(arr.slice(1), fn)))
+
+const arrEveryAsync = async (arr, fn) => arr.length === 0
+  || (await fn(arr[0]) && (
+    // console.log('next', arr.slice(1)),
+    arrEveryAsync(arr.slice(1), fn)))
 
 const sortObjParse = o => isLookObj(o)
   ? (isSortObj(o) ? o : isSortObj(o.index) ? o.index : null)
@@ -161,14 +221,16 @@ const spendRecs = async (db, qst, reqlObj, rows) => {
   }
 
   // const val = reqlObj.recs.reduce((qstNext, rec, i) => {
-  for (let i in reqlObj.recs) {
+  // for (let i in reqlObj.recs) {
+  for (let i = 0; i < reqlObj.recs.length; i++) {
     let rec = reqlObj.recs[i]
+
     // const val = reqlObj.recs.reduce((qstNext, rec, i) => {
     // avoid mutating original args w/ suspended values
     const queryArgs = rec[1].slice()
 
-    if (qstNext.error && !pgEnumQueryNameIsCURSORORDEFAULTRe.test(rec[0]))
-      return qstNext
+    if (qstNext.error && !pgEnumQueryNameIsDEFAULTRe.test(rec[0]))
+      return qstNext    
     
     if (rec[0] === 'row') {
       // following authentic rethinkdb, disallow most nested short-hand
@@ -216,12 +278,10 @@ const spendRecs = async (db, qst, reqlObj, rows) => {
       qstNext.target = null
       qstNext.error = e
 
-      // if (reqlObj.recs.slice(-1)[0][0] === 'getCursor')
-      //   return qstNext
-
       e[pgEnumTypeERROR] = typeof e[pgEnumTypeERROR] === 'boolean'
         ? e[pgEnumTypeERROR]
-        : true
+        : !reqlObj.recs.slice(i + 1)
+          .some(o => pgEnumQueryNameIsDEFAULTRe.test(o[0]))
 
       if (e[pgEnumTypeERROR])
         throw e
@@ -518,15 +578,19 @@ q.row = (cst, qst, args) => {
     ? qst.rowMap[args[1]][args[2]]
     : qst.target[args[0]]
 
+  // console.log(
+  //   'r.row() target',
+  //   qst.target,
+  //   args[0] === pgEnumQueryArgTypeARGSIG)
   return qst
 }
 
-q.row.fn = async (st, qst, args) => {
+q.row.fn = async (cst, qst, args) => {
   if (typeof args[0] === 'string' && !(args[0] in qst.target)) {
     throw pgErrNoAttributeInObject(args[0])
   }
 
-  return q.getField(st, qst, args)
+  return q.getField(cst, qst, args)
 }
 
 q.default = async (st, qst, args) => {
@@ -558,9 +622,9 @@ q.expr.fn = (st, qst, args) => {
   return qst
 }
 
-q.coerceTo = (st, qst, args) => {
+q.coerceTo = async (cst, qst, args) => {
   const coerceType = String(args[0]).toLowerCase()
-  let resolved = spend(st, qst, qst.target)
+  let resolved = await spend(cst, qst, qst.target)
 
   if (coerceType === 'string')
     resolved = String(resolved)
@@ -582,21 +646,90 @@ q.downcase = (st, qst) => {
   return qst
 }
 
-q.map = async (st, qst, args) => {
-  // qst.target = qst
-  //   .target.map(t => spend(st, qst, args[0], [t]))
+// Used to ‘zip’ up the result of a join by merging the ‘right’ fields into
+// ‘left’ fields of each member of the sequence.
+q.zip = (db, qst) => {
+  qst.target = qst.target
+    .map(t => ({ ...t.left, ...t.right }))
 
-  const listold = qst.target
-  const listnew = []
-
-  for (const i in listold)
-    listnew[i] = await spend(st, qst, args[0], [listold[i]])
-
-  qst.target = listnew
   return qst
 }
 
-q.without = (st, qst, args) => {
+q.map = async (st, qst, args) => {
+  // qst.target = qst
+  //   .target.map(t => spend(st, qst, args[0], [t]))
+  qst.target = await arrMapConcurrentAsync(
+    qst.target.slice(), async listoldi => (
+      // console.log({ listoldi }),
+      spend(st, qst, args[0], [listoldi])))
+
+  return qst
+}
+
+q.isEmpty = async (st, qst) => {
+  qst.target = qst.target.length === 0
+
+  return qst
+}
+
+q.union = async (db, qst, args) => {
+  const queryOptions = queryArgsOptions(args, null)
+
+  if (queryOptions)
+    args.splice(-1, 1)
+
+  // let res = args.reduce((acc, arg) => {
+  let res = await arrReduceAsync(args, async (ac, arg) => {
+    return ac.concat(await spend(db, qst, arg))
+  }, qst.target || [])
+
+  if (queryOptions && queryOptions.interleave) {
+    res = res.sort(
+      (a, b) => compare(a, b, queryOptions.interleave)
+    )
+  }
+
+  qst.target = res
+
+  return qst
+}
+
+// Rethink has its own alg for finding distinct,
+// but unique by ID should be sufficient here.
+q.distinct = async (db, qst, args) => {
+  const queryOptions = queryArgsOptions(args)
+  const dbName = mockdbReqlQueryOrStateDbName(qst, db)
+
+  if (Array.isArray(qst.target)
+    && qst.tablename
+    // skip if target is filtered, concatenated or manipulated in some way
+      && !isBoolNumOrStr(qst.target[0])) {
+    const primaryKey = queryOptions.index
+      || pgDbStateTableGetPrimaryKey(db, dbName, qst.tablename)
+
+    const keys = {}
+    qst.target = qst.target.reduce((disti, row) => {
+      const value = row[primaryKey]
+
+      if (!keys[value]) {
+        keys[value] = true
+        disti.push(row)
+      }
+
+      return disti
+    }, [])
+  } else if (Array.isArray(qst.target)) {
+    qst.target = qst.target.filter(
+      (item, pos, self) => self.indexOf(item) === pos)
+  } else if (Array.isArray(args[0])) {
+    qst.target = args[0].filter(
+      (item, pos, self) => self.indexOf(item) === pos)
+  }
+
+  return qst
+}
+
+q.without = async (st, qst, args) => {
   const queryTarget = qst.target
 
   const withoutFromDoc = (doc, withoutlist) => Object.keys(doc)
@@ -614,7 +747,7 @@ q.without = (st, qst, args) => {
     throw pgErrArgsNumber('without', 1, args.length)
   }
 
-  args = spend(st, qst, args)
+  args = await spend(st, qst, args)
 
   if (qst.eqJoinBranch) {
     const isleft = 'left' in args[0]
@@ -688,8 +821,8 @@ q.and = (st, qst, args) => {
 }
 
 // r.args(array) → special
-q.args = (st, qst, args) => {
-  const result = spend(st, qst, args[0])
+q.args = async (st, qst, args) => {
+  const result = await spend(st, qst, args[0])
   if (!Array.isArray(result))
     throw new Error('args must be an array')
 
@@ -745,7 +878,7 @@ q.run = (st, qst) => {
   return qst
 }
 
-q.serialize = (st, qst) => {
+q.serialize = (cst, qst) => {
   qst.target = JSON.stringify(qst.chain)
 
   return qst
@@ -811,18 +944,21 @@ q.fold = (st, qst, args) => {
   return qst
 }
 
-q.forEach =  (st, qst, args) => {
-  const [forEachRow] = args
+q.forEach = async (cst, qst, args) => {
+  const forEachRow = args[0]
 
   if (args.length !== 1) {
     throw pgErrArgsNumber('forEach', 1, args.length)
   }
 
-  qst.target = qst.target.reduce((st, arg) => {
-    const result = spend(st, qst, forEachRow, [arg])
+  //qst.target = qst.target.reduce((st, arg) => {
+  qst.target = await arrReduceAsync(qst.target, async (ac, arg) => {
+    const result = await spend(cst, qst, forEachRow, [arg])
 
-    return "mmDbStateAggregate(st, result)"
+    return pgDbStateAggregate(ac, result)
   }, {})
+
+
 
   return qst
 }
@@ -845,6 +981,230 @@ q.toISO8601 = (st, qst, args) => {
   return qst
 }
 
+q.toEpochTime = (cst, qst) => {
+  qst.target = (new Date(qst.target)).getTime() / 1000
+
+  return qst
+}
+
+q.date = (cst, qst) => {
+  const dateYMD = new Date(qst.target)
+
+  dateYMD.setMilliseconds(0)
+  dateYMD.setSeconds(0)
+  dateYMD.setMinutes(0)
+  dateYMD.setHours(0)
+
+  qst.target = dateYMD
+
+  return qst
+}
+
+q.epochTime = (cst, qst, args) => {
+  if (args.length !== 1)
+    throw pgErrArgsNumber('r.epochTime', 1, args.length)
+  
+  qst.target = new Date(args[0] * 1000)
+
+  return qst
+}
+
+q.now = (cst, qst) => {
+  qst.target = new Date()
+
+  return qst
+}
+
+// Return the hour in a time object as a number between 0 and 23.
+q.hours = (cst, qst) => {
+  qst.target = new Date(qst.target).getHours()
+
+  return qst
+}
+
+q.minutes = (cst, qst) => {
+  qst.target = new Date(qst.target).getMinutes()
+
+  return qst
+}
+
+q.seconds = (cst, qst) => {
+  qst.target = new Date(qst.target).getSeconds()
+
+  return qst
+}
+
+q.time = async (db, qst, args) => {
+  const timeargs = await spend(db, qst, args)
+
+  if (timeargs.length < 4)
+    throw pgErrArgsNumber('r.time', 4, args.length, true)
+
+  if (!/^[4|7]$/.test(timeargs.length))
+    throw new Error('Got 5 arguments to TIME (expected 4 or 7)')
+
+  if (typeof timeargs[2] === 'number')
+    timeargs[2] += 1
+
+  if (timeargs[6]) {
+    console.log('[!!!] r.time: zerotimezone not supported')
+    timeargs.splice(6, 1)
+  }
+
+  while (typeof timeargs.slice(-1)[0] !== 'number')
+    timeargs.splice(timeargs.length -1, 1)
+
+  qst.target = new Date(...timeargs)
+  
+  return qst
+}
+
+q.inTimezone = async (cst, qst, args) => {
+  const timezone = await spend(cst, qst, args)[0] // ex, '-08:00'
+
+  if (args.length !== 1)
+    throw pgErrArgsNumber('inTimezone', 1, args.length)
+
+  const hhmm = timezone.split(':')
+  const time = (+hhmm[0] * 60) + hhmm[1]
+  qst.target = new Date(qst.target)
+  qst.target.getTimezoneOffset = () => time
+
+  // qst.target.timezoneOffset(time)
+  // new Date().timezoneOffset(-180) // +3 UTC
+  //  qst.target = new Date(qst.target.toISOString()
+  //    .replace(/\.\d*Z$/, '') + timezone)
+  
+  return qst
+}
+
+q.timezone = async (cst, qst) => {
+  const timezoneMinutes = qst.target.getTimezoneOffset()
+
+  // convert minutes to hours
+  const timezoneHours = timezoneMinutes > 0
+    ? Math.floor(timezoneMinutes / 60)
+    : Math.ceil(timezoneMinutes / 60)
+  const timezoneHoursMin = timezoneMinutes - timezoneHours * 60
+  const timezonePre =timezoneMinutes > 0 ? '-' : ''
+
+  const timezoneStr = timezonePre + [
+    String('0' + timezoneHours).slice(-2),
+    String('0' + timezoneHoursMin).slice(-2)
+  ].join(':')
+
+  qst.target = timezoneStr
+
+  return qst
+}
+
+q.ISO8601 = async (cst, qst, args) => {
+  const isoargs = await spend(cst, qst, args)
+  const isoopts = queryArgsOptions(isoargs)
+
+  if (isoargs.length > 2)
+    throw new Error('`r.ISO8601` takes at most 2 arguments, 3 provided.')
+  if (typeof isoargs[0] !== 'string')
+    throw pgErrArgsNumber('r.ISO8601', 1, args.length)
+  
+  const isostr = isoopts.defaultTimezone
+    ? isoargs[0].replace(/-\d\d:\d\d$/, '') + isoopts.defaultTimezone
+    : isoargs[0]
+
+  qst.target = new Date(isostr)
+  
+  return qst
+}
+
+// time.during(startTime, endTime[, {
+//   leftBound: "closed", rightBound: "open"
+// }]) → bool
+q.during = async (cst, qst, args) => {
+  const [start, end] = args
+  const startTime = await spend(cst, qst, start)
+  const endTime = await spend(cst, qst, end)
+
+  if (args.length < 2)
+    throw pgErrArgsNumber('during', 2, args.length, true)
+
+  if (args.length > 3)
+    throw new Error(
+      '`during` takes at most 3 arguments, ' + args.length + ' provided.')
+
+  qst.target = (
+    qst.target.getTime() > startTime.getTime()
+      && qst.target.getTime() < endTime.getTime()
+  )
+
+  return qst
+}
+
+// used for selecting/specifying db, not supported yet
+q.db = async (cst, qst, args) => {
+  const [dbName] = args
+  const isValidDbNameRe = /^[A-Za-z0-9_]*$/
+
+  if (!args.length) {
+    throw pgErrArgsNumber('r.db', 1, args.length)
+  }
+
+  if (!isValidDbNameRe.test(dbName)) {
+    throw pgErrInvalidDbName(dbName)
+  }
+
+  qst.db = dbName
+
+  return qst
+}
+
+q.dbList = (cst, qst) => {
+  qst.target = Object.keys(cst.db)
+
+  return qst
+}
+
+q.dbCreate = async (cst, qst, args) => {
+  const dbName = await spend(cst, qst, args[0])
+
+  if (!args.length)
+    throw pgErrArgsNumber('r.dbCreate', 1, args.length)
+
+  pgDbStateDbCreate(cst, dbName)
+
+  qst.target = {
+    config_changes: [{
+      new_val: pgDbStateDbConfigGet(dbName),
+      old_val: null
+    }],
+    dbs_created: 1
+  }
+
+  return qst
+}
+
+q.dbDrop = (db, qst, args) => {
+  const [dbName] = args
+  const dbConfig = pgDbStateDbConfigGet(db, dbName)
+  const tables = pgDbStateDbGet(db, dbName)
+
+  if (args.length !== 1) {
+    throw pgErrArgsNumber('r.dbDrop', 1, args.length)
+  }
+
+  db = pgDbStateDbDrop(db, dbName)
+
+  qst.target = {
+    config_changes: [{
+      new_val: null,
+      old_val: dbConfig
+    }],
+    dbs_dropped: 1,
+    tables_dropped: Object.keys(tables).length
+  }
+
+  return qst
+}
+
 q.table = async (st, qst, args) => {
   const tablename = args[0]
   const dbName = mockdbReqlQueryOrStateDbName(qst, st)
@@ -862,6 +1222,75 @@ q.table = async (st, qst, args) => {
 
 q.table.fn = q.getField
 
+q.tableList = (cst, qst) => {
+  const dbName = mockdbReqlQueryOrStateDbName(qst, cst)
+  const tables = pgDbStateDbGet(cst, dbName)
+
+  qst.target = Object.keys(tables)
+
+  return qst
+}
+
+q.tableCreate = async (db, qst, args) => {
+  const tableName = await spend(db, qst, args[0])
+  const isValidConfigKeyRe = /^(primaryKey|durability)$/
+  const isValidTableNameRe = /^[A-Za-z0-9_]*$/
+  const config = queryArgsOptions(args)
+  const invalidConfigKey = Object.keys(config)
+    .find(k => !isValidConfigKeyRe.test(k))
+
+  if (invalidConfigKey) {
+    throw pgErrUnrecognizedOption(
+      invalidConfigKey, config[invalidConfigKey])
+  }
+
+  if (!tableName) {
+    throw pgErrArgsNumber('r.tableCreate', 1, 0, true)
+  }
+
+  if (!isValidTableNameRe.test(tableName)) {
+    throw pgErrInvalidTableName(tableName)
+  }
+
+  const dbName = mockdbReqlQueryOrStateDbName(qst, db)
+  const tables = pgDbStateDbGet(db, dbName)
+  if (tableName in tables) {
+    throw pgErrTableExists(dbName, tableName)
+  }
+
+  db = pgDbStateTableCreate(db, dbName, tableName, config)
+
+  const tableConfig = pgDbStateTableConfigGet(db, dbName, tableName)
+
+  qst.target = {
+    tables_created: 1,
+    config_changes: [{
+      new_val: tableConfig,
+      old_val: null
+    }]
+  }
+
+  return qst
+}
+
+q.tableDrop = (db, qst, args) => {
+  const [tableName] = args
+  const dbName = mockdbReqlQueryOrStateDbName(qst, db)
+  const tableConfig = pgDbStateTableConfigGet(db, dbName, tableName)
+
+  db = pgDbStateTableDrop(db, dbName, tableName)
+    
+  qst.target = {
+    tables_dropped: 1,
+    config_changes: [{
+      new_val: null,
+      old_val: tableConfig
+    }]
+  }
+
+  return qst
+}
+
 q.get = async (cst, qst, args) => {
   const queryLocale = pgLocaleIdResolve(cst.lang)
   const primaryKeyValue = await spend(cst, qst, args[0])
@@ -875,12 +1304,13 @@ q.get = async (cst, qst, args) => {
     throw pgErrArgsNumber('get', 1, 0)
   }
 
+  /*
   if (!tableDoc) {
     throw new Error('temp... doc not found!', {
       primaryKeyValue, queryLocale
     })
   }
-
+  */
   if (!isNumOrStr(primaryKeyValue) && !Array.isArray(primaryKeyValue)) {
     throw pgErrPrimaryKeyWrongType(primaryKeyValue)
   }
@@ -895,6 +1325,282 @@ q.get = async (cst, qst, args) => {
 
 q.get.fn = async (db, qst, args) => {
   qst.target = await spend(db, qst, args[0], [qst.target])
+
+  return qst
+}
+
+q.getAll = async (db, qst, args) => {
+  const queryOptions = queryArgsOptions(args)
+  const primaryKeyValues = await spend(
+    db,
+    qst,
+    (queryOptions && queryOptions.index) ? args.slice(0, -1) : args
+  )
+
+  const dbName = mockdbReqlQueryOrStateDbName(qst, db)
+  const tablename = qst.tablename
+  const primaryKey = queryOptions.index
+    || pgDbStateTableGetPrimaryKey(db, dbName, qst.tablename)
+  const tableIndexTuple = pgDbStateTableGetIndexTuple(
+    db, dbName, tablename, primaryKey)
+  if (primaryKeyValues.length === 0) {
+    qst.target = []
+
+    return qst
+  }
+
+  const tableDocHasIndex = pgTableDocHasIndexValueFn(
+    tableIndexTuple, primaryKeyValues, db)
+
+  qst.target = await arrFilterConcurrentAsync(qst.target, async doc => (
+    tableDocHasIndex(doc, spend, qst)))
+
+  qst.target = qst.target
+    // .filter(doc => tableDocHasIndex(doc, spend, qst))
+    .sort(() => 0.5 - Math.random())
+
+  return qst
+}
+
+q.nth = async (db, qst, args) => {
+  const nthIndex = await spend(db, qst, args[0])
+
+  if (nthIndex >= qst.target.length) {
+    throw pgErrIndexOutOfBounds(nthIndex)
+  }
+
+  qst.target = qst.target[nthIndex]
+
+  return qst
+}
+
+// The replace command can be used to both insert and delete documents.
+// If the “replaced” document has a primary key that doesn’t exist in the
+// table, the document will be inserted; if an existing document is replaced
+// with null, the document will be deleted. Since update and replace
+// operations are performed atomically, this allows atomic inserts and
+// deletes as well.
+q.replace = async (db, qst, args) => {
+  const queryTarget = qst.target
+  const queryTable = qst.tablelist
+  const dbName = mockdbReqlQueryOrStateDbName(qst, db)
+  const primaryKey = pgDbStateTableGetPrimaryKey(db, dbName, qst.tablename)
+  const config = queryArgsOptions(args.slice(1))
+
+  const isValidConfigKeyRe =
+    /^(returnChanges|durability|nonAtomic|ignoreWriteHook)$/
+  const invalidConfigKey = Object.keys(config)
+    .find(k => !isValidConfigKeyRe.test(k))
+  if (invalidConfigKey) {
+    throw pgErrUnrecognizedOption(
+      invalidConfigKey, config[invalidConfigKey])
+  }
+
+  if (!args.length) {
+    throw pgErrArgsNumber('replace', 1, args.length, true)
+  }
+
+  // const resSpec = asList(queryTarget).reduce((spec, targetDoc) => {
+  const resSpec = await arrReduceAsync(asList(queryTarget), async (ac, doc) => {
+    const replacement = await spend(db, qst, args[0], [doc])
+    const oldDoc = pgTableDocGet(queryTable, doc, primaryKey)
+    const newDoc = replacement === null ? null : replacement
+
+    if (oldDoc === null
+      && newDoc && ('primaryKeyValue' in qst)
+      && newDoc[primaryKey] !== qst.primaryKeyValue) {
+      return pgQueryResChangesErrorPush(
+        ac, pgErrPrimaryKeyCannotBeChanged(primaryKey))
+    }
+
+    if (oldDoc && newDoc === null)
+      pgTableDocRm(queryTable, oldDoc, primaryKey)
+    else if (newDoc)
+      pgTableDocsSet(queryTable, [newDoc], primaryKey)
+
+    return pgQueryResChangesSpecPush(ac, {
+      new_val: newDoc,
+      old_val: oldDoc
+    })
+  }, pgQueryResChangesFieldCreate({ changes: [] }))
+
+  qst.target = pgQueryResChangesSpecFinal(resSpec, config)
+
+  return qst
+}
+
+q.update = async (cst, qst, args) => {
+  const queryTarget = qst.target
+  const queryTable = qst.tablelist
+  const updateProps = await spend(cst, qst, args[0], [qst.target])
+  const dbName = mockdbReqlQueryOrStateDbName(qst, cst)
+  const primaryKey = pgDbStateTableGetPrimaryKey(cst, dbName, qst.tablename)
+  const options = args[1] || {}
+  // const resSpec = asList(queryTarget).reduce((spec, targetDoc) => {
+  const resSpec = await arrReduceAsync(asList(queryTarget), async (ac, doc) => {
+    const oldDoc = pgTableDocGet(queryTable, doc, primaryKey)
+    const newDoc = updateProps === null
+      ? oldDoc
+      : oldDoc && Object.assign({}, oldDoc, updateProps || {})
+
+    if (oldDoc && newDoc) {
+      pgTableDocsSet(queryTable, [newDoc], primaryKey)
+    }
+
+    return pgQueryResChangesSpecPush(ac, {
+      new_val: newDoc,
+      old_val: oldDoc
+    })
+  }, pgQueryResChangesFieldCreate({ changes: [] }))
+
+  qst.target = pgQueryResChangesSpecFinal(resSpec, options)
+
+  return qst
+}
+
+// pass query down to 'spend' and copy data
+q.insert = async (cst, qst, args) => {
+  // both argument types (list or atom) resolved to a list here
+  let documents = Array.isArray(args[0]) ? args[0] : args.slice(0, 1)
+  let table = qst.tablelist
+  const dbName = mockdbReqlQueryOrStateDbName(qst, cst)
+  const primaryKey = pgDbStateTableGetPrimaryKey(cst, dbName, qst.tablename)
+  const options = args[1] || {}
+
+  const isValidConfigKeyRe = /^(returnChanges|durability|conflict)$/
+  const invalidConfigKey = Object.keys(options)
+    .find(k => !isValidConfigKeyRe.test(k))
+
+  if (args.length > 1 && (!args[1] || typeof args[1] !== 'object')) {
+    throw pgErrSecondArgumentOfQueryMustBeObject('insert')
+  }
+
+  if (invalidConfigKey) {
+    throw pgErrUnrecognizedOption(
+      invalidConfigKey, options[invalidConfigKey])
+  }
+
+  if (documents.length === 0) {
+    throw pgErrArgsNumber('insert', 1, 0)
+  }
+
+  const documentIsPrimaryKeyPredefined = documents
+    .some(d => primaryKey in d)
+
+  documents = documents
+    .map(doc => pgTableDocEnsurePrimaryKey(doc, primaryKey))
+
+  const existingDocs = pgTableDocsGet(
+    qst.tablelist, documents, primaryKey)
+
+  if (existingDocs.length) {
+    if (pgEnumIsChain(options.conflict)) {
+      const resDoc = await spend(cst, qst, options.conflict, [
+        documents[0].id,
+        existingDocs[0],
+        documents[0]
+      ])
+
+      const resSpec = pgQueryResChangesSpecPush(
+        pgQueryResChangesFieldCreate({ changes: [] }), {
+          old_val: existingDocs[0],
+          new_val: resDoc,
+          generated_key: documentIsPrimaryKeyPredefined
+            ? null : resDoc[primaryKey]
+        })
+
+      pgTableDocsSet(table, [resDoc], primaryKey)
+
+      qst.target = pgQueryResChangesSpecFinal(resSpec, options)
+
+      return qst
+    } else if (/^(update|replace)$/.test(options.conflict)) {
+      const conflictIds = existingDocs.map(doc => doc[primaryKey])
+      // eslint-disable-next-line security/detect-non-literal-regexp
+      const conflictIdRe = new RegExp(`^(${conflictIds.join('|')})$`)
+      const conflictDocs = documents
+        .filter(doc => conflictIdRe.test(doc[primaryKey]))
+
+      qst = options.conflict === 'update'
+        ? await q.update(cst, qst, conflictDocs)
+        : await q.replace(cst, qst, conflictDocs)
+
+      return qst
+    } else {
+      qst.target = pgQueryResChangesErrorPush(
+        pgQueryResChangesFieldCreate(),
+        pgErrDuplicatePrimaryKey(
+          existingDocs[0], documents
+            .find(doc => doc[primaryKey] === existingDocs[0][primaryKey])))
+    }
+        
+    return qst
+  }
+
+  [table, documents] = pgTableDocsSet(
+    table,
+    await arrMapConcurrentAsync(
+      documents, async doc => spend(cst, qst, doc)),
+    primaryKey)
+
+  const resSpec = documents.reduce((spec, doc) => {
+    return pgQueryResChangesSpecPush(spec, {
+      new_val: doc,
+      old_val: null,
+      generated_key: documentIsPrimaryKeyPredefined
+        ? null : doc[primaryKey]
+    })    
+  }, pgQueryResChangesFieldCreate({ changes: [] }))
+
+  qst.target = pgQueryResChangesSpecFinal(resSpec, options)
+
+  return qst
+}
+
+// .indexCreate('foo')
+// .indexCreate('foo', { multi: true })
+// .indexCreate('foos', r.row('hobbies').add(r.row('sports')), { multi: true })
+// .indexCreate([r.row('id'), r.row('numeric_id')])
+q.indexCreate = async (db, qst, args) => {
+  const [indexName] = args
+  const config = queryArgsOptions(args)
+  const dbName = mockdbReqlQueryOrStateDbName(qst, db)
+
+  const fields = pgEnumIsChainShallow(args[1])
+    ? args[1]
+    : [indexName]
+
+  pgDbStateTableIndexAdd(
+    db, dbName, qst.tablename, indexName, fields, config)
+
+  // should throw ReqlRuntimeError if index exits already
+  qst.target = { created: 1 }
+
+  return qst
+}
+
+q.indexWait = (db, qst) => {
+  const dbName = mockdbReqlQueryOrStateDbName(qst, db)
+  const tableIndexList = pgDbStateTableGetIndexNames(
+    db, dbName, qst.tablename)
+
+  qst.target = tableIndexList.map(indexName => ({
+    index: indexName,
+    ready: true,
+    function: 1234,
+    multi: false,
+    geo: false,
+    outdated: false
+  }))
+
+  return qst
+}
+
+q.indexList = (cst, qst) => {
+  const dbName = mockdbReqlQueryOrStateDbName(qst, cst)
+  const tableConfig = pgDbStateTableConfigGet(cst, dbName, qst.tablename)
+
+  qst.target = tableConfig.indexes.map(i => i[0])
 
   return qst
 }
@@ -938,8 +1644,8 @@ q.orderBy = async (cst, qst, args) => {
           fieldSortDirection = sortObj.sortDirection
         }
 
-        //value = sortObj.sortBy
-        value = doc[sortObj.sortBy]
+        value = sortObj.sortBy
+        // value = doc[sortObj.sortBy]
       }
     } else if (argsSortPropValue) {
       value = doc[argsSortPropValue]
@@ -971,13 +1677,28 @@ q.orderBy = async (cst, qst, args) => {
   return qst
 }
 
-q.filter = async (db, qst, args) => {
+q.filter = async (cst, qst, args) => {
   // qst.ntarget = await Promise
   //   .all(qst.target.map(t => spend(db, qst, args[0], [t])))
-  qst.target = await Promise
-    .all(qst.target.map(t => spend(db, qst, args[0], [t])))
-    .then(results => qst.target.filter((_, i) => results[i]))
+  qst.target = await arrFilterConcurrentAsync(qst.target, async item => {
+    const finitem = await spend(cst, qst, args[0], [item])
 
+    /*
+    console.log('filter', {
+      finitem,
+      item,
+      args0: args[0],
+      target: qst.target
+    })*/
+    if (finitem && typeof finitem === 'object') {
+      return Object
+        .keys(finitem)
+        .every(key => finitem[key] === item[key])
+    }
+  
+    return finitem
+  })
+  
   // qst.target = qst.target.filter(item => {
   //   const finitem = spend(db, qst, args[0], [item])
   //
@@ -993,6 +1714,47 @@ q.filter = async (db, qst, args) => {
   return qst
 }
 
+// NOTE rethinkdb uses re2 syntax
+// re using re2-specific syntax will fail
+q.match = async (db, qst, args) => {
+  let regexString = await spend(db, qst, args[0])
+
+  let flags = ''
+  if (regexString.startsWith('(?i)')) {
+    flags = 'i'
+    regexString = regexString.slice('(?i)'.length)
+  }
+
+  const regex = new RegExp(regexString, flags)
+
+  if (typeof qst.target === 'number') {
+    throw pgErrExpectedTypeFOOButFoundBAR('STRING', 'NUMBER')
+  }
+
+  qst.target = regex.test(qst.target)
+
+  return qst
+}
+
+q.limit = (cst, qst, args) => {
+  qst.target = qst.target.slice(0, args[0])
+
+  return qst
+}
+
+q.difference = async (cst, qst, args) => {
+  const differenceValues = await spend(cst, qst, args[0])
+
+  if (typeof differenceValues === 'undefined') {
+    throw pgErrArgsNumber('difference', 1, 0, false)
+  }
+
+  qst.target = qst.target
+    .filter(e => !differenceValues.some(a => e == a))
+
+  return qst
+}
+
 q.error = async (cst, qst, args) => {
   const [error] = await spend(cst, qst, args)
 
@@ -1004,7 +1766,7 @@ q.error = async (cst, qst, args) => {
 //
 // https://rethinkdb.com/api/javascript/get_field
 q.getField = async (db, qst, args) => {
-  const [fieldName] = await spend(db, qst, args)
+  const fieldName = (await spend(db, qst, args))[0]
 
   if (args.length === 0) {
     throw pgErrArgsNumber('(...)', 1, args.length)
@@ -1023,10 +1785,452 @@ q.getField = async (db, qst, args) => {
   return qst
 }
 
+q.pluck = async (cst, qst, args) => {
+  const queryTarget = qst.target
+  const pluckObj = (obj, props) => props.reduce((plucked, prop) => {
+    plucked[prop] = obj[prop]
+    return plucked
+  }, {})
+
+  args = await spend(cst, qst, args)
+
+  qst.target = Array.isArray(queryTarget)
+    ? queryTarget.map(t => pluckObj(t, args))
+    : pluckObj(queryTarget, args)
+
+  return qst
+}
+
 q.filter.fn = q.getField
+
+q.hasFields = (cst, qst, args) => {
+  const queryTarget = qst.target
+  const itemHasFields = item => Boolean(item && args
+    .every(name => Object.prototype.hasOwnProperty.call(item, name)))
+
+  qst.target = Array.isArray(queryTarget)
+    ? queryTarget.filter(itemHasFields)
+    : itemHasFields(queryTarget)
+
+  return qst
+}
+
+q.slice = async (cst, qst, args) => {
+  const [begin, end] = await spend(cst, qst, args.slice(0, 2))
+
+  if (qst.isGrouped) { // slice from each group
+    qst.target = qst.target.map(targetGroup => {
+      targetGroup.reduction = targetGroup.reduction.slice(begin, end)
+
+      return targetGroup
+    })
+  } else {
+    qst.target = qst.target.slice(begin, end)
+  }
+
+  return qst
+}
+
+q.append = async (cst, qst, args) => {
+  qst.target = (await spend(cst, qst, args)).reduce((list, val) => {
+    list.push(val)
+
+    return list
+  }, qst.target)
+
+  return qst
+}
+
+q.skip = async (cst, qst, args) => {
+  const count = await spend(cst, qst, args[0])
+
+  qst.target = qst.target.slice(count)
+
+  return qst
+}
+
+q.contains = async (cst, qst, args) => {
+  const queryTarget = qst.target
+
+  if (!args.length) {
+    throw new Error('Rethink supports contains(0) but rethinkdbdash does not.')
+  }
+
+  if (!Array.isArray(qst.target)) {
+    throw pgErrExpectedTypeFOOButFoundBAR('SEQUENCE', 'SINGLE_SELECTION')
+  }
+
+  if (pgEnumIsChain(args[0])) {
+    // qst.target = queryTarget.some(target => {    
+    qst.target = await arrSomeAsync(queryTarget, async target => {
+      const res = await spend(cst, qst, args[0], [target])
+
+      return typeof res === 'boolean'
+        ? res
+        : queryTarget.includes(res)
+    })
+  } else {
+    qst.target = await arrEveryAsync(args, async predicate => (
+      queryTarget.includes(await spend(cst, qst, predicate))))
+    // qst.target = args.every(predicate => (
+    //   queryTarget.includes(spend(cst, qst, predicate))))
+  }
+
+  return qst
+}
+
+q.delete = async (cst, qst, args) => {
+  const queryTarget = qst.target
+  const queryTable = qst.tablelist
+  const dbName = mockdbReqlQueryOrStateDbName(qst, cst)
+  const primaryKey = pgDbStateTableGetPrimaryKey(cst, dbName, qst.tablename)
+  const tableIndexTuple = pgDbStateTableGetIndexTuple(
+    cst, dbName, qst.tablename, primaryKey)
+  const targetList = asList(queryTarget)
+  const targetIds = await arrMapConcurrentAsync(targetList, async doc => (
+    pgTableDocGetIndexValue(doc, tableIndexTuple, spend, qst, cst)))
+  const targetIdRe = new RegExp(`^(${targetIds.join('|')})$`)
+  const options = queryArgsOptions(args)
+  // const tableFiltered = queryTable.filter(doc => !targetIdRe.test(
+  //   pgTableDocGetIndexValue(doc, tableIndexTuple, spend, qst, cst)))
+  const tableFiltered = await arrFilterConcurrentAsync(
+    queryTable, async doc => !targetIdRe.test(
+      await pgTableDocGetIndexValue(doc, tableIndexTuple, spend, qst, cst)))
+  const queryConfig = queryArgsOptions(args)
+  const isValidConfigKeyRe = /^(durability|returnChanges|ignoreWriteHook)$/
+  const invalidConfigKey = Object.keys(queryConfig)
+    .find(k => !isValidConfigKeyRe.test(k))
+
+  if (invalidConfigKey) {
+    throw pgErrUnrecognizedOption(
+      invalidConfigKey, queryConfig[invalidConfigKey])
+  }
+
+  const resSpec = targetList.reduce((spec, targetDoc) => {
+    if (targetDoc) {
+      spec = pgQueryResChangesSpecPush(spec, {
+        new_val: null,
+        old_val: targetDoc        
+      })
+    }
+
+    return spec
+  }, pgQueryResChangesFieldCreate({ changes: [] }))
+
+  pgTableSet(queryTable, tableFiltered)
+
+  qst.target = pgQueryResChangesSpecFinal(resSpec, options)
+
+  return qst
+}
+
+q.merge = async (cst, qst, args) => {
+  if (args.length === 0) {
+    throw pgErrArgsNumber('merge', 1, args.length, true)
+  }
+  
+  // evaluate anonymous function given as merge definition
+
+  // const mergeTarget = (merges, target) => merges.reduce((p, next) => (
+  const mergeTarget = async (merges, target) => (
+    arrReduceAsync(merges, async (ac, next) => (
+      // console.log('-->', qst.target, await spend(cst, qst, next, [target])),
+      Object.assign(ac, await spend(cst, qst, next, [target]))
+    ), { ...target })
+  )
+
+  // console.log('-->', qst.target)
+  qst.target = Array.isArray(qst.target)
+    ? await arrMapConcurrentAsync(qst.target, async i => mergeTarget(args, i))
+    : await mergeTarget(args, qst.target)
+
+  return qst
+}
+
+q.concatMap = async (cst, qst, args) => {
+  const func = args[0]
+
+  // qst.target = qst
+  //  .target.map(t => spend(cst, qst, func, [t])).flat()
+
+  qst.target = await arrMapConcurrentAsync(
+    qst.target, async t => spend(cst, qst, func, [t]))
+
+  qst.target = qst.target.flat()
+
+  return qst
+}
+
+// .group(field | function...,
+//   [{index: <indexname>, multi: false}]
+// ) → grouped_stream
+// arg can be stringy field name, { index: 'indexname' }, { multi: true }
+q.group = async (db, qst, args) => {
+  const queryTarget = qst.target
+  const arg = args[0]
+
+  const groupedData = await arrReduceAsync(queryTarget, async (ac, item) => {
+    const key = (typeof arg === 'object' && arg && 'index' in arg)
+      ? arg.index
+      : await spend(db, qst, arg)
+    const groupKey = item[key]
+
+    ac[groupKey] = ac[groupKey] || []
+    ac[groupKey].push(item)
+
+    return ac
+  }, {})
+
+  // queryTarget.reduce((group, item) => {
+  /*
+  const groupedData = queryTarget.reduce((group, item) => {
+    const key = (typeof arg === 'object' && arg && 'index' in arg)
+      ? arg.index
+      : spend(db, qst, arg)
+    const groupKey = item[key]
+
+    group[groupKey] = group[groupKey] || []
+    group[groupKey].push(item)
+
+    return group
+  }, {})
+  */
+  
+  const rethinkFormat = Object.entries(groupedData)
+    .map(([group, reduction]) => ({ group, reduction }))
+
+  qst.isGrouped = true
+  qst.target = rethinkFormat
+
+  return qst
+}
+
+// Documents in the result set consist of pairs of left-hand and right-hand
+// documents, matched when the field on the left-hand side exists and is
+// non-null and an entry with that field’s value exists in the specified index
+// on the right-hand side.
+q.eqJoin = async (cst, qst, args) => {
+  const queryTarget = qst.target
+  const isNonNull = v => v !== null && v !== undefined
+  const queryConfig = queryArgsOptions(args)
+  const isValidConfigKeyRe = /^index$/
+  const rightFields = await spend(cst, qst, args[1])
+
+  // should remove this... get table name from args[1] record
+  // and call q.config() directly
+  const rightFieldConfig = args[1] && await spend(cst, qst, {
+    type: pgEnumQueryArgTypeCHAIN,
+    recs: [
+      ...args[1].recs,
+      ['config', []]
+    ]
+  })
+  
+  const rightFieldKey = queryConfig.index
+    || (rightFieldConfig && rightFieldConfig.primary_key)
+  const invalidConfigKey = Object.keys(queryConfig)
+    .find(k => !isValidConfigKeyRe.test(k))
+
+  if (invalidConfigKey) {
+    throw pgErrUnrecognizedOption(
+      invalidConfigKey, queryConfig[invalidConfigKey])
+  }
+    
+  if (args.length === 0) {
+    throw pgErrArgsNumber('eqJoin', 2, 0, true)
+  }
+
+  // qst.target = queryTarget.reduce((joins, item) => {
+  qst.target = await arrReduceAsync(queryTarget, async (ac, item) => {
+    const leftFieldSpend = await spend(cst, qst, args[0], [item])
+    
+    const leftFieldValue = qst.tablelist
+      ? item // if value comes from table use full document
+      : leftFieldSpend
+
+    if (isNonNull(leftFieldValue)) {
+      const rightFieldValue = rightFields
+        .find(rf => rf[rightFieldKey] === leftFieldSpend)
+
+      if (isNonNull(rightFieldValue)) {
+        ac.push({
+          left: leftFieldValue,
+          right: rightFieldValue
+        })
+      }
+    }
+
+    return ac
+  }, [])
+
+  qst.eqJoinBranch = true
+  return qst
+}
+
+q.innerJoin = async (cst, qst, args) => {
+  const queryTarget = qst.target
+  const otherSequence = args[0]
+  const joinFunc = args[1]
+  const otherTable = await spend(cst, qst, otherSequence)
+
+  qst.target = await arrMapConcurrentAsync(queryTarget, async item => (
+    arrMapConcurrentAsync(otherTable, async otherItem => {
+      //     // problem here is we don't know if item will be evaluated first
+      const oinSPend = await spend(cst, qst, joinFunc, [item, otherItem])
+
+      /*
+      console.log({
+        left: item,
+        otherItem
+        // oinSPend
+        //right: oinSPend ? otherItem : null
+      })
+      */
+      return {
+        left: item,
+        right: oinSPend ? otherItem : null
+      }
+    })
+  // ))
+  )).then(e => e.flat().filter(ob => ob.right))
+
+  // console.log('qst.target', qst.target)
+  // qst.target = queryTarget.map(item => (
+  //   otherTable.map(otherItem => {
+  //     // problem here is we don't know if item will be evaluated first
+  //     const oinSPend = spend(db, qst, joinFunc, [item, otherItem])
+  //
+  //     return {
+  //       left: item,
+  //       right: oinSPend ? otherItem : null
+  //     }
+  //   })
+  // )).flat().filter(({ right }) => right)
+  
+
+  return qst
+}
+
+q.config = (db, qst, args) => {
+  const dbName = mockdbReqlQueryOrStateDbName(qst, db)
+
+  if (args.length) {
+    throw pgErrArgsNumber('config', 0, args.length)
+  }
+
+  if (qst.tablename) {
+    qst.target = pgDbStateTableConfigGet(db, dbName, qst.tablename)
+    qst.target = { // remove indexes data added for internal use
+      ...qst.target,
+      indexes: qst.target.indexes.map(i => i[0])
+    }
+  } else {
+    qst.target = pgDbStateDbConfigGet(db, dbName, qst.tableName)
+  }
+
+  return qst
+}
+
+q.status = (db, qst) => {
+  const dbName = mockdbReqlQueryOrStateDbName(qst, db)
+  const tableConfig = pgDbStateTableConfigGet(db, dbName, qst.tablename)
+
+  qst.target = pgQueryResTableStatus(tableConfig)
+
+  return qst
+}
+
+q.info = (db, qst) => {
+  const dbName = mockdbReqlQueryOrStateDbName(qst, db)
+  qst.target = pgQueryResTableInfo(db, dbName, qst.tablename)
+
+  return qst
+}
+
+q.info.fn = async (db, qst, args) => {
+  return q.getField(db, qst, args)
+}
+
+q.eqJoin.fn = q.getField
+
+// array.sample(number) → array
+q.sample = (cst, qst, args) => {
+  qst.target = qst.target
+    .sort(() => 0.5 - Math.random())
+    .slice(0, args)
+
+  return qst
+}
+
+q.ungroup = (cst, qst) => {
+  qst.isGrouped = false
+
+  return qst
+}
 
 q.count = (cst, qst) => {
   qst.target = qst.target.length
+
+  return qst
+}
+
+// if conditionals return any value but false or null (i.e., “truthy” values),
+q.branch = async (cst, qst, args) => {
+  const isResultTruthy = result => (
+    result !== false && result !== null)
+
+  const nextCondition = async (condition, branches) => {
+    const conditionResult = await spend(cst, qst, condition)
+
+    if (branches.length === 0)
+      return conditionResult
+
+    if (isResultTruthy(conditionResult)) {
+      return spend(cst, qst, branches[0])
+    }
+
+    return nextCondition(branches[1], branches.slice(2))
+  }
+
+  qst.target = await nextCondition(args[0], args.slice(1))
+
+  return qst
+}
+
+/*
+q.or = (db, qst, args) => {
+  const rows = [qst.target]
+
+  qst.target = args.reduce((current, arg) => (
+    current || spend(db, qst, arg, rows)
+  ), qst.target)
+
+  return qst
+}
+
+q.and = (db, qst, args) => {
+  const rows = [qst.target]
+
+  qst.target = args.reduce((current, arg) => (
+    current && spend(db, qst, arg, rows)
+  ), typeof qst.target === 'boolean' ? qst.target : true)
+  
+  return qst
+}
+*/
+q.not = (cst, qst) => {
+  const queryTarget = qst.target
+
+  if (typeof queryTarget !== 'boolean')
+    throw pgErrCannotCallFOOonBARTYPEvalue('not()', 'non-boolean')
+
+  qst.target = !queryTarget
+
+  return qst
+}
+
+q.gt = async (db, qst, args) => {
+  qst.target = qst.target > await spend(db, qst, args[0])
 
   return qst
 }
@@ -1039,10 +2243,6 @@ q.ge = async (cst, qst, args) => {
 
 q.lt = async (cst, qst, args) => {
   const argTarget = await spend(cst, qst, args[0])
-
-  if (argTarget instanceof Date && !(qst.target instanceof Date)) {
-    throw pgErrNotATIMEpsuedotype('forEach', 1, args.length)
-  }
 
   if (typeof qst.target === typeof qst.target) {
     qst.target = qst.target < argTarget
@@ -1067,6 +2267,134 @@ q.ne = async (cst, qst, args) => {
   qst.target = qst.target !== await spend(cst, qst, args[0])
 
   return qst
+}
+
+q.max = (cst, qst, args) => {
+  const targetList = qst.target
+  const getListMax = (list, prop) => list.reduce((maxDoc, doc) => (
+    maxDoc[prop] > doc[prop] ? maxDoc : doc
+  ), targetList)
+
+  const getListMaxGroups = (groups, prop) => (
+    groups.reduce((prev, target) => {
+      prev.push({
+        ...target,
+        reduction: getListMax(target.reduction, prop)
+      })
+
+      return prev
+    }, [])
+  )
+
+  qst.target = qst.isGrouped
+    ? getListMaxGroups(targetList, args[0])
+    : getListMax(targetList, args[0])
+
+  return qst
+}
+
+q.max.fn = async (db, qst, args) => {
+  const field = await spend(db, qst, args[0])
+
+  if (qst.isGrouped) {
+    qst.target = qst.target.map(targetGroup => {
+      targetGroup.reduction = targetGroup.reduction[field]
+
+      return targetGroup
+    })
+  } else {
+    qst.target = qst.target[field]
+  }
+
+  return qst
+}
+
+q.min = (cst, qst, args) => {
+  const targetList = qst.target
+  const getListMin = (list, prop) => list.reduce((maxDoc, doc) => (
+    maxDoc[prop] < doc[prop] ? maxDoc : doc
+  ), targetList)
+
+  const getListMinGroups = (groups, prop) => (
+    groups.reduce((prev, target) => {
+      prev.push({
+        ...target,
+        reduction: getListMin(target.reduction, prop)
+      })
+
+      return prev
+    }, [])
+  )
+
+  qst.target = qst.isGrouped
+    ? getListMinGroups(targetList, args[0])
+    : getListMin(targetList, args[0])
+
+  return qst
+}
+
+q.sub = async (cst, qst, args) => {
+  const target = qst.target
+  const values = await spend(cst, qst, args)
+
+  if (typeof target === null) {
+    qst.target = Array.isArray(values)
+      ? values.slice(1).reduce((prev, val) => prev - val, values[0])
+      : values
+  } else if (isBoolNumOrStr(target)) {
+    qst.target = values.reduce((prev, val) => prev - val, target)
+  }
+
+  return qst
+}
+
+q.mul = async (cst, qst, args) => {
+  const target = qst.target
+  const values = await spend(cst, qst, args)
+
+  if (typeof target === null) {
+    qst.target = Array.isArray(values)
+      ? values.slice(1).reduce((prev, val) => prev * val, values[0])
+      : values
+  } else if (isBoolNumOrStr(target)) {
+    qst.target = values.reduce((prev, val) => prev * val, target)
+  }
+
+  return qst
+}
+
+q.add = async (cst, qst, args) => {
+  const target = qst.target
+  const values = await spend(cst, qst, args)
+
+  if (target === null) {
+    qst.target = Array.isArray(values)
+      ? values.slice(1).reduce((prev, val) => prev + val, values[0])
+      : values
+  } else if (isBoolNumOrStr(target)) {
+    qst.target = values.reduce((prev, val) => prev + val, target)
+  } else if (Array.isArray(target)) {
+    qst.target = [...target, ...values]
+  }
+
+  return qst
+}
+
+q.uuid = (cst, qst) => {
+  qst.target = randomUUID()
+
+  return qst
+}
+
+q.info = async (cst, qst) => {
+  const dbName = mockdbReqlQueryOrStateDbName(qst, cst)
+  qst.target = pgQueryResTableInfo(cst, dbName, qst.tablename)
+
+  return qst
+}
+
+q.info.fn = async (db, qst, args) => {
+  return q.getField(db, qst, args)
 }
 
 export default Object.assign(spend, q)

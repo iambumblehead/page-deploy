@@ -72,7 +72,7 @@ const pgEnumQueryNameIsFIRSTTERMRe = new RegExp(
 const pgEnumQueryNameIsGREEDYRe = new RegExp(
   `^(${pgEnumQueryNamesGreedy.join('|')})$`)
 
-const pgEnumQueryNameIsCURSORORDEFAULTRe = /getCursor|default/
+const pgEnumQueryNameIsDEFAULTRe = /default/
 
 const pgEnumIsLookObj = obj => (
   obj && typeof obj === 'object'
@@ -141,7 +141,8 @@ export {
 
   pgEnumQueryNameIsRESOLVINGRe,
   pgEnumQueryNameIsFIRSTTERMRe,
-  pgEnumQueryNameIsCURSORORDEFAULTRe,
+  pgEnumQueryNameIsDEFAULTRe,
+  // pgEnumQueryNameIsCURSORORDEFAULTRe,
   pgEnumQueryNameIsGREEDYRe,
 
   pgEnumTypeERROR,

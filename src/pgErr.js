@@ -40,10 +40,19 @@ const pgErrTableDoesNotExist = (dbName, tableName) => new Error(
   'Table `:tableName` does not exist.'
     .replace(/:tableName/, [dbName, tableName].join('.')))
 
+const pgErrDuplicatePrimaryKey = (existingDoc, conflictDoc) => new Error (
+  'Duplicate primary key `id`:\n :existingDoc\n:conflictDoc'
+    .replace(/:existingDoc/, pgErrStringify(existingDoc))
+    .replace(/:conflictDoc/, pgErrStringify(conflictDoc)))
+
 const pgErrPrimaryKeyWrongType = primaryKey => new Error(
   ('Primary keys must be either a'
    + ' number, string, bool, pseudotype or array (got type :type)')
     .replace(/:type/, String(typeof primaryKey).toUpperCase()))
+
+const pgErrPrimaryKeyCannotBeChanged = primaryKeyVal => new Error(
+  'Primary key `:primaryKeyVal` cannot be changed'
+    .replace(/:primaryKeyVal/, primaryKeyVal))
 
 const pgErrArgsNumber = (queryId, takes = 0, given = 1, atLeast) => new Error(
   '`:queryId` takes :takesArgs :argument, :givenArgs provided.'
@@ -51,6 +60,9 @@ const pgErrArgsNumber = (queryId, takes = 0, given = 1, atLeast) => new Error(
     .replace(/:argument/, takes === 1 ? 'argument' : 'arguments')
     .replace(/:takesArgs/, atLeast ? `at least ${takes}` : takes)
     .replace(/:givenArgs/, given))
+
+const pgErrIndexOutOfBounds = idx => new Error(
+  `ReqlNonExistanceError: Index out of bounds: ${idx}`)
 
 const pgErrUnRecognizedOption = key => new Error(
   'Unrecognized optional argument `:key`.'
@@ -79,6 +91,10 @@ const pgErrCannotCallFOOonBARTYPEvalue = (foo, bar) => new Error(
 const pgErrNotATIMEpsuedotype = () => new Error(
   'Not a TIME pseudotype: `null`')
 
+const pgErrUnrecognizedOption = key => new Error(
+  'Unrecognized optional argument `:key`.'
+    .replace(/:key/, key))
+
 export {
   pgErrDirNotFound,
   pgErrFileNotFound,
@@ -97,11 +113,14 @@ export {
   pgErrNoMoreRowsInCursor,
   pgErrNoAttributeInObject,
   pgErrExpectedTypeFOOButFoundBAR,
-
+  pgErrIndexOutOfBounds,
   pgErrInvalidTableName,
   pgErrInvalidDbName,
   pgErrTableExists,
   pgErrTableDoesNotExist,
+  pgErrDuplicatePrimaryKey,
   pgErrPrimaryKeyWrongType,
-  pgErrNotATIMEpsuedotype
+  pgErrPrimaryKeyCannotBeChanged,
+  pgErrNotATIMEpsuedotype,
+  pgErrUnrecognizedOption
 }

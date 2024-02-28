@@ -123,8 +123,8 @@ const pgTableDocHasIndexValueFn = (tableIndexTuple, indexValues, dbState) => {
     || new RegExp(`^(${indexValues.join('|')})$`)
   const targetValueIs = valueResolved => targetValueRe.test(valueResolved)
 
-  return (doc, spend, qst) => {
-    const indexValueResolved = pgTableDocGetIndexValue(
+  return async (doc, spend, qst) => {
+    const indexValueResolved = await pgTableDocGetIndexValue(
       doc, tableIndexTuple, spend, qst, dbState)
 
     if (!targetIndexMulti)

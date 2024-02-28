@@ -1,8 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  pgscript_helpercreate
-} from '../src/pgscript.js'
+  pgNodeDesign
+} from '../src/pgNodeDesign.js'
 
 const {
   gnpgdata,
@@ -15,7 +15,7 @@ const {
   'uispread',
   'uicheckbox'
 ].reduce((ac, n) => (
-  Object.assign(ac, { [n]: pgscript_helpercreate(n) })
+  Object.assign(ac, { [n]: pgNodeDesign(n) })
 ), {})
 
 test("helper should return valid node", () => {

@@ -48,11 +48,12 @@ const buildDb = (tables, config) => {
 
 // returns [opts, tableslist]
 const pgReqlArgs = (arg0, arg1) => (
-  Array.isArray(arg0) ? [{}, arg0] : [arg0, arg1 || []])
+  Array.isArray(arg0) ? [{}, arg0] : [arg0 || {}, arg1 || []])
 
 export default (opts, configList) => {
   const args = pgReqlArgs(opts, configList)
 
+  // console.log({ args })
   args[0].i18nDoc = (
     (args[1] || [])
       .find(table => table[0] === 'i18n') || [])[1]

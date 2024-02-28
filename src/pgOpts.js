@@ -37,8 +37,10 @@ export default useropts => {
 
   opt.deploytype = useropts.deploytype || 'flat'
   opt.i18nDoc = useropts.i18nDoc
-  opt.i18nDoc.localeTreePriorityMap = pgLocaleTreeMapCreate(
-    opt.i18nDoc.localeTreePriorityList)
+  if (opt.i18nDoc) {
+    opt.i18nDoc.localeTreePriorityMap = pgLocaleTreeMapCreate(
+      opt.i18nDoc.localeTreePriorityList)
+  }
   
   return opt
 }

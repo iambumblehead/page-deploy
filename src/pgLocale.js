@@ -36,7 +36,7 @@ const pgLocaleIdParse = localeId => {
 const pgLocaleIdResolve = localeId => {
   const charCodeHyphen = 45
 
-  return localeId.charCodeAt(3) === charCodeHyphen
+  return !localeId || (localeId.charCodeAt(3) === charCodeHyphen)
     ? localeId || pgEnumLOCALETYPEUNIVERSALID
     : localeId.length === 3
       ? localeId + '-' + pgEnumLOCALETYPEUNIVERSALREGION
