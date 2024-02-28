@@ -186,98 +186,83 @@ const asList = value => Array.isArray(value) ? value : [value]
 
 const q = {}
 
+const spendRecsNext = async (db, reqlObj, rows, recs, qstNext, i = 0) => {
+  if (i >= recs.length)
+    return qstNext
+
+  const rec = recs[i]
+
+  // const val = reqlObj.recs.reduce((qstNext, rec, i) => {
+  // avoid mutating original args w/ suspended values
+  const queryArgs = rec[1].slice()
+
+  if (qstNext.error && !pgEnumQueryNameIsDEFAULTRe.test(rec[0]))
+    return qstNext    
+  
+  if (rec[0] === 'row') {
+    // following authentic rethinkdb, disallow most nested short-hand
+    // row queries. legacy 'rethinkdb' driver is sometimes more permissive
+    // than newer rethinkdb-ts: rethinkdb-ts behaviour preferred here
+    //
+    // ex, nested r.row('membership') elicits an error
+    // ```
+    // r.expr(list).filter( // throws error
+    //   r.row('user_id').eq('xavier').or(r.row('membership').eq('join'))
+    // ```
+    if (qstNext.rowDepth >= 1 && i === 0 && (
+      // existance of ARGSIG indicates row function was used
+      pgEnumQueryArgTypeARGSIG !== rec[1][0])) {
+      throw pgErrCannotUseNestedRow()
+    } else {
+      qstNext.rowDepth += 1
+    }
+  }
+
+  if (i === 0 && rows && !/\(.*\)/.test(reqlObj.recId)) {
+    // assigns row from callee to this pattern target,
+    //  * this pattern must represent the beginning of a chain
+    //  * this pattern is not a 'function'; pattern will not resolve row
+    //
+    // ex, filter passes each item to the embedded 'row'
+    // ```
+    // r.expr(list).filter(
+    //   r.row('time_expire').during(
+    //     r.epochTime(0),
+    //     r.epochTime(now / 1000)))
+    // ```
+    qstNext.target = rows[0]
+  }
+
+  try {
+    qstNext = await (/\.fn/.test(rec[0])
+      ? q[rec[0].replace(/\.fn/, '')].fn
+      : q[rec[0]]
+    )(db, qstNext, queryArgs, reqlObj)
+  } catch (e) {
+    // do not throw error if chain subsequently uses `.default(...)`
+    // * if no future default query exists, tag error
+    // * throw all tagged errors up to user
+    qstNext.target = null
+    qstNext.error = e
+
+    e[pgEnumTypeERROR] = typeof e[pgEnumTypeERROR] === 'boolean'
+      ? e[pgEnumTypeERROR]
+      : !reqlObj.recs.slice(i + 1)
+        .some(o => pgEnumQueryNameIsDEFAULTRe.test(o[0]))
+
+    if (e[pgEnumTypeERROR])
+      throw e
+  }
+
+  return spendRecsNext(db, reqlObj, rows, recs, qstNext, i + 1)
+}
+
 const spendRecs = async (db, qst, reqlObj, rows) => {
   if (rows && rows.length) {
     qst.rowMap[reqlObj.recId] = rows.slice()
   }
 
-  let qstNext = {
-    // if nested spec is not a function expression,
-    // pass target value down from parent
-    //
-    // r.expr(...).map(
-    //   r.branch(
-    //     r.row('victories').gt(100),
-    //     r.row('name').add(' is a hero'),
-    //     r.row('name').add(' is very nice')))
-    target: reqlObj.recs[0][0] === 'row' ? qst.target : null,
-    recId: reqlObj.recId,
-    rowMap: qst.rowMap || {},
-    rowDepth: qst.rowDepth || 0
-  }
-
-  // const val = reqlObj.recs.reduce((qstNext, rec, i) => {
-  // for (let i in reqlObj.recs) {
-  for (let i = 0; i < reqlObj.recs.length; i++) {
-    let rec = reqlObj.recs[i]
-
-    // const val = reqlObj.recs.reduce((qstNext, rec, i) => {
-    // avoid mutating original args w/ suspended values
-    const queryArgs = rec[1].slice()
-
-    if (qstNext.error && !pgEnumQueryNameIsDEFAULTRe.test(rec[0]))
-      return qstNext    
-    
-    if (rec[0] === 'row') {
-      // following authentic rethinkdb, disallow most nested short-hand
-      // row queries. legacy 'rethinkdb' driver is sometimes more permissive
-      // than newer rethinkdb-ts: rethinkdb-ts behaviour preferred here
-      //
-      // ex, nested r.row('membership') elicits an error
-      // ```
-      // r.expr(list).filter( // throws error
-      //   r.row('user_id').eq('xavier').or(r.row('membership').eq('join'))
-      // ```
-      if (qstNext.rowDepth >= 1 && i === 0 && (
-        // existance of ARGSIG indicates row function was used
-        pgEnumQueryArgTypeARGSIG !== rec[1][0])) {
-        throw pgErrCannotUseNestedRow()
-      } else {
-        qstNext.rowDepth += 1
-      }
-    }
-
-    if (i === 0 && rows && !/\(.*\)/.test(reqlObj.recId)) {
-      // assigns row from callee to this pattern target,
-      //  * this pattern must represent the beginning of a chain
-      //  * this pattern is not a 'function'; pattern will not resolve row
-      //
-      // ex, filter passes each item to the embedded 'row'
-      // ```
-      // r.expr(list).filter(
-      //   r.row('time_expire').during(
-      //     r.epochTime(0),
-      //     r.epochTime(now / 1000)))
-      // ```
-      qstNext.target = rows[0]
-    }
-
-    try {
-      qstNext = await (/\.fn/.test(rec[0])
-        ? q[rec[0].replace(/\.fn/, '')].fn
-        : q[rec[0]]
-      )(db, qstNext, queryArgs, reqlObj)
-    } catch (e) {
-      // do not throw error if chain subsequently uses `.default(...)`
-      // * if no future default query exists, tag error
-      // * throw all tagged errors up to user
-      qstNext.target = null
-      qstNext.error = e
-
-      e[pgEnumTypeERROR] = typeof e[pgEnumTypeERROR] === 'boolean'
-        ? e[pgEnumTypeERROR]
-        : !reqlObj.recs.slice(i + 1)
-          .some(o => pgEnumQueryNameIsDEFAULTRe.test(o[0]))
-
-      if (e[pgEnumTypeERROR])
-        throw e
-    }
-
-    // return qstNext
-    // return qstNext
-  }
-  /*
-  }, {
+  qst = await spendRecsNext(db, reqlObj, rows, reqlObj.recs, {
     // if nested spec is not a function expression,
     // pass target value down from parent
     //
@@ -291,10 +276,8 @@ const spendRecs = async (db, qst, reqlObj, rows) => {
     rowMap: qst.rowMap || {},
     rowDepth: qst.rowDepth || 0
   })
-  */
 
-  // return val.target
-  return qstNext.target
+  return qst.target
 }
 
 // eslint-disable-next-line max-len
