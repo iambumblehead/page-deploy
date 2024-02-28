@@ -3416,15 +3416,13 @@ test('.filter(…)("val") attribute getField call is supported', async () => {
   await d.table('Memberships').indexCreate('user_sender_id').run()
   await d.table('Memberships').indexCreate('room_id').run()
 
-  const joinDetails = d.table(tableRoomMemberships)
+  const joinDetails = await d.table(tableRoomMemberships)
     .getAll(userId, { index: 'user_id' })
     .filter(row => d.and(
       row('room_membership_type').eq('JOIN')))
     .merge(row => ({ friend_id: row('user_sender_id') }))
     .run()
 
-  assert.ok(joinDetails, true)
-/*
   assert.deepEqual(joinDetails[0], {
     id: 'memberid-111',
     user_id: 'userId-1234',
@@ -3433,7 +3431,7 @@ test('.filter(…)("val") attribute getField call is supported', async () => {
     room_id: 'roomId-1234',
     friend_id: 'userId-1234'
   })
-/*
+
   const filter = await d.expr([{
     id: 'memberid-111',
     user_id: 'userId-1234',
@@ -3487,7 +3485,6 @@ test('.filter(…)("val") attribute getField call is supported', async () => {
     ))('user_id').run()
 
     assert.deepEqual(userFriendIds, [friendId])
-  */    
 })
 
 test('supports complex filtering', async () => {
@@ -3561,3 +3558,4 @@ test('supports complex filtering', async () => {
 
   assert.deepEqual(userFriendIds.sort(), [friendAId, friendBId].sort())
 })
+

@@ -110,6 +110,13 @@ import {
   pgMdParse
 } from './pgMd.js'
 
+import {
+  pgArrFilterAsync,
+  pgArrMapAsync,
+  pgArrReduceAsync,
+  pgArrSomeAsync,
+  pgArrEveryAsync
+} from './pgArr.js'
 
 // pending removal, should use event system
 import pgLog from './pgLog.js'
@@ -149,44 +156,6 @@ const isBoolNumOrStr = (o, to = typeof o) => (
 // created by 'asc' and 'desc' queries
 const isSortObj = obj => isLookObj(obj)
   && 'sortBy' in obj
-
-// const arrFilterConcurrentAsync = async (arr, fn) => Promise.all(
-//   arr.map((elem, i) => fn(elem, i).then(t => t ? elem : []))
-// ).then(res => res.flat())
-const arrFilterConcurrentAsync = async (arr, fn, fin = []) => {
-  if (arr.length === 0)
-    return fin
-
-  if (await fn(arr[0]))
-    fin.push(arr[0])
-
-  return arrFilterConcurrentAsync(arr.slice(1), fn, fin)
-}
-
-// const arrMapConcurrentAsync = async (arr, fn) => Promise.all(
-//  arr.map((elem, i) => fn(elem, i)))
-const arrMapConcurrentAsync = async (arr, fn, fin = []) => {
-  if (arr.length === 0)
-    return fin
-
-  fin.push(await fn(arr[0]))
-
-  return arrMapConcurrentAsync(arr.slice(1), fn, fin)
-}
-
-const arrReduceAsync = async (arr, fn, acc) => arr.length === 0
-  ? acc
-  : arrReduceAsync(arr.slice(1), fn, await fn(acc, arr[0]))
-
-const arrSomeAsync = async (arr, fn) => arr.length
-  && (await fn(arr[0]) || (
-    // console.log('next', arr.slice(1)),
-    arrSomeAsync(arr.slice(1), fn)))
-
-const arrEveryAsync = async (arr, fn) => arr.length === 0
-  || (await fn(arr[0]) && (
-    // console.log('next', arr.slice(1)),
-    arrEveryAsync(arr.slice(1), fn)))
 
 const sortObjParse = o => isLookObj(o)
   ? (isSortObj(o) ? o : isSortObj(o.index) ? o.index : null)
@@ -675,7 +644,7 @@ q.zip = (db, qst) => {
 q.map = async (st, qst, args) => {
   // qst.target = qst
   //   .target.map(t => spend(st, qst, args[0], [t]))
-  qst.target = await arrMapConcurrentAsync(
+  qst.target = await pgArrMapAsync(
     qst.target.slice(), async listoldi => (
       // console.log({ listoldi }),
       spend(st, qst, args[0], [listoldi])))
@@ -696,7 +665,7 @@ q.union = async (db, qst, args) => {
     args.splice(-1, 1)
 
   // let res = args.reduce((acc, arg) => {
-  let res = await arrReduceAsync(args, async (ac, arg) => {
+  let res = await pgArrReduceAsync(args, async (ac, arg) => {
     return ac.concat(await spend(db, qst, arg))
   }, qst.target || [])
 
@@ -969,7 +938,7 @@ q.forEach = async (cst, qst, args) => {
   }
 
   //qst.target = qst.target.reduce((st, arg) => {
-  qst.target = await arrReduceAsync(qst.target, async (ac, arg) => {
+  qst.target = await pgArrReduceAsync(qst.target, async (ac, arg) => {
     const result = await spend(cst, qst, forEachRow, [arg])
 
     return pgDbStateAggregate(ac, result)
@@ -1369,7 +1338,7 @@ q.getAll = async (db, qst, args) => {
   const tableDocHasIndex = pgTableDocHasIndexValueFn(
     tableIndexTuple, primaryKeyValues, db)
 
-  qst.target = await arrFilterConcurrentAsync(qst.target, async doc => (
+  qst.target = await pgArrFilterAsync(qst.target, async doc => (
     tableDocHasIndex(doc, spend, qst)))
 
   qst.target = qst.target
@@ -1418,7 +1387,7 @@ q.replace = async (db, qst, args) => {
   }
 
   // const resSpec = asList(queryTarget).reduce((spec, targetDoc) => {
-  const resSpec = await arrReduceAsync(asList(queryTarget), async (ac, doc) => {
+  const resSpec = await pgArrReduceAsync(asList(queryTarget), async (ac, doc) => {
     const replacement = await spend(db, qst, args[0], [doc])
     const oldDoc = pgTableDocGet(queryTable, doc, primaryKey)
     const newDoc = replacement === null ? null : replacement
@@ -1454,7 +1423,7 @@ q.update = async (cst, qst, args) => {
   const primaryKey = pgDbStateTableGetPrimaryKey(cst, dbName, qst.tablename)
   const options = args[1] || {}
   // const resSpec = asList(queryTarget).reduce((spec, targetDoc) => {
-  const resSpec = await arrReduceAsync(asList(queryTarget), async (ac, doc) => {
+  const resSpec = await pgArrReduceAsync(asList(queryTarget), async (ac, doc) => {
     const oldDoc = pgTableDocGet(queryTable, doc, primaryKey)
     const newDoc = updateProps === null
       ? oldDoc
@@ -1556,7 +1525,7 @@ q.insert = async (cst, qst, args) => {
 
   [table, documents] = pgTableDocsSet(
     table,
-    await arrMapConcurrentAsync(
+    await pgArrMapAsync(
       documents, async doc => spend(cst, qst, doc)),
     primaryKey)
 
@@ -1697,7 +1666,7 @@ q.orderBy = async (cst, qst, args) => {
 q.filter = async (cst, qst, args) => {
   // qst.ntarget = await Promise
   //   .all(qst.target.map(t => spend(db, qst, args[0], [t])))
-  qst.target = await arrFilterConcurrentAsync(qst.target, async item => {
+  qst.target = await pgArrFilterAsync(qst.target, async item => {
     const finitem = await spend(cst, qst, args[0], [item])
 
     /*
@@ -1879,7 +1848,7 @@ q.contains = async (cst, qst, args) => {
 
   if (pgEnumIsChain(args[0])) {
     // qst.target = queryTarget.some(target => {    
-    qst.target = await arrSomeAsync(queryTarget, async target => {
+    qst.target = await pgArrSomeAsync(queryTarget, async target => {
       const res = await spend(cst, qst, args[0], [target])
 
       return typeof res === 'boolean'
@@ -1887,7 +1856,7 @@ q.contains = async (cst, qst, args) => {
         : queryTarget.includes(res)
     })
   } else {
-    qst.target = await arrEveryAsync(args, async predicate => (
+    qst.target = await pgArrEveryAsync(args, async predicate => (
       queryTarget.includes(await spend(cst, qst, predicate))))
     // qst.target = args.every(predicate => (
     //   queryTarget.includes(spend(cst, qst, predicate))))
@@ -1904,13 +1873,13 @@ q.delete = async (cst, qst, args) => {
   const tableIndexTuple = pgDbStateTableGetIndexTuple(
     cst, dbName, qst.tablename, primaryKey)
   const targetList = asList(queryTarget)
-  const targetIds = await arrMapConcurrentAsync(targetList, async doc => (
+  const targetIds = await pgArrMapAsync(targetList, async doc => (
     pgTableDocGetIndexValue(doc, tableIndexTuple, spend, qst, cst)))
   const targetIdRe = new RegExp(`^(${targetIds.join('|')})$`)
   const options = queryArgsOptions(args)
   // const tableFiltered = queryTable.filter(doc => !targetIdRe.test(
   //   pgTableDocGetIndexValue(doc, tableIndexTuple, spend, qst, cst)))
-  const tableFiltered = await arrFilterConcurrentAsync(
+  const tableFiltered = await pgArrFilterAsync(
     queryTable, async doc => !targetIdRe.test(
       await pgTableDocGetIndexValue(doc, tableIndexTuple, spend, qst, cst)))
   const queryConfig = queryArgsOptions(args)
@@ -1950,7 +1919,7 @@ q.merge = async (cst, qst, args) => {
 
   // const mergeTarget = (merges, target) => merges.reduce((p, next) => (
   const mergeTarget = async (merges, target) => (
-    arrReduceAsync(merges, async (ac, next) => (
+    pgArrReduceAsync(merges, async (ac, next) => (
       // console.log('-->', qst.target, await spend(cst, qst, next, [target])),
       Object.assign(ac, await spend(cst, qst, next, [target]))
     ), { ...target })
@@ -1958,7 +1927,7 @@ q.merge = async (cst, qst, args) => {
 
   // console.log('-->', qst.target)
   qst.target = Array.isArray(qst.target)
-    ? await arrMapConcurrentAsync(qst.target, async i => mergeTarget(args, i))
+    ? await pgArrMapAsync(qst.target, async i => mergeTarget(args, i))
     : await mergeTarget(args, qst.target)
 
   return qst
@@ -1970,7 +1939,7 @@ q.concatMap = async (cst, qst, args) => {
   // qst.target = qst
   //  .target.map(t => spend(cst, qst, func, [t])).flat()
 
-  qst.target = await arrMapConcurrentAsync(
+  qst.target = await pgArrMapAsync(
     qst.target, async t => spend(cst, qst, func, [t]))
 
   qst.target = qst.target.flat()
@@ -1986,7 +1955,7 @@ q.group = async (db, qst, args) => {
   const queryTarget = qst.target
   const arg = args[0]
 
-  const groupedData = await arrReduceAsync(queryTarget, async (ac, item) => {
+  const groupedData = await pgArrReduceAsync(queryTarget, async (ac, item) => {
     const key = (typeof arg === 'object' && arg && 'index' in arg)
       ? arg.index
       : await spend(db, qst, arg)
@@ -2058,7 +2027,7 @@ q.eqJoin = async (cst, qst, args) => {
   }
 
   // qst.target = queryTarget.reduce((joins, item) => {
-  qst.target = await arrReduceAsync(queryTarget, async (ac, item) => {
+  qst.target = await pgArrReduceAsync(queryTarget, async (ac, item) => {
     const leftFieldSpend = await spend(cst, qst, args[0], [item])
     
     const leftFieldValue = qst.tablelist
@@ -2090,8 +2059,8 @@ q.innerJoin = async (cst, qst, args) => {
   const joinFunc = args[1]
   const otherTable = await spend(cst, qst, otherSequence)
 
-  qst.target = await arrMapConcurrentAsync(queryTarget, async item => (
-    arrMapConcurrentAsync(otherTable, async otherItem => {
+  qst.target = await pgArrMapAsync(queryTarget, async item => (
+    pgArrMapAsync(otherTable, async otherItem => {
       //     // problem here is we don't know if item will be evaluated first
       const oinSPend = await spend(cst, qst, joinFunc, [item, otherItem])
 
