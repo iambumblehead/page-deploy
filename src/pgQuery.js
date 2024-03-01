@@ -1428,14 +1428,54 @@ q.getAll = async (db, qst, args) => {
   return qst
 }
 
+// array.prepend(value) → array
+q.prepend = async (cst, qst, args) => {
+  const target = qst.target.slice()
+  const value = await spend(cst, qst, args[0])
+
+  qst.target = [value].concat(target)
+
+  return qst
+}
+
+// array.append(value) → array
+q.append = async (cst, qst, args) => {
+  const target = qst.target.slice()
+  const value = await spend(cst, qst, args[0])
+
+  qst.target = target.concat([value])
+
+  return qst
+}
+
+// array.changeAt(offset, value) → array
+// array.setInsert(value) → array
+q.changeAt = async (cst, qst, args) => {
+  const target = qst.target.slice()
+  const offset = await spend(cst, qst, args[0])
+  const value = await spend(cst, qst, args[1])
+  const index = offset >= 0
+    ? offset
+    : target.length + offset
+
+  target[index] = value
+
+  qst.target = target
+
+  return qst
+}
+
 q.nth = async (db, qst, args) => {
   const nthIndex = await spend(db, qst, args[0])
+  const target = qst.target
 
-  if (nthIndex >= qst.target.length) {
+  if (nthIndex >= target.length) {
     throw pgErrIndexOutOfBounds(nthIndex)
   }
 
-  qst.target = qst.target[nthIndex]
+  qst.target = nthIndex >= 0
+    ? target[nthIndex]
+    : target.slice(nthIndex)[0]
 
   return qst
 }
