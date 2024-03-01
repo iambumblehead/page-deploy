@@ -27,6 +27,7 @@ import {
   pgErrInvalidDbName,
   pgErrPrimaryKeyCannotBeChanged,
   pgErrDuplicatePrimaryKey,
+  pgErrCannotReduceOverEmptyStream,
   pgErrSecondArgumentOfQueryMustBeObject
 } from './pgErr.js'
 
@@ -203,14 +204,15 @@ const spendRecsNext = async (db, reqlObj, rows, recs, qstNext, i = 0) => {
     // row queries. legacy 'rethinkdb' driver is sometimes more permissive
     // than newer rethinkdb-ts: rethinkdb-ts behaviour preferred here
     //
-    // ex, nested r.row('membership') elicits an error
+    // ex, nested d.row('membership') elicits an error
     // ```
-    // r.expr(list).filter( // throws error
-    //   r.row('user_id').eq('xavier').or(r.row('membership').eq('join'))
+    // d.expr(list).filter( // throws error
+    //   d.row('user_id').eq('xavier').or(d.row('membership').eq('join'))
     // ```
     if (qstNext.rowDepth >= 1 && i === 0 && (
       // existance of ARGSIG indicates row function was used
       pgEnumQueryArgTypeARGSIG !== rec[1][0])) {
+
       throw pgErrCannotUseNestedRow()
     } else {
       qstNext.rowDepth += 1
@@ -224,10 +226,10 @@ const spendRecsNext = async (db, reqlObj, rows, recs, qstNext, i = 0) => {
     //
     // ex, filter passes each item to the embedded 'row'
     // ```
-    // r.expr(list).filter(
-    //   r.row('time_expire').during(
-    //     r.epochTime(0),
-    //     r.epochTime(now / 1000)))
+    // d.expr(list).filter(
+    //   d.row('time_expire').during(
+    //     d.epochTime(0),
+    //     d.epochTime(now / 1000)))
     // ```
     qstNext.target = rows[0]
   }
@@ -265,11 +267,11 @@ const spendRecs = async (db, qst, reqlObj, rows) => {
     // if nested spec is not a function expression,
     // pass target value down from parent
     //
-    // r.expr(...).map(
-    //   r.branch(
-    //     r.row('victories').gt(100),
-    //     r.row('name').add(' is a hero'),
-    //     r.row('name').add(' is very nice')))
+    // d.expr(...).map(
+    //   d.branch(
+    //     d.row('victories').gt(100),
+    //     d.row('name').add(' is a hero'),
+    //     d.row('name').add(' is very nice')))
     target: reqlObj.recs[0][0] === 'row' ? qst.target : null,
     recId: reqlObj.recId,
     rowMap: qst.rowMap || {},
@@ -295,7 +297,7 @@ const spend = async (db, qst, qspec, rows, d = 0, type = typeof qspec, f = null)
   } else if (pgEnumIsChain(qspec)) {
     // why re-use existing reql.rows, eg `spec.rows || rows`?
     // ```
-    // r.expr([{ type: 'boot' }]).contains(row => r
+    // d.expr([{ type: 'boot' }]).contains(row => r
     //  .expr([ 'cleat' ]).contains(row.getField('type')))
     //  .run();
     // ```
@@ -319,7 +321,7 @@ const spend = async (db, qst, qspec, rows, d = 0, type = typeof qspec, f = null)
     }
     // render nested query objects, shallow. ex `row('id')`,
     // ```
-    // r.expr([{ id: 1 }, { id: 2 }])
+    // d.expr([{ id: 1 }, { id: 2 }])
     //  .merge(row => ({ oldid: row('id'), id: 0 }))
     //  .run()
     // ```    
@@ -370,6 +372,30 @@ const mockdbi18nResolved = async (st, qst) => {
   }
 
   return i18ndoc
+}
+
+// Get a single field from an object. If called on a sequence, gets that field
+// from every object in the sequence, skipping objects that lack it.
+//
+// https://rethinkdb.com/api/javascript/get_field
+q.getField = async (db, qst, args) => {
+  const fieldName = (await spend(db, qst, args))[0]
+
+  if (args.length === 0) {
+    throw pgErrArgsNumber('(...)', 1, args.length)
+  }
+
+  // if ( Array.isArray( qst.target ) ) {
+  //  qst.error = 'Expected type DATUM but found SEQUENCE"';
+  //  qst.target = null;
+  //   return qst;
+  // }
+
+  qst.target = Array.isArray(qst.target)
+    ? qst.target.map(t => t[fieldName])
+    : qst.target[fieldName]
+
+  return qst
 }
 
 // 'i' for 'i18n'
@@ -523,10 +549,10 @@ q.md = async (st, qst, args) => {
 }
 
 // this calls row then row.fn
-// r.row('age').gt(5)
-// r.row → value
+// d.row('age').gt(5)
+// d.row → value
 // row => row('name_screenname')
-// r.row( 'hobbies' ).add( r.row( 'sports' )
+// d.row( 'hobbies' ).add( d.row( 'sports' )
 //
 // dynamic row sometimes passes value,
 //   [ 'reqlARGSSUSPEND', 'reqlARGSIG.row', 0, 'row' ]
@@ -547,7 +573,7 @@ q.row = (cst, qst, args) => {
     : qst.target[args[0]]
 
   // console.log(
-  //   'r.row() target',
+  //   'd.row() target',
   //   qst.target,
   //   args[0] === pgEnumQueryArgTypeARGSIG)
   return qst
@@ -778,17 +804,30 @@ q.or = async (st, qst, args) => {
   return qst
 }
 
-q.and = (st, qst, args) => {
-  const rows = [qst.target]
+q.and = async (st, qst, args) => {
+  const target = qst.target
+  const rows = [target]
 
-  qst.target = args.reduce((current, arg) => (
-    current && spend(st, qst, arg, rows)
-  ), typeof qst.target === 'boolean' ? qst.target : true)
+  // qst.target = await (async and => {
+  //   while (and && args.length)
+  // })(typeof target === 'boolean' ? target : true)
+  const start = typeof target === 'boolean' ? target : true
+  qst.target = start && await pgArrEveryAsync(args, async arg => (
+    spend(st, qst, arg, rows)
+  ))
+  // cosnt target = 
+  // qst.target = typeof qst.target === 'boolean' ? qst.target : true
+  // while (!qst.target && args.length) {
+  //
+  //
+  // qst.target = args.reduce((current, arg) => (
+  //   current && spend(st, qst, arg, rows)
+  // ), typeof qst.target === 'boolean' ? qst.target : true)
   
   return qst
 }
 
-// r.args(array) → special
+// d.args(array) → special
 q.args = async (st, qst, args) => {
   const result = await spend(st, qst, args[0])
   if (!Array.isArray(result))
@@ -863,7 +902,7 @@ q.serialize = (cst, qst) => {
 //
 // TAKECARE: when shape of reduced value differs from shape of sequence values
 //
-// await r.expr([
+// await d.expr([
 //   { count: 3 }, { count: 0 },
 //   { count: 6 }, { count: 7 }
 // ]).reduce((left, right) => (
@@ -872,11 +911,16 @@ q.serialize = (cst, qst) => {
 //
 // > 'Cannot perform bracket on a non-object non-sequence `8`.'
 //
-q.reduce = (st, qst, args) => {
+q.reduce = async (cst, qst, args) => {
   if (args.length === 0) {
     throw pgErrArgsNumber('reduce', 1, args.length)
   }
 
+  // live rethinkdb inst returns sequence of 0 as error
+  if (qst.target.length === 0) {
+    throw pgErrCannotReduceOverEmptyStream()
+  }
+  
   // live rethinkdb inst returns sequence of 1 atom
   if (qst.target.length === 1) {
     [qst.target] = qst.target
@@ -886,8 +930,10 @@ q.reduce = (st, qst, args) => {
 
   const seq = qst.target.sort(() => 0.5 - Math.random())
 
-  qst.target = seq.slice(1)
-    .reduce((st, arg) => spend(st, qst, args[0], [st, arg]), seq[0])
+  qst.target = await pgArrReduceAsync(seq.slice(1), async (ac, arg) => (
+    spend(ac, qst, args[0], [ac, arg])), seq[0])
+  // qst.target = seq.slice(1)
+  //   .reduce((st, arg) => spend(st, qst, args[0], [st, arg]), seq[0])
 
   return qst
 }
@@ -899,15 +945,19 @@ q.reduce = (st, qst, args) => {
 //  * it passes an initial base value to the function with the
 //    first element in place of the previous reduction result.
 //
-q.fold = (st, qst, args) => {
-  const [startVal, reduceFn] = args
+q.fold = async (cst, qst, args) => {
+  const startVal = args[0]
+  const reduceFn = args[1]
 
   if (args.length < 2) {
     throw pgErrArgsNumber('fold', 2, args.length)
   }
 
-  qst.target = qst.target
-    .reduce((st, arg) => spend(st, qst, reduceFn, [st, arg]), startVal)
+  // qst.target = qst.target
+  //   .reduce((st, arg) => spend(st, qst, reduceFn, [st, arg]), startVal)
+  qst.target = await pgArrReduceAsync(qst.target, async (ac, arg) => (
+    spend(ac, qst, reduceFn, [ac, arg])
+  ), startVal)
 
   return qst
 }
@@ -970,7 +1020,7 @@ q.date = (cst, qst) => {
 
 q.epochTime = (cst, qst, args) => {
   if (args.length !== 1)
-    throw pgErrArgsNumber('r.epochTime', 1, args.length)
+    throw pgErrArgsNumber('d.epochTime', 1, args.length)
   
   qst.target = new Date(args[0] * 1000)
 
@@ -979,6 +1029,43 @@ q.epochTime = (cst, qst, args) => {
 
 q.now = (cst, qst) => {
   qst.target = new Date()
+
+  return qst
+}
+
+q.year = (db, qst) => {
+  qst.target = qst.target.getFullYear()
+
+  return qst
+}
+
+q.month = (db, qst) => {
+  qst.target = qst.target.getMonth() + 1
+
+  return qst
+}
+
+q.day = (db, qst) => {
+  qst.target = qst.target.getDate()
+
+  return qst
+}
+
+q.dayOfYear = (db, qst) => {
+  // from koen peters
+  const now = new Date(qst.target)
+  const start = new Date(now.getFullYear(), 0, 0)
+  const diff = now - start
+  const oneDay = 1000 * 60 * 60 * 24
+  const day = Math.floor(diff / oneDay)
+
+  qst.target = day
+  
+  return qst
+}
+
+q.dayOfWeek = (db, qst) => {
+  qst.target = qst.target.getDay()
 
   return qst
 }
@@ -1006,7 +1093,7 @@ q.time = async (db, qst, args) => {
   const timeargs = await spend(db, qst, args)
 
   if (timeargs.length < 4)
-    throw pgErrArgsNumber('r.time', 4, args.length, true)
+    throw pgErrArgsNumber('d.time', 4, args.length, true)
 
   if (!/^[4|7]$/.test(timeargs.length))
     throw new Error('Got 5 arguments to TIME (expected 4 or 7)')
@@ -1015,7 +1102,7 @@ q.time = async (db, qst, args) => {
     timeargs[2] += 1
 
   if (timeargs[6]) {
-    console.log('[!!!] r.time: zerotimezone not supported')
+    console.log('[!!!] d.time: zerotimezone not supported')
     timeargs.splice(6, 1)
   }
 
@@ -1028,7 +1115,7 @@ q.time = async (db, qst, args) => {
 }
 
 q.inTimezone = async (cst, qst, args) => {
-  const timezone = await spend(cst, qst, args)[0] // ex, '-08:00'
+  const timezone = (await spend(cst, qst, args))[0] // ex, '-08:00'
 
   if (args.length !== 1)
     throw pgErrArgsNumber('inTimezone', 1, args.length)
@@ -1071,9 +1158,9 @@ q.ISO8601 = async (cst, qst, args) => {
   const isoopts = queryArgsOptions(isoargs)
 
   if (isoargs.length > 2)
-    throw new Error('`r.ISO8601` takes at most 2 arguments, 3 provided.')
+    throw new Error('`d.ISO8601` takes at most 2 arguments, 3 provided.')
   if (typeof isoargs[0] !== 'string')
-    throw pgErrArgsNumber('r.ISO8601', 1, args.length)
+    throw pgErrArgsNumber('d.ISO8601', 1, args.length)
   
   const isostr = isoopts.defaultTimezone
     ? isoargs[0].replace(/-\d\d:\d\d$/, '') + isoopts.defaultTimezone
@@ -1081,6 +1168,17 @@ q.ISO8601 = async (cst, qst, args) => {
 
   qst.target = new Date(isostr)
   
+  return qst
+}
+
+q.timeOfDay = (cst, qst) => {
+  const day = qst.target
+  
+  qst.target = 0
+    + day.getSeconds()
+    + day.getMinutes() * 60
+    + day.getHours() * 60 * 60
+
   return qst
 }
 
@@ -1113,7 +1211,7 @@ q.db = async (cst, qst, args) => {
   const isValidDbNameRe = /^[A-Za-z0-9_]*$/
 
   if (!args.length) {
-    throw pgErrArgsNumber('r.db', 1, args.length)
+    throw pgErrArgsNumber('d.db', 1, args.length)
   }
 
   if (!isValidDbNameRe.test(dbName)) {
@@ -1135,7 +1233,7 @@ q.dbCreate = async (cst, qst, args) => {
   const dbName = await spend(cst, qst, args[0])
 
   if (!args.length)
-    throw pgErrArgsNumber('r.dbCreate', 1, args.length)
+    throw pgErrArgsNumber('d.dbCreate', 1, args.length)
 
   pgDbStateDbCreate(cst, dbName)
 
@@ -1156,7 +1254,7 @@ q.dbDrop = (db, qst, args) => {
   const tables = pgDbStateDbGet(db, dbName)
 
   if (args.length !== 1) {
-    throw pgErrArgsNumber('r.dbDrop', 1, args.length)
+    throw pgErrArgsNumber('d.dbDrop', 1, args.length)
   }
 
   db = pgDbStateDbDrop(db, dbName)
@@ -1213,7 +1311,7 @@ q.tableCreate = async (db, qst, args) => {
   }
 
   if (!tableName) {
-    throw pgErrArgsNumber('r.tableCreate', 1, 0, true)
+    throw pgErrArgsNumber('d.tableCreate', 1, 0, true)
   }
 
   if (!isValidTableNameRe.test(tableName)) {
@@ -1527,8 +1625,8 @@ q.insert = async (cst, qst, args) => {
 
 // .indexCreate('foo')
 // .indexCreate('foo', { multi: true })
-// .indexCreate('foos', r.row('hobbies').add(r.row('sports')), { multi: true })
-// .indexCreate([r.row('id'), r.row('numeric_id')])
+// .indexCreate('foos', d.row('hobbies').add(d.row('sports')), { multi: true })
+// .indexCreate([d.row('id'), d.row('numeric_id')])
 q.indexCreate = async (db, qst, args) => {
   const [indexName] = args
   const config = queryArgsOptions(args)
@@ -1601,7 +1699,7 @@ q.orderBy = async (cst, qst, args) => {
     let value
 
     // ex, queryOptions,
-    //  ({ index: r.desc('date') })
+    //  ({ index: d.desc('date') })
     //  doc => doc('upvotes')
     if (pgEnumIsChainShallow(queryOptions)) {
       value = await spend(cst, qst, queryOptions, [doc])
@@ -1727,30 +1825,6 @@ q.error = async (cst, qst, args) => {
   const [error] = await spend(cst, qst, args)
 
   throw new Error(error)
-}
-
-// Get a single field from an object. If called on a sequence, gets that field
-// from every object in the sequence, skipping objects that lack it.
-//
-// https://rethinkdb.com/api/javascript/get_field
-q.getField = async (db, qst, args) => {
-  const fieldName = (await spend(db, qst, args))[0]
-
-  if (args.length === 0) {
-    throw pgErrArgsNumber('(...)', 1, args.length)
-  }
-
-  // if ( Array.isArray( qst.target ) ) {
-  //  qst.error = 'Expected type DATUM but found SEQUENCE"';
-  //  qst.target = null;
-  //   return qst;
-  // }
-
-  qst.target = Array.isArray(qst.target)
-    ? qst.target.map(t => t[fieldName])
-    : qst.target[fieldName]
-
-  return qst
 }
 
 q.pluck = async (cst, qst, args) => {
@@ -1888,6 +1962,18 @@ q.delete = async (cst, qst, args) => {
   pgTableSet(queryTable, tableFiltered)
 
   qst.target = pgQueryResChangesSpecFinal(resSpec, options)
+
+  return qst
+}
+
+q.prepend = async (cst, qst, args) => {
+  const prependValue = await spend(cst, qst, args[0])
+
+  if (typeof prependValue === 'undefined') {
+    throw pgErrArgsNumber('prepend', 1, 0, false)
+  }
+
+  qst.target.unshift(prependValue)
 
   return qst
 }
@@ -2344,6 +2430,20 @@ q.add = async (cst, qst, args) => {
   } else if (Array.isArray(target)) {
     qst.target = [...target, ...values]
   }
+
+  return qst
+}
+
+q.object = async (db, qst, args) => {
+  const reducetuples = (accum, list) => {
+    if (list.length < 2) return accum
+    
+    accum[list[0]] = list[1]
+
+    return reducetuples(accum, list.slice(2))
+  }
+
+  qst.target = reducetuples({}, await spend(db, qst, args))
 
   return qst
 }

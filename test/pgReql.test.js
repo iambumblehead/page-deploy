@@ -15,7 +15,7 @@ import {
 
 timezonemock.register('US/Pacific')
 
-// eslint-disable-max-len
+// eslint-disable-next-line max-len
 const isUUIDre = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i
 const uuidValidate = str => typeof str === 'string' && isUUIDre.test(str)
 
@@ -3549,7 +3549,8 @@ test('supports complex filtering', async () => {
           row('user_id').ne(userId)))
         .merge(row => ({ friend_id: row('user_id') }))
     )
-    .eqJoin(d.row('friend_id'), d.table(tableRoomMemberships), { index: 'user_id' })
+    .eqJoin(
+      d.row('friend_id'), d.table(tableRoomMemberships), { index: 'user_id' })
     .getField('right')
     .filter(row => d.and(
       row('room_membership_type').eq('JOIN'),
@@ -3558,4 +3559,3 @@ test('supports complex filtering', async () => {
 
   assert.deepEqual(userFriendIds.sort(), [friendAId, friendBId].sort())
 })
-

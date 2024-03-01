@@ -73,7 +73,7 @@ const pgErrSecondArgumentOfQueryMustBeObject = queryType => new Error(
     .replace(/:queryType/, queryType))
 
 const pgErrCannotUseNestedRow = () => new Error(
-  'Cannot user r.row in nested queries. Use functions instead')
+  'Cannot use d.row in nested queries. Use functions instead')
 
 const pgErrNoMoreRowsInCursor = () => new Error(
   'No more rows in the cursor.')
@@ -94,6 +94,9 @@ const pgErrNotATIMEpsuedotype = () => new Error(
 const pgErrUnrecognizedOption = key => new Error(
   'Unrecognized optional argument `:key`.'
     .replace(/:key/, key))
+
+const pgErrCannotReduceOverEmptyStream = () => new Error(
+  `Cannot reduce over an empty stream.`)
 
 export {
   pgErrDirNotFound,
@@ -121,6 +124,7 @@ export {
   pgErrDuplicatePrimaryKey,
   pgErrPrimaryKeyWrongType,
   pgErrPrimaryKeyCannotBeChanged,
+  pgErrCannotReduceOverEmptyStream,
   pgErrNotATIMEpsuedotype,
   pgErrUnrecognizedOption
 }
